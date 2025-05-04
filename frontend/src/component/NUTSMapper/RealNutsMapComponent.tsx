@@ -14,7 +14,8 @@ export default ({ nutsLevel = '2' }) => {
         setLoading(true);
         
         // Fetch pre-processed NUTS data from our API endpoint
-        const response = await fetch(`/api/nuts-data?level=${nutsLevel}`);
+        const response = await fetch(`/data/nutsRegions.csv`);
+        console.log("Fetching NUTS data from CSV file");
         
         if (!response.ok) {
           throw new Error(`Failed to fetch NUTS data: ${response.status} ${response.statusText}`);
