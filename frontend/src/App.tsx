@@ -1,35 +1,27 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
+import { Routes, Route } from 'react-router-dom'
 import './App.css'
+import Overview from './pages/Overview'
+import GlobalMapGrid from "./component/GlobalMapGrid.tsx";
+import GlobalMapCanvasOverlay from "./component/GlobalMapCanvasOverlay.tsx";
+import NutsMapComponent from "./component/NUTSMapper/NutsMapComponent.tsx";
+import NutsMapV2 from "./component/NUTSMapper/NutsMapV2.tsx";
 
 function App() {
-  const [count, setCount] = useState(0)
-
-  return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    return (
+        <>
+            <Routes>
+                <Route path="/" element={<Overview />} />
+                <Route path="/about" element={<div>The project...</div>} />
+                <Route path="/grid" element={<GlobalMapGrid />} />
+                <Route path="/gridcanvas" element={<GlobalMapCanvasOverlay />} />
+                <Route path="/nuts" element={<NutsMapComponent nutsLevel='2'
+                       nutsDataUrl="https://gisco-services.ec.europa.eu/distribution/v2/nuts/geojson/NUTS_RG_60M_2024_3857_LEVL_2.geojson" />} />
+                <Route path="/nuts2" element={<NutsMapV2 nutsLevel='2'
+                                                               nutsDataUrl="https://gisco-services.ec.europa.eu/distribution/v2/nuts/geojson/NUTS_RG_60M_2024_3857_LEVL_2.geojson" />} />
+            </Routes>
+        </>
+    )
 }
 
+// <Route path="/vega" element={<GlobalMapVega />} />
 export default App
