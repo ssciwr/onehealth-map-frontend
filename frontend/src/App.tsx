@@ -6,6 +6,7 @@ import GlobalMapCanvasOverlay from "./component/GlobalMapCanvasOverlay.tsx";
 import NutsMapComponent from "./component/NUTSMapper/NutsMapComponent.tsx";
 import NutsMapV2 from "./component/NUTSMapper/NutsMapV2.tsx";
 import RealNutsMapComponent from "./component/NUTSMapper/RealNutsMapComponent.tsx";
+import NutsMapV5 from "./component/NUTSMapper/NutsMapV5.tsx";
 
 function App() {
     return (
@@ -20,6 +21,7 @@ function App() {
                 <Route path="/nuts2" element={<NutsMapV2 nutsLevel='2'
                                                                nutsDataUrl="https://gisco-services.ec.europa.eu/distribution/v2/nuts/geojson/NUTS_RG_60M_2024_3857_LEVL_2.geojson" />} />
                 <Route path="/realnuts" element={<RealNutsMapComponent nutsLevel='2' />} />
+                <Route path="/nuts5" element={<NutsMapV5 nutsLevel='2' />} />
             </Routes>
         </>
     )

@@ -10,14 +10,24 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@turf/turf": "^7.2.0",
+    "axios": "^1.9.0",
     "leaflet": "^1.9.4",
-    "react": "^19.0.0",
+    "papaparse": "^5.5.2",
+    "react": "^19.1.0",
     "react-dom": "^19.0.0",
     "react-leaflet": "^5.0.0",
-    "react-leaflet-cluster": "^2.1.0"
+    "react-leaflet-cluster": "^2.1.0",
+    "react-leaflet-heatmap-layer-v3": "3.0.3-beta-1",
+    "react-router-dom": "^7.5.3",
+    "react-vega": "^7.6.0",
+    "topojson-client": "^3.1.0",
+    "vega": "^6.1.2",
+    "vega-lite": "^6.1.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.22.0",
+    "@types/papaparse": "^5.3.15",
     "@types/react": "^19.0.10",
     "@types/react-dom": "^19.0.4",
     "@vitejs/plugin-react": "^4.3.4",
