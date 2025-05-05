@@ -22,7 +22,7 @@ interface NutsFeature {
 }
 
 interface NutsGeoJSON {
-    type: string;
+    type: "FeatureCollection";
     features: NutsFeature[];
 }
 
@@ -239,6 +239,7 @@ const NutsMapV5: React.FC = () => {
 
                     {outbreaks.map(outbreak => (
                         <CircleMarker
+                            radius={10}
                             key={outbreak.id}
                             center={[outbreak.latitude, outbreak.longitude]}
                             pathOptions={{
