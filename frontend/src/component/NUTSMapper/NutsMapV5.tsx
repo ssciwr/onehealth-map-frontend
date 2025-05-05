@@ -36,7 +36,6 @@ export default ({ nutsLevel = '2' }) => {
                 console.log(`Successfully loaded ${geoJSON.features.length} NUTS regions`);
                 console.log(`Processing stats:`, processingStats);
 
-                // Sample the first feature to verify data
                 if (geoJSON.features.length > 0) {
                     const sample = geoJSON.features[0];
                     console.log('Sample NUTS region:', {
@@ -155,15 +154,6 @@ export default ({ nutsLevel = '2' }) => {
                     <h3>Error Loading Map Data</h3>
                     <p className="error-message">{error}</p>
                 </div>
-                <div className="troubleshooting">
-                    <h4>Troubleshooting Suggestions:</h4>
-                    <ul>
-                        <li>Check that your CSV file is correctly formatted with NUTS_ID, geometry, and t2m columns</li>
-                        <li>Ensure WKT geometry data is valid</li>
-                        <li>Verify the CSV file is accessible at the specified endpoint</li>
-                        <li>Check the browser console for detailed error information</li>
-                    </ul>
-                </div>
             </div>
         );
     }
@@ -192,10 +182,10 @@ export default ({ nutsLevel = '2' }) => {
 
             <div className="map-wrapper">
                 <MapContainer
-                    className="nuts-map"
+                    className="full-height-map"
                     center={[50, 10]}
                     zoom={4}
-                    style={{ height: '600px', width: '100%' }}
+                    style={{ height: '100%', width: '100%' }}
                 >
                     <TileLayer
                         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -347,15 +337,6 @@ export default ({ nutsLevel = '2' }) => {
             font-weight: bold;
           }
           
-          .troubleshooting h4 {
-            margin-top: 0;
-            margin-bottom: 10px;
-          }
-          
-          .troubleshooting ul {
-            margin-top: 5px;
-            padding-left: 20px;
-          }
         `}</style>
         </div>
     );

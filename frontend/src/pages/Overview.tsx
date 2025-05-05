@@ -1,7 +1,7 @@
 
-import GlobalMapOlderHeatmapLibrary from "../component/GlobalMapOlderHeatmapLibrary.tsx";
 import Header from "../static/Header.tsx";
 import Footer from "../static/Footer.tsx";
+import NutsMapV5 from "../component/NUTSMapper/NutsMapV5.tsx";
 
 
 export default () => {
@@ -11,7 +11,7 @@ export default () => {
 
         <Header />
         <div>
-            <GlobalMapOlderHeatmapLibrary />
+            <NutsMapV5 nutsLevel='2' />
         </div>
         <Footer />
 

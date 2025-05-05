@@ -13,14 +13,6 @@ function App() {
         <>
             <Routes>
                 <Route path="/" element={<Overview />} />
-                <Route path="/about" element={<div>The project...</div>} />
-                <Route path="/grid" element={<GlobalMapGrid />} />
-                <Route path="/gridcanvas" element={<GlobalMapCanvasOverlay />} />
-                <Route path="/nuts" element={<NutsMapComponent nutsLevel='2'
-                       nutsDataUrl="https://gisco-services.ec.europa.eu/distribution/v2/nuts/geojson/NUTS_RG_60M_2024_3857_LEVL_2.geojson" />} />
-                <Route path="/nuts2" element={<NutsMapV2 nutsLevel='2'
-                                                               nutsDataUrl="https://gisco-services.ec.europa.eu/distribution/v2/nuts/geojson/NUTS_RG_60M_2024_3857_LEVL_2.geojson" />} />
-                <Route path="/realnuts" element={<RealNutsMapComponent nutsLevel='2' />} />
                 <Route path="/nuts5" element={<NutsMapV5 nutsLevel='2' />} />
             </Routes>
         </>
