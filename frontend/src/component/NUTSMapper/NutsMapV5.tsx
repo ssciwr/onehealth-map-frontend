@@ -1,88 +1,95 @@
-import React, { useState, useEffect } from 'react';
-import { MapContainer, TileLayer, GeoJSON, Marker, Popup, CircleMarker } from 'react-leaflet';
+import { useState, useEffect } from 'react';
+import { MapContainer, TileLayer, GeoJSON, Popup, CircleMarker } from 'react-leaflet';
 import NutsMapperV5 from './nuts_mapper_v5';
 import 'leaflet/dist/leaflet.css';
-import Papa from 'papaparse'; // For CSV parsing
+import L from 'leaflet';
 
-export default ({ nutsLevel = '2' }) => {
-    const [nutsGeoJSON, setNutsGeoJSON] = useState(null);
-    const [outbreaks, setOutbreaks] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
-    const [stats, setStats] = useState(null);
-    const [debugMode, setDebugMode] = useState(false);
-    const [showOutbreaks, setShowOutbreaks] = useState(true);
+// Define types for our data structures
+interface NutsProperties {
+    NUTS_ID: string;
+    intensity: number | null;
+}
+
+interface NutsGeometry {
+    type: string;
+    coordinates: any[][];
+}
+
+interface NutsFeature {
+    type: string;
+    properties: NutsProperties;
+    geometry: NutsGeometry;
+}
+
+interface NutsGeoJSON {
+    type: string;
+    features: NutsFeature[];
+}
+
+interface OutbreakData {
+    id: string;
+    category: string;
+    location: string;
+    latitude: number;
+    longitude: number;
+    date: string;
+    cases: number;
+    notes?: string;
+}
+
+interface ProcessingStats {
+    processed: number;
+    skipped: number;
+    errors: number;
+    skippedRegions?: string[];
+}
+
+const NutsMapV5: React.FC = () => {
+    const [nutsGeoJSON, setNutsGeoJSON] = useState<NutsGeoJSON | null>(null);
+    const [loading, setLoading] = useState<boolean>(false);
+    const [error, setError] = useState<string | null>(null);
+    const [stats, setStats] = useState<ProcessingStats>({ processed: 0, skipped: 0, errors: 0 });
+    const [outbreaks, setOutbreaks] = useState<OutbreakData[]>([]);
 
     useEffect(() => {
-        const fetchData = async () => {
-            try {
-                setLoading(true);
-                setError(null);
-
-                // Fetch pre-processed NUTS data from our API endpoint
-                console.log("Fetching NUTS data from CSV file...");
-                const nutsResponse = await fetch(`/data/nutsRegions.csv`);
-
-                if (!nutsResponse.ok) {
-                    throw new Error(`Failed to fetch NUTS data: ${nutsResponse.status} ${nutsResponse.statusText}`);
-                }
-
-                const csvData = await nutsResponse.text();
-                console.log("CSV data received, processing with improved mapper...");
-
-                // Parse the CSV data into GeoJSON using our enhanced mapper
-                const mapper = new NutsMapperV5();
-                const geoJSON = mapper.parseNutsCSV(csvData);
-                const processingStats = mapper.getStats();
-
-                setStats(processingStats);
-                console.log(`Successfully loaded ${geoJSON.features.length} NUTS regions`);
-
-                if (geoJSON.features.length === 0) {
-                    throw new Error('No valid regions were parsed from the CSV data');
-                }
-
-                setNutsGeoJSON(geoJSON);
-
-                // Fetch outbreak data
-                console.log("Fetching outbreak data...");
-                const outbreakResponse = await fetch(`/data/outbreaks.csv`);
-
-                if (!outbreakResponse.ok) {
-                    throw new Error(`Failed to fetch outbreak data: ${outbreakResponse.status} ${outbreakResponse.statusText}`);
-                }
-
-                const outbreakCsvData = await outbreakResponse.text();
-
-                // Parse the outbreak CSV data
-                const parsedOutbreaks = Papa.parse(outbreakCsvData, {
-                    header: true,
-                    skipEmptyLines: true,
-                    dynamicTyping: true, // Automatically convert numeric values
-                    complete: (results) => {
-                        if (results.errors.length > 0) {
-                            console.error("Errors parsing outbreaks CSV:", results.errors);
-                        }
-                        return results.data;
-                    }
-                }).data;
-
-                console.log(`Successfully loaded ${parsedOutbreaks.length} outbreak points`);
+        // Load demo outbreaks data
+        fetch('/api/outbreaks')
+            .then(response => response.json())
+            .then(data => {
+                const parsedOutbreaks = data as OutbreakData[];
                 setOutbreaks(parsedOutbreaks);
+            })
+            .catch((err: Error) => {
+                console.error('Error loading outbreaks data:', err);
+                setError(err.message);
+            });
+    }, []);
+
+    // Function to load and process NUTS data
+    const loadNutsData = () => {
+        setLoading(true);
+        setError(null);
+
+        // Load CSV data
+        fetch('/api/nuts-data')
+            .then(response => response.text())
+            .then(csvData => {
+                const nutsMapper = new NutsMapperV5();
+                const geoJSON = nutsMapper.parseNutsCSV(csvData);
+                setNutsGeoJSON(geoJSON as NutsGeoJSON);
+                setStats(nutsMapper.getStats());
                 setLoading(false);
-            } catch (err) {
-                console.error('Error loading data:', err);
+            })
+            .catch((err: Error) => {
+                console.error('Error loading NUTS data:', err);
                 setError(err.message);
                 setLoading(false);
-            }
-        };
+            });
+    };
 
-        fetchData();
-    }, [nutsLevel]);
-
-    // Function to determine color based on intensity for regions
-    const getColor = (intensity) => {
-        if (intensity === null || intensity === undefined) return '#CCCCCC'; // Gray for no data
+    // Function to get color based on intensity
+    const getColor = (intensity: number | null): string => {
+        if (intensity === null) return '#cccccc'; // Default gray for null values
 
         // Temperature color scale
         return intensity >= 14 ? '#800026' :  // Dark red
@@ -102,21 +109,21 @@ export default ({ nutsLevel = '2' }) => {
                                                                 intensity >= -14 ? '#08519C' : '#08306B';  // Dark blue
     };
 
-    // Get color for outbreak category
-    const getOutbreakColor = (category) => {
-        const colorMap = {
-            'Zika virus': '#8A2BE2', // Purple for Zika
-            'Dengue': '#FF4500',
-            'Malaria': '#006400',
-            'Ebola': '#DC143C',
-            'COVID-19': '#FF8C00'
+    // Function to get color for outbreak markers
+    const getOutbreakColor = (category: string): string => {
+        const colorMap: { [key: string]: string } = {
+            'Zika virus': '#ff9800',  // Orange
+            'Dengue': '#f44336',      // Red
+            'Malaria': '#9c27b0',     // Purple
+            'Ebola': '#d32f2f',       // Dark red
+            'COVID-19': '#2196f3'     // Blue
         };
 
         return colorMap[category] || '#8A2BE2'; // Default to purple
     };
 
-    // Style function for GeoJSON
-    const style = (feature) => {
+    // Style function for GeoJSON features
+    const style = (feature: any) => {
         return {
             fillColor: getColor(feature.properties.intensity),
             weight: 1,
@@ -127,108 +134,93 @@ export default ({ nutsLevel = '2' }) => {
         };
     };
 
-    // Function to handle mouseover events
-    const highlightFeature = (e) => {
+    // Highlight feature on mouseover
+    const highlightFeature = (e: any) => {
         const layer = e.target;
 
         layer.setStyle({
             weight: 3,
             color: '#666',
             dashArray: '',
-            fillOpacity: 0.7
+            fillOpacity: 0.9
         });
 
-        layer.bringToFront();
-    };
-
-    // Function to reset highlight on mouseout
-    const resetHighlight = (e) => {
-        if (nutsGeoJSON) {
-            e.target.setStyle(style(e.target.feature));
+        if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
+            layer.bringToFront();
         }
     };
 
-    // Function to add interactivity to each feature
-    const onEachFeature = (feature, layer) => {
-        const nutsId = feature.properties.NUTS_ID;
-        const intensity = feature.properties.intensity;
-        const geometryType = feature.geometry.type;
+    // Reset highlight on mouseout
+    const resetHighlight = (e: any) => {
+        if (nutsGeoJSON) {
+            const geoJSONLayer = e.target;
+            geoJSONLayer.setStyle(style(e.target.feature));
+        }
+    };
 
-        layer.bindPopup(`
-      <strong>NUTS ID: ${nutsId}</strong><br/>
-      Temperature: ${intensity !== null && intensity !== undefined ? intensity.toFixed(2) + '°C' : 'No data'}<br/>
-      ${debugMode ? `Geometry Type: ${geometryType}` : ''}
-    `);
-
+    // Set up event listeners for each feature
+    const onEachFeature = (feature: any, layer: any) => {
         layer.on({
             mouseover: highlightFeature,
             mouseout: resetHighlight
         });
-    };
 
-    // Debug mode toggle handler
-    const toggleDebugMode = () => {
-        setDebugMode(prev => !prev);
-    };
-
-    // Outbreak visibility toggle handler
-    const toggleOutbreaks = () => {
-        setShowOutbreaks(prev => !prev);
-    };
-
-    if (loading) {
-        return <div className="loading-container">
-            <div className="spinner"></div>
-            <p>Loading map data...</p>
-        </div>;
-    }
-
-    if (error) {
-        return (
-            <div className="error-container">
-                <div className="error-header">
-                    <h3>Error Loading Map Data</h3>
-                    <p className="error-message">{error}</p>
+        // Add popup with region info
+        if (feature.properties) {
+            const { NUTS_ID, intensity } = feature.properties;
+            const popupContent = `
+                <div>
+                    <h4>NUTS Region: ${NUTS_ID}</h4>
+                    <p>Temperature: ${intensity !== null ? `${intensity.toFixed(1)}°C` : 'N/A'}</p>
                 </div>
-            </div>
-        );
-    }
+            `;
+            layer.bindPopup(popupContent);
+        }
+    };
 
     return (
         <div className="nuts-map-container">
-            <div className="map-controls">
-                <div className="control-options">
-                    <label className="control-toggle">
-                        <input
-                            type="checkbox"
-                            checked={debugMode}
-                            onChange={toggleDebugMode}
-                        />
-                        Debug Mode
-                    </label>
-                    <label className="control-toggle">
-                        <input
-                            type="checkbox"
-                            checked={showOutbreaks}
-                            onChange={toggleOutbreaks}
-                        />
-                        Show Outbreaks
-                    </label>
-                </div>
+            <div className="controls">
+                <h2>NUTS Mapper V5</h2>
+                <p>Enhanced NUTS mapping with improved error handling</p>
 
-                {stats && (
-                    <div className="stats-panel">
-                        <h4>Processing Stats:</h4>
+                <button
+                    onClick={loadNutsData}
+                    disabled={loading}
+                    className="load-button"
+                >
+                    {loading ? 'Loading...' : 'Load NUTS Data'}
+                </button>
+
+                {error && (
+                    <div className="error-message">
+                        <p>Error: {error}</p>
+                    </div>
+                )}
+
+                {stats.processed > 0 && (
+                    <div className="stats">
+                        <h3>Processing Stats</h3>
                         <p>Regions processed: {stats.processed}</p>
                         <p>Regions skipped: {stats.skipped}</p>
                         <p>Errors encountered: {stats.errors}</p>
                     </div>
                 )}
+
+                <div className="legend">
+                    <h3>Temperature</h3>
+                    <div><span style={{ backgroundColor: getColor(30) }}></span> &gt; 25°C</div>
+                    <div><span style={{ backgroundColor: getColor(23) }}></span> 20-25°C</div>
+                    <div><span style={{ backgroundColor: getColor(18) }}></span> 15-20°C</div>
+                    <div><span style={{ backgroundColor: getColor(13) }}></span> 10-15°C</div>
+                    <div><span style={{ backgroundColor: getColor(8) }}></span> 5-10°C</div>
+                    <div><span style={{ backgroundColor: getColor(0) }}></span> &lt; 5°C</div>
+                </div>
             </div>
 
             <div className="map-wrapper">
                 <MapContainer
-                    className="full-height-map"
+                    className="map"
                     center={[42, 12]} // Centered more on Italy
                     zoom={5}
                     style={{ height: '600px', width: '100%' }}
@@ -244,14 +236,14 @@ export default ({ nutsLevel = '2' }) => {
                             onEachFeature={onEachFeature}
                         />
                     )}
-                    {showOutbreaks && outbreaks.map((outbreak, index) => (
+
+                    {outbreaks.map(outbreak => (
                         <CircleMarker
-                            key={`outbreak-${index}`}
+                            key={outbreak.id}
                             center={[outbreak.latitude, outbreak.longitude]}
-                            radius={10}
                             pathOptions={{
                                 fillColor: getOutbreakColor(outbreak.category),
-                                color: 'white',
+                                color: '#000',
                                 weight: 1,
                                 opacity: 1,
                                 fillOpacity: 0.8
@@ -271,211 +263,75 @@ export default ({ nutsLevel = '2' }) => {
                 </MapContainer>
             </div>
 
-            <div className="legend-container">
-                <div className="legend-section">
-                    <h3>Temperature Legend (°C)</h3>
-                    <div className="legend-scale">
-                        {[-12, -8, -4, 0, 4, 8, 12].map((threshold, i) => (
-                            <div key={i} className="legend-item">
-                                <div
-                                    className="color-box"
-                                    style={{
-                                        backgroundColor: getColor(threshold),
-                                        color: threshold >= 8 || threshold <= -8 ? 'white' : 'black'
-                                    }}
-                                >
-                                    {threshold}
-                                </div>
-                            </div>
-                        ))}
-                        <div className="legend-item">
-                            <div
-                                className="color-box"
-                                style={{
-                                    backgroundColor: '#CCCCCC'
-                                }}
-                            >
-                                N/A
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {showOutbreaks && (
-                    <div className="legend-section outbreak-legend">
-                        <h3>Outbreaks</h3>
-                        <div className="legend-item">
-                            <div
-                                className="circle-marker"
-                                style={{
-                                    backgroundColor: '#8A2BE2'
-                                }}
-                            ></div>
-                            <span>Zika virus</span>
-                        </div>
-                    </div>
-                )}
-            </div>
-
-            <style jsx>{`
+            <style>{`
                 .nuts-map-container {
+                    display: flex;
+                    flex-direction: row;
+                    padding: 20px;
                     font-family: Arial, sans-serif;
                 }
-
-                .map-controls {
-                    margin-bottom: 10px;
-                    display: flex;
-                    justify-content: space-between;
+                
+                .controls {
+                    width: 250px;
+                    padding-right: 20px;
                 }
-
-                .control-options {
-                    display: flex;
-                    gap: 20px;
+                
+                .map-wrapper {
+                    flex: 1;
                 }
-
-                .control-toggle {
-                    display: flex;
-                    align-items: center;
-                    gap: 5px;
+                
+                .load-button {
+                    margin-bottom: 15px;
+                    padding: 8px 16px;
+                    background-color: #4CAF50;
+                    color: white;
+                    border: none;
+                    border-radius: 4px;
                     cursor: pointer;
                 }
-
-                .stats-panel {
-                    font-size: 0.9em;
-                    border: 1px solid #ddd;
-                    padding: 10px;
-                    background: #f9f9f9;
-                    border-radius: 4px;
+                
+                .load-button:disabled {
+                    background-color: #cccccc;
+                    cursor: not-allowed;
                 }
-
-                .stats-panel h4 {
-                    margin-top: 0;
-                    margin-bottom: 5px;
-                }
-
-                .stats-panel p {
-                    margin: 5px 0;
-                }
-
-                .map-wrapper {
-                    border: 1px solid #ccc;
-                    border-radius: 8px;
-                    overflow: hidden;
-                    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-                }
-
-                .full-height-map {
-                    height: 100%;
-                    width: 100%;
-                }
-
-                .legend-container {
-                    margin-top: 15px;
-                    display: flex;
-                    flex-wrap: wrap;
-                    gap: 30px;
-                }
-
-                .legend-section {
-                    background: #f9f9f9;
-                    padding: 10px;
-                    border-radius: 5px;
-                    border: 1px solid #ddd;
-                }
-
-                .legend-section h3 {
-                    margin-top: 0;
-                    margin-bottom: 10px;
-                    font-size: 14px;
-                }
-
-                .legend-scale {
-                    display: flex;
-                    flex-wrap: wrap;
-                    gap: 5px;
-                }
-
-                .legend-item {
-                    text-align: center;
-                    display: flex;
-                    align-items: center;
-                    gap: 5px;
-                    margin-bottom: 5px;
-                }
-
-                .color-box {
-                    width: 50px;
-                    height: 20px;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    font-size: 12px;
-                }
-
-                .circle-marker {
-                    width: 15px;
-                    height: 15px;
-                    border-radius: 50%;
-                    border: 1px solid white;
-                    display: inline-block;
-                    margin-right: 5px;
-                }
-
-                .outbreak-legend {
-                    min-width: 150px;
-                }
-
-                .loading-container {
-                    display: flex;
-                    flex-direction: column;
-                    align-items: center;
-                    padding: 20px;
-                }
-
-                .spinner {
-                    border: 4px solid rgba(0, 0, 0, 0.1);
-                    width: 36px;
-                    height: 36px;
-                    border-radius: 50%;
-                    border-left-color: #09f;
-                    animation: spin 1s linear infinite;
-                    margin-bottom: 10px;
-                }
-
-                @keyframes spin {
-                    0% { transform: rotate(0deg); }
-                    100% { transform: rotate(360deg); }
-                }
-
-                .error-container {
-                    border: 1px solid #f5c6cb;
-                    background-color: #f8d7da;
-                    border-radius: 4px;
-                    padding: 15px;
-                    margin-bottom: 20px;
-                }
-
-                .error-header {
-                    margin-bottom: 10px;
-                }
-
+                
                 .error-message {
-                    color: #721c24;
-                    font-weight: bold;
+                    color: #d32f2f;
+                    margin-bottom: 15px;
+                    padding: 10px;
+                    border: 1px solid #d32f2f;
+                    border-radius: 4px;
+                    background-color: #ffebee;
                 }
-
+                
+                .stats {
+                    margin-bottom: 15px;
+                    padding: 10px;
+                    border: 1px solid #ddd;
+                    border-radius: 4px;
+                }
+                
+                .legend {
+                    margin-bottom: 15px;
+                    padding: 10px;
+                    border: 1px solid #ddd;
+                    border-radius: 4px;
+                }
+                
+                .legend span {
+                    display: inline-block;
+                    width: 20px;
+                    height: 20px;
+                    margin-right: 10px;
+                    border-radius: 3px;
+                }
+                
                 .outbreak-popup h3 {
                     margin-top: 0;
-                    color: #8A2BE2;
-                    opacity: 0.5;
-                    border-bottom: 1px solid #ddd;
-                    padding-bottom: 5px;
-                }
-
-                .outbreak-popup p {
-                    margin: 5px 0;
                 }
             `}</style>
         </div>
     );
 };
+
+export default NutsMapV5;

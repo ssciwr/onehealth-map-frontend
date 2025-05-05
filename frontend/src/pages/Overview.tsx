@@ -11,7 +11,7 @@ export default () => {
 
         <Header />
         <div>
-            <NutsMapV5 nutsLevel='2' />
+            <NutsMapV5 />
         </div>
         <Footer />
 

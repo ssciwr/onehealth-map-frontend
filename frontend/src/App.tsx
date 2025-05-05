@@ -8,11 +8,10 @@ function App() {
         <>
             <Routes>
                 <Route path="/" element={<Overview />} />
-                <Route path="/nuts5" element={<NutsMapV5 nutsLevel='2' />} />
+                <Route path="/nuts5" element={<NutsMapV5 />} />
             </Routes>
         </>
     )
 }
 
-// <Route path="/vega" element={<GlobalMapVega />} />
 export default App

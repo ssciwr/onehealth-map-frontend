@@ -2,7 +2,42 @@
  * Enhanced NUTS Mapper that works with pre-processed NUTS data
  * Improved error handling and WKT parsing for problematic geometries
  */
+
+// Define TypeScript interfaces for GeoJSON structures
+interface GeoJSONFeature {
+    type: 'Feature';
+    properties: {
+        NUTS_ID: string;
+        intensity: number | null;
+    };
+    geometry: GeoJSONGeometry;
+}
+
+interface GeoJSONFeatureCollection {
+    type: 'FeatureCollection';
+    features: GeoJSONFeature[];
+}
+
+interface GeoJSONGeometry {
+    type: 'Polygon' | 'MultiPolygon';
+    coordinates: any[];
+}
+
+// Type aliases for clarity
+type Coordinate = [number, number]; // [x, y] coordinate
+type Ring = Coordinate[]; // A closed ring of coordinates
+type Polygon = Ring[]; // Array of rings (first is exterior, rest are holes)
+type MultiPolygon = Polygon[]; // Array of polygons
+
+// Possible return types from parsing functions
+type GeometryResult = Polygon | { type: 'MultiPolygon'; coordinates: MultiPolygon } | null;
+
 class NutsMapperV5 {
+    private nutsData: GeoJSONFeatureCollection | null;
+    private errorCount: number;
+    private processedCount: number;
+    private skippedRegions: string[];
+
     constructor() {
         this.nutsData = null;
         this.errorCount = 0;
@@ -14,9 +49,9 @@ class NutsMapperV5 {
      * Parse CSV data containing NUTS regions with geometry and intensity values
      * @param {string} csvData - CSV string with NUTS_ID, geometry (WKT), and intensity columns
      * @param {boolean} skipInvalid - Whether to skip invalid geometries (default: true)
-     * @returns {Object} - GeoJSON object with NUTS regions
+     * @returns {GeoJSONFeatureCollection} - GeoJSON object with NUTS regions
      */
-    parseNutsCSV(csvData, skipInvalid = true) {
+    parseNutsCSV(csvData: string, skipInvalid: boolean = true): GeoJSONFeatureCollection {
         if (!csvData) {
             throw new Error('No CSV data provided');
         }
@@ -27,46 +62,46 @@ class NutsMapperV5 {
         this.skippedRegions = [];
 
         // Split CSV into lines
-        const lines = csvData.trim().split('\n');
+        const lines: string[] = csvData.trim().split('\n');
         console.log(`Found ${lines.length - 1} data lines to process`);
 
         // Parse header to find column indices
-        const header = lines[0].split(',');
-        const nutsIdIndex = header.indexOf('NUTS_ID');
-        const geometryIndex = header.indexOf('geometry');
-        const intensityIndex = header.indexOf('t2m');
+        const header: string[] = lines[0].split(',');
+        const nutsIdIndex: number = header.indexOf('NUTS_ID');
+        const geometryIndex: number = header.indexOf('geometry');
+        const intensityIndex: number = header.indexOf('t2m');
 
         if (nutsIdIndex === -1 || geometryIndex === -1 || intensityIndex === -1) {
             throw new Error(`CSV must contain NUTS_ID, geometry, and t2m columns. Found columns: ${header.join(', ')}`);
         }
 
         // Create GeoJSON structure
-        const features = [];
+        const features: GeoJSONFeature[] = [];
 
         // Process each line (skip header)
         for (let i = 1; i < lines.length; i++) {
-            const line = lines[i];
+            const line: string = lines[i];
             if (!line.trim()) continue; // Skip empty lines
 
             try {
                 // Split by comma, but respect quoted values
-                const columns = this.parseCSVLine(line);
+                const columns: string[] = this.parseCSVLine(line);
 
                 if (columns.length <= Math.max(nutsIdIndex, geometryIndex, intensityIndex)) {
                     console.warn(`Skipping invalid line ${i}: Not enough columns`);
                     continue;
                 }
 
-                const nutsId = columns[nutsIdIndex];
+                const nutsId: string = columns[nutsIdIndex];
                 // Skip whole-countries NUTS regions (these ones overlap the other fields)
                 if (["FR", "IT", "DE", "NL"].indexOf(nutsId) !== -1) {
                     continue;
                 }
-                const wktGeometry = columns[geometryIndex];
-                const intensity = parseFloat(columns[intensityIndex]);
+                const wktGeometry: string = columns[geometryIndex];
+                const intensity: number = parseFloat(columns[intensityIndex]);
 
                 // Process the geometry data
-                let coordinates = null;
+                let coordinates: GeometryResult = null;
                 try {
                     // Handle different WKT formats and try to recover from some errors
                     coordinates = this.parseWKTGeometry(wktGeometry, nutsId);
@@ -81,7 +116,7 @@ class NutsMapperV5 {
                     }
                 } catch (geometryError) {
                     this.errorCount++;
-                    console.warn(`Error parsing geometry for region ${nutsId}: ${geometryError.message}`);
+                    console.warn(`Error parsing geometry for region ${nutsId}: ${(geometryError as Error).message}`);
 
                     if (skipInvalid) {
                         this.skippedRegions.push(nutsId);
@@ -100,8 +135,8 @@ class NutsMapperV5 {
                             intensity: isNaN(intensity) ? null : intensity
                         },
                         geometry: {
-                            type: coordinates.type || 'Polygon',
-                            coordinates: coordinates.coordinates || coordinates
+                            type: 'coordinates' in coordinates ? coordinates.type : 'Polygon',
+                            coordinates: 'coordinates' in coordinates ? coordinates.coordinates : coordinates
                         }
                     });
                     this.processedCount++;
@@ -111,7 +146,7 @@ class NutsMapperV5 {
                 }
             } catch (err) {
                 this.errorCount++;
-                console.warn(`Error processing line ${i}: ${err.message}`);
+                console.warn(`Error processing line ${i}: ${(err as Error).message}`);
             }
         }
 
@@ -134,16 +169,16 @@ class NutsMapperV5 {
     /**
      * Parse a CSV line respecting quoted values
      * @param {string} line - CSV line
-     * @returns {Array} - Array of column values
+     * @returns {string[]} - Array of column values
      */
-    parseCSVLine(line) {
-        const result = [];
-        let current = '';
-        let inQuotes = false;
-        let escapeNext = false;
+    private parseCSVLine(line: string): string[] {
+        const result: string[] = [];
+        let current: string = '';
+        let inQuotes: boolean = false;
+        let escapeNext: boolean = false;
 
         for (let i = 0; i < line.length; i++) {
-            const char = line[i];
+            const char: string = line[i];
 
             if (escapeNext) {
                 current += char;
@@ -176,19 +211,19 @@ class NutsMapperV5 {
      * Main WKT geometry parser that tries multiple formats
      * @param {string} wkt - WKT geometry string
      * @param {string} nutsId - NUTS region ID (for logging)
-     * @returns {Array|Object|null} - GeoJSON coordinates or null if parsing failed
+     * @returns {GeometryResult} - GeoJSON coordinates or null if parsing failed
      */
-    parseWKTGeometry(wkt, nutsId) {
+    private parseWKTGeometry(wkt: string, nutsId: string): GeometryResult {
         if (!wkt || typeof wkt !== 'string') {
             console.warn(`Invalid WKT string for ${nutsId}: ${wkt}`);
             return null;
         }
 
         // Clean up and normalize the WKT string
-        const cleanWkt = wkt.trim().replace(/\s+/g, ' ');
+        const cleanWkt: string = wkt.trim().replace(/\s+/g, ' ');
 
         // Try to determine the geometry type
-        const upperWkt = cleanWkt.toUpperCase();
+        const upperWkt: string = cleanWkt.toUpperCase();
 
         try {
             if (upperWkt.startsWith('POLYGON')) {
@@ -201,12 +236,12 @@ class NutsMapperV5 {
             }
         } catch (error) {
             // If standard parsing fails, try the recovery methods
-            console.warn(`Standard parsing failed for ${nutsId}, trying recovery methods: ${error.message}`);
+            console.warn(`Standard parsing failed for ${nutsId}, trying recovery methods: ${(error as Error).message}`);
 
             try {
                 return this.recoverWKTGeometry(cleanWkt, nutsId);
             } catch (recoveryError) {
-                console.error(`Recovery failed for ${nutsId}: ${recoveryError.message}`);
+                console.error(`Recovery failed for ${nutsId}: ${(recoveryError as Error).message}`);
                 return null;
             }
         }
@@ -216,9 +251,9 @@ class NutsMapperV5 {
      * Recovery method for problematic WKT geometries
      * @param {string} wkt - WKT geometry string
      * @param {string} nutsId - NUTS region ID (for logging)
-     * @returns {Array|Object|null} - GeoJSON coordinates or null if recovery failed
+     * @returns {Polygon} - GeoJSON coordinates or null if recovery failed
      */
-    recoverWKTGeometry(wkt, nutsId) {
+    private recoverWKTGeometry(wkt: string, nutsId: string): Polygon {
         // Try to extract any coordinate pairs we can find
         const coordRegex = /(-?\d+\.?\d*)\s+(-?\d+\.?\d*)/g;
         const matches = [...wkt.matchAll(coordRegex)];
@@ -228,7 +263,7 @@ class NutsMapperV5 {
         }
 
         // Convert matches to coordinate pairs
-        const coordinates = matches.map(match => {
+        const coordinates: Coordinate[] = matches.map(match => {
             const x = parseFloat(match[1]);
             const y = parseFloat(match[2]);
 
@@ -257,9 +292,9 @@ class NutsMapperV5 {
      * Parse WKT polygon string to GeoJSON coordinates
      * @param {string} wkt - WKT polygon string
      * @param {string} nutsId - NUTS region ID (for logging)
-     * @returns {Array} - GeoJSON coordinates array
+     * @returns {Polygon} - GeoJSON coordinates array
      */
-    parseWKTPolygon(wkt, nutsId) {
+    private parseWKTPolygon(wkt: string, nutsId: string): Polygon {
         try {
             // Extract coordinates part - anything between the outermost parentheses
             const coordsMatch = wkt.match(/\(\s*\((.*)\)\s*\)/);
@@ -270,7 +305,7 @@ class NutsMapperV5 {
             const coordsText = coordsMatch[1];
 
             // Split by comma and parse each coordinate pair
-            const ring = coordsText.split(',').map(pair => {
+            const ring: Coordinate[] = coordsText.split(',').map(pair => {
                 const trimmedPair = pair.trim();
                 const coords = trimmedPair.split(' ');
 
@@ -293,7 +328,7 @@ class NutsMapperV5 {
                 }
 
                 // GeoJSON uses [longitude, latitude] order
-                return [x, y];
+                return [x, y] as Coordinate;
             });
 
             // GeoJSON polygons must have at least 4 points with the last point equal to the first
@@ -323,7 +358,7 @@ class NutsMapperV5 {
      * @param {string} nutsId - NUTS region ID (for logging)
      * @returns {Object} - GeoJSON type and coordinates
      */
-    parseWKTMultiPolygon(wkt, nutsId) {
+    private parseWKTMultiPolygon(wkt: string, nutsId: string): { type: 'MultiPolygon'; coordinates: MultiPolygon } {
         try {
             // Extract the content between the outermost parentheses
             const outerMatch = wkt.match(/MULTIPOLYGON\s*\(\s*(.*)\s*\)/i);
@@ -342,12 +377,12 @@ class NutsMapperV5 {
             }
 
             // Parse each polygon
-            const parsedPolygons = polygons.map(polygon => {
+            const parsedPolygons: Ring[] = polygons.map(polygon => {
                 // Create a temporary POLYGON WKT string and parse it
                 const polygonWkt = `POLYGON ${polygon}`;
                 const coords = this.parseWKTPolygon(polygonWkt, `${nutsId}[multi]`);
                 return coords ? coords[0] : null;
-            }).filter(Boolean);
+            }).filter((poly): poly is Ring => poly !== null);
 
             if (parsedPolygons.length === 0) {
                 throw new Error('No valid polygons could be parsed');
@@ -366,10 +401,10 @@ class NutsMapperV5 {
     /**
      * Helper method to extract individual polygons from MultiPolygon WKT
      * @param {string} content - MultiPolygon content
-     * @returns {Array} - Array of polygon WKT strings
+     * @returns {string[]} - Array of polygon WKT strings
      */
-    extractPolygons(content) {
-        const polygons = [];
+    private extractPolygons(content: string): string[] {
+        const polygons: string[] = [];
         let depth = 0;
         let start = 0;
         let inPolygon = false;
@@ -397,15 +432,15 @@ class NutsMapperV5 {
 
     /**
      * Validate coordinates to ensure they are all valid numbers and form proper geometries
-     * @param {Array|Object} geometryData - GeoJSON coordinates array or geometry object
+     * @param {GeometryResult} geometryData - GeoJSON coordinates array or geometry object
      * @returns {boolean} - Whether coordinates are valid
      */
-    validateCoordinates(geometryData) {
+    private validateCoordinates(geometryData: GeometryResult): boolean {
         if (!geometryData) return false;
 
         // If we have a geometry object with type and coordinates
-        const coordinates = geometryData.coordinates || geometryData;
-        const geometryType = geometryData.type || 'Polygon';
+        const coordinates = 'coordinates' in geometryData ? geometryData.coordinates : geometryData;
+        const geometryType = 'type' in geometryData ? geometryData.type : 'Polygon';
 
         if (!Array.isArray(coordinates) || coordinates.length === 0) {
             return false;
@@ -414,12 +449,12 @@ class NutsMapperV5 {
         try {
             if (geometryType === 'Polygon') {
                 // For each ring in the polygon
-                for (const ring of coordinates) {
+                for (const ring of coordinates as Ring[]) {
                     if (!this.validateRing(ring)) return false;
                 }
             } else if (geometryType === 'MultiPolygon') {
                 // For each polygon in the multipolygon
-                for (const polygon of coordinates) {
+                for (const polygon of coordinates as Polygon[]) {
                     if (!Array.isArray(polygon)) return false;
 
                     // For each ring in this polygon
@@ -441,10 +476,10 @@ class NutsMapperV5 {
 
     /**
      * Validate a single ring of coordinates
-     * @param {Array} ring - Ring of coordinates
+     * @param {Ring} ring - Ring of coordinates
      * @returns {boolean} - Whether the ring is valid
      */
-    validateRing(ring) {
+    private validateRing(ring: Ring): boolean {
         if (!Array.isArray(ring) || ring.length < 4) {
             return false;
         }
@@ -478,9 +513,9 @@ class NutsMapperV5 {
 
     /**
      * Get the GeoJSON data
-     * @returns {Object} - GeoJSON object with NUTS regions
+     * @returns {GeoJSONFeatureCollection | null} - GeoJSON object with NUTS regions
      */
-    getGeoJSON() {
+    getGeoJSON(): GeoJSONFeatureCollection | null {
         return this.nutsData;
     }
 
@@ -488,7 +523,7 @@ class NutsMapperV5 {
      * Get processing statistics
      * @returns {Object} - Statistics about the processing
      */
-    getStats() {
+    getStats(): { processed: number; errors: number; skipped: number; skippedRegions: string[] } {
         return {
             processed: this.processedCount,
             errors: this.errorCount,
