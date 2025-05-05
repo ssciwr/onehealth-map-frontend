@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { MapContainer, TileLayer, GeoJSON, Popup, CircleMarker } from 'react-leaflet';
 import NutsMapperV5 from './nuts_mapper_v5';
 import 'leaflet/dist/leaflet.css';
@@ -50,13 +50,15 @@ const NutsMapV5: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [stats, setStats] = useState<ProcessingStats>({ processed: 0, skipped: 0, errors: 0 });
     const [outbreaks, setOutbreaks] = useState<OutbreakData[]>([]);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
-        // Load demo outbreaks data
-        fetch('/api/outbreaks')
+        // Load demo outbreaks data from CSV file in public data folder
+        fetch('/data/outbreaks.csv')
             .then(response => response.json())
-            .then(data => {
-                const parsedOutbreaks = data as OutbreakData[];
+            .then(csvData => {
+                // Parse CSV data
+                const parsedOutbreaks = csvData as OutbreakData[];
                 setOutbreaks(parsedOutbreaks);
             })
             .catch((err: Error) => {
@@ -65,19 +67,15 @@ const NutsMapV5: React.FC = () => {
             });
     }, []);
 
-    // Function to load and process NUTS data
     const loadNutsData = () => {
         setLoading(true);
         setError(null);
 
-        // Load CSV data
-        fetch('/api/nuts-data')
+        // Load CSV data from file
+        fetch('/data/nutsRegions.csv')
             .then(response => response.text())
             .then(csvData => {
-                const nutsMapper = new NutsMapperV5();
-                const geoJSON = nutsMapper.parseNutsCSV(csvData);
-                setNutsGeoJSON(geoJSON as NutsGeoJSON);
-                setStats(nutsMapper.getStats());
+                processCSVData(csvData);
                 setLoading(false);
             })
             .catch((err: Error) => {
@@ -85,6 +83,53 @@ const NutsMapV5: React.FC = () => {
                 setError(err.message);
                 setLoading(false);
             });
+    };
+
+    // Function to process uploaded CSV file
+    const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        setLoading(true);
+        setError(null);
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const csvData = e.target?.result as string;
+                processCSVData(csvData);
+            } catch (err: any) {
+                console.error('Error processing uploaded file:', err);
+                setError(err.message);
+                setLoading(false);
+            }
+        };
+        reader.onerror = (err) => {
+            console.error('File reading error:', err);
+            setError('Error reading file');
+            setLoading(false);
+        };
+        reader.readAsText(file);
+    };
+
+    // Common function to process CSV data from any source
+    const processCSVData = (csvData: string) => {
+        try {
+            const nutsMapper = new NutsMapperV5();
+            const geoJSON = nutsMapper.parseNutsCSV(csvData);
+            setNutsGeoJSON(geoJSON as NutsGeoJSON);
+            setStats(nutsMapper.getStats());
+        } catch (err: any) {
+            console.error('Error processing CSV data:', err);
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Trigger file input click
+    const handleUploadClick = () => {
+        fileInputRef.current?.click();
     };
 
     // Function to get color based on intensity
@@ -115,7 +160,7 @@ const NutsMapV5: React.FC = () => {
             'Zika virus': '#ff9800',  // Orange
             'Dengue': '#f44336',      // Red
             'Malaria': '#9c27b0',     // Purple
-            'Ebola': '#d32f2f',       // Dark red
+            'West Nile': '#d32f2f',       // Dark red
             'COVID-19': '#2196f3'     // Blue
         };
 
@@ -184,17 +229,35 @@ const NutsMapV5: React.FC = () => {
                 <h2>NUTS Mapper V5</h2>
                 <p>Enhanced NUTS mapping with improved error handling</p>
 
-                <button
-                    onClick={loadNutsData}
-                    disabled={loading}
-                    className="load-button"
-                >
-                    {loading ? 'Loading...' : 'Load NUTS Data'}
-                </button>
+                <div className="button-group">
+                    <button
+                        onClick={loadNutsData}
+                        disabled={loading}
+                        className="load-button"
+                    >
+                        {loading ? 'Loading...' : 'Generate with CSV'}
+                    </button>
+
+                    <button
+                        onClick={handleUploadClick}
+                        disabled={loading}
+                        className="upload-button"
+                    >
+                        Upload CSV
+                    </button>
+
+                    <input
+                        type="file"
+                        ref={fileInputRef}
+                        onChange={handleFileUpload}
+                        accept=".csv"
+                        style={{ display: 'none' }}
+                    />
+                </div>
 
                 {error && (
                     <div className="error-message">
-                        <p>Error: {error}</p>
+                        <p>Error (or no data present - meaning you need to upload): {error}</p>
                     </div>
                 )}
 
@@ -207,20 +270,11 @@ const NutsMapV5: React.FC = () => {
                     </div>
                 )}
 
-                <div className="legend">
-                    <h3>Temperature</h3>
-                    <div><span style={{ backgroundColor: getColor(30) }}></span> &gt; 25°C</div>
-                    <div><span style={{ backgroundColor: getColor(23) }}></span> 20-25°C</div>
-                    <div><span style={{ backgroundColor: getColor(18) }}></span> 15-20°C</div>
-                    <div><span style={{ backgroundColor: getColor(13) }}></span> 10-15°C</div>
-                    <div><span style={{ backgroundColor: getColor(8) }}></span> 5-10°C</div>
-                    <div><span style={{ backgroundColor: getColor(0) }}></span> &lt; 5°C</div>
-                </div>
             </div>
 
             <div className="map-wrapper">
                 <MapContainer
-                    className="map"
+                    className="full-height-map"
                     center={[42, 12]} // Centered more on Italy
                     zoom={5}
                     style={{ height: '600px', width: '100%' }}
@@ -263,35 +317,62 @@ const NutsMapV5: React.FC = () => {
                     ))}
                 </MapContainer>
             </div>
+            <div className="controls">
+                <div className="legend">
+                    <h3>Temperature</h3>
+                    <div><span style={{ backgroundColor: getColor(30) }}></span> &gt; 25°C</div>
+                    <div><span style={{ backgroundColor: getColor(23) }}></span> 20-25°C</div>
+                    <div><span style={{ backgroundColor: getColor(18) }}></span> 15-20°C</div>
+                    <div><span style={{ backgroundColor: getColor(13) }}></span> 10-15°C</div>
+                    <div><span style={{ backgroundColor: getColor(8) }}></span> 5-10°C</div>
+                    <div><span style={{ backgroundColor: getColor(3) }}></span> 0-5°C</div>
+                    <div><span style={{ backgroundColor: getColor(-3) }}></span> -5-0°C</div>
+                    <div><span style={{ backgroundColor: getColor(-8) }}></span> -10--5°C</div>
+                    <div><span style={{ backgroundColor: getColor(-13) }}></span> -15--10°C</div>
+                    <div><span style={{ backgroundColor: getColor(-18) }}></span> &lt; -15°C</div>
+                </div>
+            </div>
 
             <style>{`
                 .nuts-map-container {
-                    display: flex;
-                    flex-direction: row;
                     padding: 20px;
                     font-family: Arial, sans-serif;
                 }
                 
                 .controls {
-                    width: 250px;
+                    padding: 10px;
+                    margin: 10px;
+                    border: 1px solid grey;
+                    margin-bottom: 20px;
+                    border-radius: 10px
                     padding-right: 20px;
                 }
                 
-                .map-wrapper {
-                    flex: 1;
+                
+                .button-group {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 10px;
+                    margin-bottom: 15px;
                 }
                 
-                .load-button {
-                    margin-bottom: 15px;
+                .load-button, .upload-button {
                     padding: 8px 16px;
-                    background-color: #4CAF50;
                     color: white;
                     border: none;
                     border-radius: 4px;
                     cursor: pointer;
                 }
                 
-                .load-button:disabled {
+                .load-button {
+                    background-color: #4CAF50;
+                }
+                
+                .upload-button {
+                    background-color: #2196f3;
+                }
+                
+                .load-button:disabled, .upload-button:disabled {
                     background-color: #cccccc;
                     cursor: not-allowed;
                 }
@@ -317,6 +398,7 @@ const NutsMapV5: React.FC = () => {
                     padding: 10px;
                     border: 1px solid #ddd;
                     border-radius: 4px;
+                    text-align: left;
                 }
                 
                 .legend span {
