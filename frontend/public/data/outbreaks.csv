@@ -1,0 +1,11 @@
+latitude,longitude,category,location,date,cases,notes
+41.9028,12.4964,Zika virus,Rome,2025-01-15,37,First major European outbreak of 2025
+43.7696,11.2558,Zika virus,Florence,2025-01-22,24,Concentrated in tourist areas
+45.4642,9.1900,Zika virus,Milan,2025-02-03,42,Linked to international travelers
+40.8518,14.2681,Zika virus,Naples,2025-02-12,56,Highest case concentration in Italy
+45.6495,13.7768,Zika virus,Trieste,2025-02-21,18,Border region transmission
+41.1171,16.8719,Zika virus,Bari,2025-03-05,29,Coastal region outbreak
+37.5079,15.0830,Zika virus,Catania,2025-03-17,31,Sicily island cluster
+44.4949,11.3426,Zika virus,Bologna,2025-03-28,26,University area transmission
+38.1121,13.3366,Zika virus,Palermo,2025-04-06,22,Growing cluster in western Sicily
+43.1107,12.3908,Zika virus,Perugia,2025-04-15,19,Most recent identified cluster
