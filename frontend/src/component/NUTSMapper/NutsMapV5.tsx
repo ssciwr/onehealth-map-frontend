@@ -308,7 +308,7 @@ const NutsMapV5: React.FC = () => {
                     className="full-height-map"
                     center={[42, 12]} // Centered more on Italy
                     zoom={5}
-                    style={{ height: '600px', width: '100%' }}
+                    style={{ height: '800px', width: '100%' }}
                 >
                     <TileLayer
                         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -316,12 +316,13 @@ const NutsMapV5: React.FC = () => {
                     />
                     {/* Render GeoJSON first (lower z-index) */}
                     {nutsGeoJSON && nutsGeoJSON.features && nutsGeoJSON.features.length > 0 && (
-                        <GeoJSON
-                            data={nutsGeoJSON}
-                            style={style}
-                            onEachFeature={onEachFeature}
-                            zIndex={10}
-                        />
+                        <Pane name="geoJsonPane" style={{ zIndex: 400 }}>
+                            <GeoJSON
+                                data={nutsGeoJSON}
+                                style={style}
+                                onEachFeature={onEachFeature}
+                            />
+                        </Pane>
                     )}
 
                     {/* Create a Pane with higher z-index for markers */}
@@ -336,8 +337,7 @@ const NutsMapV5: React.FC = () => {
                                     color: '#000',
                                     weight: 1,
                                     opacity: 1,
-                                    fillOpacity: 0.8,
-                                    pane: 'markersPane'
+                                    fillOpacity: 0.8
                                 }}
                             >
                                 <Popup>
