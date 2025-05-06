@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { MapContainer, TileLayer, GeoJSON, Popup, CircleMarker } from 'react-leaflet';
+import { MapContainer, TileLayer, GeoJSON, Popup, CircleMarker, Pane } from 'react-leaflet';
 import NutsMapperV5 from './nuts_mapper_v5';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
@@ -55,10 +55,12 @@ const NutsMapV5: React.FC = () => {
     useEffect(() => {
         // Load demo outbreaks data from CSV file in public data folder
         fetch('/data/outbreaks.csv')
-            .then(response => response.json())
+            .then(response => response.text())
             .then(csvData => {
                 // Parse CSV data
-                const parsedOutbreaks = csvData as OutbreakData[];
+                console.log("Raw outbreaks CSV:", csvData);
+                const parsedOutbreaks = parseCSVToOutbreaks(csvData);
+                console.log("Parsed outbreaks:", parsedOutbreaks);
                 setOutbreaks(parsedOutbreaks);
             })
             .catch((err: Error) => {
@@ -66,6 +68,35 @@ const NutsMapV5: React.FC = () => {
                 setError(err.message);
             });
     }, []);
+
+    // Function to parse CSV to outbreak data
+    const parseCSVToOutbreaks = (csvData: string): OutbreakData[] => {
+        const lines = csvData.trim().split('\n');
+        const headers = lines[0].split(',');
+
+        return lines.slice(1).map((line, index) => {
+            const values = line.split(',');
+            const outbreak: any = {};
+
+            headers.forEach((header, i) => {
+                let value = values[i];
+
+                // Convert numeric fields
+                if (header === 'latitude' || header === 'longitude' || header === 'cases') {
+                    outbreak[header] = parseFloat(value);
+                } else {
+                    outbreak[header] = value;
+                }
+            });
+
+            // Add a unique ID if not present
+            if (!outbreak.id) {
+                outbreak.id = `outbreak-${index}`;
+            }
+
+            return outbreak as OutbreakData;
+        });
+    };
 
     const loadNutsData = () => {
         setLoading(true);
@@ -157,11 +188,11 @@ const NutsMapV5: React.FC = () => {
     // Function to get color for outbreak markers
     const getOutbreakColor = (category: string): string => {
         const colorMap: { [key: string]: string } = {
-            'Zika virus': '#ff9800',  // Orange
-            'Dengue': '#f44336',      // Red
+            'Zika virus': '#99ff00',  // Orange
+            'Dengue': '#c592bf',      // Red
             'Malaria': '#9c27b0',     // Purple
-            'West Nile': '#d32f2f',       // Dark red
-            'COVID-19': '#2196f3'     // Blue
+            'West Nile': '#754910',       // Dark red
+            'COVID-19': '#95fbd1'     // Blue
         };
 
         return colorMap[category] || '#8A2BE2'; // Default to purple
@@ -283,38 +314,44 @@ const NutsMapV5: React.FC = () => {
                         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                     />
+                    {/* Render GeoJSON first (lower z-index) */}
                     {nutsGeoJSON && nutsGeoJSON.features && nutsGeoJSON.features.length > 0 && (
                         <GeoJSON
                             data={nutsGeoJSON}
                             style={style}
                             onEachFeature={onEachFeature}
+                            zIndex={10}
                         />
                     )}
 
-                    {outbreaks.map(outbreak => (
-                        <CircleMarker
-                            radius={10}
-                            key={outbreak.id}
-                            center={[outbreak.latitude, outbreak.longitude]}
-                            pathOptions={{
-                                fillColor: getOutbreakColor(outbreak.category),
-                                color: '#000',
-                                weight: 1,
-                                opacity: 1,
-                                fillOpacity: 0.8
-                            }}
-                        >
-                            <Popup>
-                                <div className="outbreak-popup">
-                                    <h3>{outbreak.category}</h3>
-                                    <p><strong>Location:</strong> {outbreak.location}</p>
-                                    <p><strong>Date:</strong> {outbreak.date}</p>
-                                    <p><strong>Cases:</strong> {outbreak.cases}</p>
-                                    {outbreak.notes && <p><strong>Notes:</strong> {outbreak.notes}</p>}
-                                </div>
-                            </Popup>
-                        </CircleMarker>
-                    ))}
+                    {/* Create a Pane with higher z-index for markers */}
+                    <Pane name="markersPane" style={{ zIndex: 650 }}>
+                        {outbreaks.map(outbreak => (
+                            <CircleMarker
+                                radius={10}
+                                key={outbreak.id}
+                                center={[outbreak.latitude, outbreak.longitude]}
+                                pathOptions={{
+                                    fillColor: getOutbreakColor(outbreak.category),
+                                    color: '#000',
+                                    weight: 1,
+                                    opacity: 1,
+                                    fillOpacity: 0.8,
+                                    pane: 'markersPane'
+                                }}
+                            >
+                                <Popup>
+                                    <div className="outbreak-popup">
+                                        <h3>{outbreak.category}</h3>
+                                        <p><strong>Location:</strong> {outbreak.location}</p>
+                                        <p><strong>Date:</strong> {outbreak.date}</p>
+                                        <p><strong>Cases:</strong> {outbreak.cases}</p>
+                                        {outbreak.notes && <p><strong>Notes:</strong> {outbreak.notes}</p>}
+                                    </div>
+                                </Popup>
+                            </CircleMarker>
+                        ))}
+                    </Pane>
                 </MapContainer>
             </div>
             <div className="controls">
