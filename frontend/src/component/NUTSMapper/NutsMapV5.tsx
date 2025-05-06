@@ -188,11 +188,11 @@ const NutsMapV5: React.FC = () => {
     // Function to get color for outbreak markers
     const getOutbreakColor = (category: string): string => {
         const colorMap: { [key: string]: string } = {
-            'Zika virus': '#99ff00',  // Orange
-            'Dengue': '#c592bf',      // Red
+            'Zika virus': '#99ff00',  // Lime green
+            'Dengue': '#c592bf',      // Light purple
             'Malaria': '#9c27b0',     // Purple
-            'West Nile': '#754910',       // Dark red
-            'COVID-19': '#95fbd1'     // Blue
+            'West Nile': '#754910',   // Brown
+            'COVID-19': '#95fbd1'     // Light teal
         };
 
         return colorMap[category] || '#8A2BE2'; // Default to purple
@@ -314,24 +314,25 @@ const NutsMapV5: React.FC = () => {
                         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                     />
-                    {/* Render GeoJSON first (lower z-index) */}
-                    {nutsGeoJSON && nutsGeoJSON.features && nutsGeoJSON.features.length > 0 && (
-                        <Pane name="geoJsonPane" style={{ zIndex: 400 }}>
+
+                    {/* Fix: Put GeoJSON in a lower z-index pane - any grid heatmap data can be yet lower a ZIndex, though
+                    this layer is notably not 100% opacity (so that the underlying visual map displays) */}
+                    <Pane name="geoJsonPane" style={{ zIndex: 200 }}>
+                        {nutsGeoJSON && nutsGeoJSON.features && nutsGeoJSON.features.length > 0 && (
                             <GeoJSON
                                 data={nutsGeoJSON}
                                 style={style}
                                 onEachFeature={onEachFeature}
                             />
-                        </Pane>
-                    )}
+                        )}
+                    </Pane>
 
-                    {/* Create a Pane with higher z-index for markers */}
-                    <Pane name="markersPane" style={{ zIndex: 650 }}>
+                    <Pane name="markersPane" style={{ zIndex: 500 }}>
                         {outbreaks.map(outbreak => (
                             <CircleMarker
-                                radius={10}
                                 key={outbreak.id}
                                 center={[outbreak.latitude, outbreak.longitude]}
+                                radius={10}
                                 pathOptions={{
                                     fillColor: getOutbreakColor(outbreak.category),
                                     color: '#000',
@@ -340,7 +341,7 @@ const NutsMapV5: React.FC = () => {
                                     fillOpacity: 0.8
                                 }}
                             >
-                                <Popup>
+                                <Popup className="custom-popup">
                                     <div className="outbreak-popup">
                                         <h3>{outbreak.category}</h3>
                                         <p><strong>Location:</strong> {outbreak.location}</p>
@@ -381,10 +382,9 @@ const NutsMapV5: React.FC = () => {
                     margin: 10px;
                     border: 1px solid grey;
                     margin-bottom: 20px;
-                    border-radius: 10px
+                    border-radius: 10px;
                     padding-right: 20px;
                 }
-                
                 
                 .button-group {
                     display: flex;
@@ -448,6 +448,15 @@ const NutsMapV5: React.FC = () => {
                 
                 .outbreak-popup h3 {
                     margin-top: 0;
+                }
+                
+                .leaflet-popup {
+                    z-index: 1000 !important;
+                }
+                
+                .leaflet-popup-content-wrapper, 
+                .leaflet-popup-tip {
+                    z-index: 1000 !important;
                 }
             `}</style>
         </div>
