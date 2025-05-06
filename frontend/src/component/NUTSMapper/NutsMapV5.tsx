@@ -257,7 +257,7 @@ const NutsMapV5: React.FC = () => {
 
                 {error && (
                     <div className="error-message">
-                        <p>Error (or no data present - meaning you need to upload): {error}</p>
+                        <p>Error (or no data present... meaning you need to upload): {error}</p>
                     </div>
                 )}
 
