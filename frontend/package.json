@@ -18,6 +18,7 @@
     "react-dom": "^19.0.0",
     "react-leaflet": "^5.0.0",
     "react-leaflet-cluster": "^2.1.0",
+    "react-leaflet-heatmap-layer-v3": "3.0.3-beta-1",
     "react-router-dom": "^7.5.3",
     "react-vega": "^7.6.0",
     "topojson-client": "^3.1.0",
