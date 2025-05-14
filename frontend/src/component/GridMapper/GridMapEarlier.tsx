@@ -106,6 +106,8 @@ export default () => {
                 }
             });
 
+            console.log("Country Temperatures full array:", countryTemperatures)
+
             // Calculate average temperature per country
             const avgTemperatures = {};
             Object.keys(countryTemperatures).forEach(code => {
@@ -136,10 +138,8 @@ export default () => {
         }
     };
 
-    // Map coordinates to country using a rough approximation
-    // This is a simplified mapping - in production, use proper spatial queries
+    // Map coordinates to country using a rough approximation for now.
     const getCountryCode = (lat, lng) => {
-        // Here are some major countries with their approximate bounding boxes
         const countryBounds = {
             'USA': { minLat: 25, maxLat: 49, minLng: -125, maxLng: -66 },
             'CAN': { minLat: 41, maxLat: 83, minLng: -141, maxLng: -52 },
@@ -183,33 +183,15 @@ export default () => {
 
     // Style function for GeoJSON features
     const geoJsonStyle = useCallback((feature) => {
-        // Try different property names for country codes
-        const countryCode = feature.properties['ISO_A3'] ||
-            feature.properties['ISO3166-1-Alpha-3'] ||
+        const countryCode = feature.properties['ISO3166-1-Alpha-3'] ||
             feature.properties['ISO3166-1-Alpha-2'] ||
-            feature.properties['ISO3'] ||
-            feature.properties['ISO2'] ||
             feature.properties.code ||
             feature.properties.id;
 
         const temperature = temperatureData[countryCode];
 
-        // If we didn't find a match by code, try by name
-        let temp = temperature;
-        if (temp === undefined) {
-            const countryName = feature.properties.name || feature.properties.NAME || '';
-            // Check if we have data for this country by name
-            for (const [code, value] of Object.entries(temperatureData)) {
-                if (countryName.toLowerCase().includes(code.toLowerCase()) ||
-                    code.toLowerCase().includes(countryName.toLowerCase())) {
-                    temp = value;
-                    break;
-                }
-            }
-        }
-
         return {
-            fillColor: temp !== undefined ? getColorForTemperature(temp) : '#CCCCCC',
+            fillColor: temperature !== undefined ? getColorForTemperature(temperature) : '#CCCCCC',
             weight: 1,
             opacity: 1,
             color: 'white',
@@ -220,54 +202,22 @@ export default () => {
     // Event handlers for features
     const onEachFeature = useCallback((feature, layer) => {
         const countryName = feature.properties.name || feature.properties.NAME || 'Unknown';
-        const countryCode = feature.properties['ISO_A3'] ||
-            feature.properties['ISO3166-1-Alpha-3'] ||
+        const countryCode = feature.properties['ISO3166-1-Alpha-3'] ||
             feature.properties['ISO3166-1-Alpha-2'] ||
-            feature.properties['ISO3'] ||
-            feature.properties['ISO2'] ||
             feature.properties.code ||
             feature.properties.id;
 
-        let temperature = temperatureData[countryCode];
-
-        // If we didn't find a match by code, try by name
-        if (temperature === undefined) {
-            for (const [code, value] of Object.entries(temperatureData)) {
-                if (countryName.toLowerCase().includes(code.toLowerCase()) ||
-                    code.toLowerCase().includes(countryName.toLowerCase())) {
-                    temperature = value;
-                    break;
-                }
-            }
-        }
+        const temperature = temperatureData[countryCode];
 
         // Add popup with temperature information
         layer.bindPopup(
             `<strong>${countryName}</strong><br/>
              ${temperature !== undefined
-                ? `Average Temperature: ${temperature.toFixed(1)}°C<br/>
-                   Code: ${countryCode || 'N/A'}`
-                : `No temperature data available<br/>
-                   Code: ${countryCode || 'N/A'}`}`,
+                ? `Average Temperature: ${temperature.toFixed(1)}°C`
+                : 'No temperature data available'}`,
             { sticky: false }
         );
-
-        // Highlight on hover
-        layer.on({
-            mouseover: (e) => {
-                const layer = e.target;
-                layer.setStyle({
-                    weight: 3,
-                    color: '#666',
-                    fillOpacity: 0.9
-                });
-                layer.bringToFront();
-            },
-            mouseout: (e) => {
-                countriesGeoJson && e.target.setStyle(geoJsonStyle(feature));
-            }
-        });
-    }, [temperatureData, countriesGeoJson, geoJsonStyle]);
+    }, [temperatureData]);
 
     // Load all data on component mount
     useEffect(() => {
