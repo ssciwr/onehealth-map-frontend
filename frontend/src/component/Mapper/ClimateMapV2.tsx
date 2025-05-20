@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { MapContainer, TileLayer, GeoJSON, Popup, CircleMarker, Pane, Rectangle, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, GeoJSON, Popup, CircleMarker, Pane, Rectangle } from 'react-leaflet';
 import NutsMapperV5 from '../NUTSMapper/nuts_mapper_v5';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
@@ -66,7 +66,6 @@ const AdaptiveGridLayer = ({ dataPoints, viewport, resolutionLevel }: {
     resolutionLevel: number;
 }) => {
     const [gridCells, setGridCells] = useState<GridCell[]>([]);
-    const map = useMap();
     const prevViewportRef = useRef<ViewportBounds | null>(null);
     const prevResolutionRef = useRef<number>(resolutionLevel);
 
@@ -211,7 +210,6 @@ const ClimateMap: React.FC = () => {
     const [temperatureData, setTemperatureData] = useState<any[]>([]);
     const [viewport, setViewport] = useState<ViewportBounds | null>(null);
     const [resolutionLevel, setResolutionLevel] = useState<number>(1);
-    const [processedDataPoints, setProcessedDataPoints] = useState<number>(0);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     // Load temperature data from CSV using the approach from Implementation 3
@@ -265,7 +263,7 @@ const ClimateMap: React.FC = () => {
             }
 
             console.log(`Processing ${pointCount} of ${rows.length} data points (${(pointCount/rows.length*100).toFixed(2)}%)`);
-            setProcessedDataPoints(pointCount);
+            // setProcessedDataPoints(pointCount);
             setTemperatureData(dataPoints);
 
         } catch (err: any) {

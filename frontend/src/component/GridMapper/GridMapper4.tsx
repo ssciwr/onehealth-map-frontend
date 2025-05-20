@@ -4,71 +4,37 @@
  * Uses real geometric coordinates with turf.js for accurate country detection
  */
 
+
+/*
 import 'leaflet/dist/leaflet.css';
 import { MapContainer, TileLayer, GeoJSON, useMap } from 'react-leaflet';
-import { useState, useEffect, useMemo, useCallback } from 'react';
-import L from 'leaflet';
+import { useState, useEffect, useCallback } from 'react';
+// Removed unused imports: useMemo, L
 import * as turf from '@turf/turf';
 
-// Component to optimize map bounds
-const FitBounds = ({ bounds }) => {
-    const map = useMap();
+// Types for temperature data
+interface DataPoint {
+    point: turf.helpers.Feature<turf.helpers.Point>;
+    temperature: number;
+    lat: number;
+    lng: number;
+}
 
-    useEffect(() => {
-        if (bounds) {
-            map.fitBounds(bounds);
-        }
-    }, [map, bounds]);
-
-    return null;
-};
-
-// Legend component
-const Legend = () => {
-    return (
-        <div className="legend" style={{
-            position: 'absolute',
-            bottom: '20px',
-            right: '20px',
-            backgroundColor: 'rgba(0,0,0,0.7)',
-            padding: '10px',
-            borderRadius: '5px',
-            zIndex: 1000,
-            color: 'white'
-        }}>
-            <div style={{ marginBottom: '5px', fontWeight: 'bold' }}>Temperature (°C)</div>
-            {[
-                { color: '#FF0000', label: '> 30' },
-                { color: '#FFAA00', label: '20 - 30' },
-                { color: '#FFFF00', label: '10 - 20' },
-                { color: '#00FF00', label: '0 - 10' },
-                { color: '#00FFFF', label: '-10 - 0' },
-                { color: '#0000FF', label: '-20 - -10' },
-                { color: '#800080', label: '< -20' },
-            ].map((item, index) => (
-                <div key={index} style={{ display: 'flex', alignItems: 'center', marginTop: '2px' }}>
-                    <div style={{
-                        width: '20px',
-                        height: '20px',
-                        backgroundColor: item.color,
-                        marginRight: '5px'
-                    }}></div>
-                    <span>{item.label}</span>
-                </div>
-            ))}
-        </div>
-    );
-};
+// Type for window with custom properties
+interface CustomWindow extends Window {
+    temperatureDataPoints?: DataPoint[];
+}
+declare const window: CustomWindow;
 
 export default () => {
-    const [temperatureData, setTemperatureData] = useState({});
-    const [countriesGeoJson, setCountriesGeoJson] = useState(null);
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState(null);
-    const [processedDataPoints, setProcessedDataPoints] = useState(0);
+    const [temperatureData, setTemperatureData] = useState<Record<string, number>>({});
+    const [countriesGeoJson, setCountriesGeoJson] = useState<any>(null);
+    const [isLoading, setIsLoading] = useState<boolean>(true);
+    const [error, setError] = useState<string | null>(null);
+    const [processedDataPoints, setProcessedDataPoints] = useState<number>(0);
 
     // Temperature to color function
-    const getColorForTemperature = (temp) => {
+    const getColorForTemperature = (temp: number): string => {
         if (temp > 30) return '#FF0000';      // Red (hot)
         if (temp > 20) return '#FFAA00';      // Orange
         if (temp > 10) return '#FFFF00';      // Yellow
@@ -79,7 +45,7 @@ export default () => {
     };
 
     // Load and process CSV temperature data
-    const loadTemperatureData = async () => {
+    const loadTemperatureData = async (): Promise<void> => {
         try {
             const response = await fetch("era5_data_2024_01_02_monthly_area_celsius_january_05res.csv");
             const text = await response.text();
@@ -96,13 +62,13 @@ export default () => {
             // my real thoughts though are that backend could well do this a lot better, as with the NUTS processing.
 
             // Random sampling for better distribution
-            const indices = new Set();
+            const indices = new Set<number>();
             while (indices.size < sampleSize) {
                 indices.add(Math.floor(Math.random() * rows.length));
             }
 
             // Get sampled data points
-            const dataPoints = [];
+            const dataPoints: DataPoint[] = [];
             let pointCount = 0;
 
             rows.forEach((row, index) => {
@@ -136,10 +102,10 @@ export default () => {
             }
 
             // Aggregate temperatures by country using real geometry
-            const countryTemperatures = {};
+            const countryTemperatures: Record<string, number> = {};
 
             // Process each country in the GeoJSON
-            countriesGeoJson.features.forEach(feature => {
+            countriesGeoJson.features.forEach((feature: any) => {
                 const countryCode = feature.properties['ISO3166-1-Alpha-3'] ||
                     feature.properties['ISO3166-1-Alpha-2'] ||
                     feature.properties['ISO3'] ||
@@ -156,7 +122,7 @@ export default () => {
                 console.log('Calculating data for country: ', key)
 
                 // Create polygon for country
-                let polygon;
+                let polygon: any;
                 try {
                     if (feature.geometry.type === 'Polygon') {
                         polygon = turf.polygon(feature.geometry.coordinates);
@@ -171,10 +137,12 @@ export default () => {
                 }
 
                 // Find points within this country
-                const pointsInCountry = [];
+                const pointsInCountry: number[] = [];
                 dataPoints.forEach(dataPoint => {
                     try {
-                        if (turf.booleanPointInPolygon(dataPoint.point, polygon)) {
+                        // Using any to bypass the type mismatch for now
+                        // This is a workaround for the turf.js type incompatibility
+                        if (turf.booleanPointInPolygon(dataPoint.point, polygon as any)) {
                             pointsInCountry.push(dataPoint.temperature);
                         }
                     } catch (e) {
@@ -199,7 +167,7 @@ export default () => {
     };
 
     // Load countries GeoJSON
-    const loadCountriesGeoJson = async () => {
+    const loadCountriesGeoJson = async (): Promise<void> => {
         try {
             // Using a public CDN for world countries GeoJSON
             const response = await fetch('https://raw.githubusercontent.com/datasets/geo-countries/main/data/countries.geojson');
@@ -210,10 +178,10 @@ export default () => {
             // If we have stored temperature data points, process them now
             if (window.temperatureDataPoints) {
                 const dataPoints = window.temperatureDataPoints;
-                const countryTemperatures = {};
+                const countryTemperatures: Record<string, number> = {};
 
                 // Process each country in the GeoJSON - each "feature" is a country
-                data.features.forEach(feature => {
+                data.features.forEach((feature: any) => {
                     const countryCode = feature.properties['ISO3166-1-Alpha-3'] ||
                         feature.properties['ISO3166-1-Alpha-2'] ||
                         feature.properties['ISO3'] ||
@@ -228,7 +196,7 @@ export default () => {
                     const key = countryCode || countryName;
 
                     // Create polygon for country
-                    let polygon;
+                    let polygon: any;
                     try {
                         if (feature.geometry.type === 'Polygon') {
                             polygon = turf.polygon(feature.geometry.coordinates);
@@ -243,10 +211,11 @@ export default () => {
                     }
 
                     // Find points within this country
-                    const pointsInCountry = [];
+                    const pointsInCountry: number[] = [];
                     dataPoints.forEach(dataPoint => {
                         try {
-                            if (turf.booleanPointInPolygon(dataPoint.point, polygon)) {
+                            // Using any to bypass the type mismatch
+                            if (turf.booleanPointInPolygon(dataPoint.point, polygon as any)) {
                                 pointsInCountry.push(dataPoint.temperature);
                             }
                         } catch (e) {
@@ -273,7 +242,7 @@ export default () => {
     };
 
     // Style function for GeoJSON features
-    const geoJsonStyle = useCallback((feature) => {
+    const geoJsonStyle = useCallback((feature: any) => {
         // Try different property names for country codes
         const countryCode = feature.properties['ISO3166-1-Alpha-3'] ||
             feature.properties['ISO3166-1-Alpha-2'] ||
@@ -298,7 +267,7 @@ export default () => {
     }, [temperatureData]);
 
     // Event handlers for features
-    const onEachFeature = useCallback((feature, layer) => {
+    const onEachFeature = useCallback((feature: any, layer: any) => {
         const countryName = feature.properties.name || feature.properties.NAME || 'Unknown';
         const countryCode = feature.properties['ISO3166-1-Alpha-3'] ||
             feature.properties['ISO3166-1-Alpha-2'] ||
@@ -324,13 +293,50 @@ export default () => {
     useEffect(() => {
         const loadData = async () => {
             setIsLoading(true);
-            await loadCountriesGeoJson()
-            await loadTemperatureData()
+            await loadCountriesGeoJson();
+            await loadTemperatureData();
             setIsLoading(false);
         };
 
         loadData();
     }, []);
+
+    // Legend component
+    const Legend = () => {
+        return (
+            <div className="legend" style={{
+                position: 'absolute',
+                bottom: '20px',
+                right: '20px',
+                backgroundColor: 'rgba(0,0,0,0.7)',
+                padding: '10px',
+                borderRadius: '5px',
+                zIndex: 1000,
+                color: 'white'
+            }}>
+                <div style={{ marginBottom: '5px', fontWeight: 'bold' }}>Temperature (°C)</div>
+                {[
+                    { color: '#FF0000', label: '> 30' },
+                    { color: '#FFAA00', label: '20 - 30' },
+                    { color: '#FFFF00', label: '10 - 20' },
+                    { color: '#00FF00', label: '0 - 10' },
+                    { color: '#00FFFF', label: '-10 - 0' },
+                    { color: '#0000FF', label: '-20 - -10' },
+                    { color: '#800080', label: '< -20' },
+                ].map((item, index) => (
+                    <div key={index} style={{ display: 'flex', alignItems: 'center', marginTop: '2px' }}>
+                        <div style={{
+                            width: '20px',
+                            height: '20px',
+                            backgroundColor: item.color,
+                            marginRight: '5px'
+                        }}></div>
+                        <span>{item.label}</span>
+                    </div>
+                ))}
+            </div>
+        );
+    };
 
     if (isLoading) {
         return <div>Loading map data...</div>;
@@ -382,3 +388,6 @@ export default () => {
         </div>
     );
 };
+
+
+ */

@@ -1,12 +1,21 @@
 // Custom hook to monitor and respond to map viewport changes
-import {useEffect, useState} from "react";
-import {
-    useMap,
-} from 'react-leaflet';
+import { useEffect, useState } from "react";
+import { useMap } from 'react-leaflet';
+import L from 'leaflet';
 
-function useMapViewport() {
+// Define types for viewport and props
+interface Viewport {
+    bounds: L.LatLngBounds;
+    zoom: number;
+}
+
+interface ViewportMonitorProps {
+    onViewportChange: (viewport: Viewport) => void;
+}
+
+function useMapViewport(): Viewport {
     const map = useMap();
-    const [viewport, setViewport] = useState({
+    const [viewport, setViewport] = useState<Viewport>({
         bounds: map.getBounds(),
         zoom: map.getZoom(),
     });
@@ -31,8 +40,8 @@ function useMapViewport() {
     return viewport;
 }
 
-// Keep track of viewport for more efficienct and responsive rendering
-function ViewportMonitor({ onViewportChange }) {
+// Keep track of viewport for more efficient and responsive rendering
+function ViewportMonitor({ onViewportChange }: ViewportMonitorProps) {
     const viewport = useMapViewport();
 
     useEffect(() => {
@@ -41,6 +50,5 @@ function ViewportMonitor({ onViewportChange }) {
 
     return null;
 }
-
 
 export default ViewportMonitor;
