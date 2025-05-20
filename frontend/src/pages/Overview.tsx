@@ -13,6 +13,8 @@ export default () => {
         <div>
             <NutsMapV5 />
         </div>
+        <a href="/nuts5">NUTS 5</a>
+        <a href="/cartesian">Cartesian</a>
         <Footer />
 
     </div>)
