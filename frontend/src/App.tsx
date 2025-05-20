@@ -12,10 +12,9 @@ function App() {
     return (
         <>
             <Routes>
-                <Route path="/" element={<Overview />} />
                 <Route path="/nuts5" element={<NutsMapV5 />} />
-                =
-                <Route path="/cartesian" element={<ClimateMapV2 />} />
+                <Route path="/" element={<ClimateMapV2 />} />
+                <Route path="/OldOverview" element={<Overview />} />
             </Routes>
         </>
     )
