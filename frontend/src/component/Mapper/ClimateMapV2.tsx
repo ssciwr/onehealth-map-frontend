@@ -1,11 +1,11 @@
-import { useState, useEffect, useRef } from 'react';
-import { MapContainer, TileLayer, GeoJSON, Popup, CircleMarker, Pane } from 'react-leaflet';
-import NutsMapperV5 from './nuts_mapper_v5';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { MapContainer, TileLayer, GeoJSON, Popup, CircleMarker, Pane, Rectangle, useMap } from 'react-leaflet';
+import NutsMapperV5 from '../NUTSMapper/nuts_mapper_v5';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import ViewportMonitor from "./ViewportMonitor.tsx";
+import * as turf from '@turf/turf';
 
-// Define types for our data structures
 interface NutsProperties {
     NUTS_ID: string;
     intensity: number | null;
@@ -45,39 +45,239 @@ interface ProcessingStats {
     skippedRegions?: string[];
 }
 
-/**
- *
- * A generic map component which can take in both NUTs data and 0.5 accuracy climate data to render graphs.
- * This class will combine the approaches of the NutsMap for the European Data and the Grid Map from earlier commits.
- *
- * Nuts uses GeoJSON to render precalculated NUTS regions.
- * The other data is provided as Lat/Lng coordinates of 0.5 degree blocks (50km)
- * A requirement is that basic geopolitical mapping can be used on top: So we should highlight different countries.
- * So V1 of the change will just calculate for each country their temperature, this will render fast because the
- * drawing part is the slow part, not the calculations.
- * V2 however will need to show that in more detial, maybe based on the view frame.
- *
- *
- * Possible implementation strategy:
- * - For the 0.5 accuracy climate data, if covered by NUTs regions, we do not render it (for efficiency)
- * - Just map everything with 0.5 accuracy. It's quite fast. The issue is parsing the data into rendering so many grid item.s
- * It we can optimize that process somehow (e.g. bucket means or something first when the user is zoomed out, only render those
- * in frame when they zoom in.)
- *
- *
- *
- * @constructor
- */
+interface GridCell {
+    bounds: L.LatLngBoundsExpression;
+    temperature: number;
+    id: string;
+}
+
+interface ViewportBounds {
+    north: number;
+    south: number;
+    east: number;
+    west: number;
+    zoom: number;
+}
+
+// Component to update grid cells based on current viewport
+const AdaptiveGridLayer = ({ dataPoints, viewport, resolutionLevel }: {
+    dataPoints: any[];
+    viewport: ViewportBounds | null;
+    resolutionLevel: number;
+}) => {
+    const [gridCells, setGridCells] = useState<GridCell[]>([]);
+    const map = useMap();
+    const prevViewportRef = useRef<ViewportBounds | null>(null);
+    const prevResolutionRef = useRef<number>(resolutionLevel);
+
+    // Memoize the function to prevent unnecessary recalculations
+    const generateAdaptiveGridCells = useCallback(() => {
+        if (!viewport || !dataPoints || dataPoints.length === 0) return [];
+
+        const { north, south, east, west, zoom } = viewport;
+
+        // Determine grid resolution based on zoom and resolution level
+        // Use fixed grid sizes to ensure consistent grid appearance
+        let gridSize = 0.1; // Base resolution of data
+
+        if (zoom < 3) gridSize = 2; // World view
+        else if (zoom < 5) gridSize = 1; // Continental view
+        else if (zoom < 7) gridSize = 0.5; // Country view
+        else if (zoom < 9) gridSize = 0.3; // Regional view
+        else gridSize = 0.1; // Local view
+
+        console.log(`Rendering grid at resolution: ${gridSize}° (zoom: ${zoom})`);
+
+        // Create a map to store aggregated temperature values
+        const cellMap = new Map<string, { sum: number; count: number; bounds: L.LatLngBoundsExpression }>();
+
+        // Only process data points within the current viewport (with a buffer)
+        const buffer = gridSize * 2;
+        const filteredData = dataPoints.filter(point =>
+            point.lat >= south - buffer &&
+            point.lat <= north + buffer &&
+            point.lng >= west - buffer &&
+            point.lng <= east + buffer
+        );
+
+        // Aggregate data points into grid cells
+        filteredData.forEach(point => {
+            // Calculate grid cell coordinates by rounding to create a proper grid
+            // Use Math.floor divided by gridSize then multiplied by gridSize to ensure proper alignment
+            const cellLat = Math.floor(point.lat / gridSize) * gridSize;
+            const cellLng = Math.floor(point.lng / gridSize) * gridSize;
+            const cellId = `${cellLat.toFixed(4)}_${cellLng.toFixed(4)}`;
+
+            const bounds: L.LatLngBoundsExpression = [
+                [cellLat, cellLng],
+                [cellLat + gridSize, cellLng + gridSize]
+            ];
+
+            if (cellMap.has(cellId)) {
+                const cell = cellMap.get(cellId)!;
+                cell.sum += point.temperature;
+                cell.count += 1;
+            } else {
+                cellMap.set(cellId, {
+                    sum: point.temperature,
+                    count: 1,
+                    bounds
+                });
+            }
+        });
+
+        // Convert aggregated data to grid cells
+        const newGridCells: GridCell[] = [];
+        cellMap.forEach((cell, id) => {
+            newGridCells.push({
+                bounds: cell.bounds,
+                temperature: cell.sum / cell.count,
+                id
+            });
+        });
+
+        console.log(`Rendered ${newGridCells.length} grid cells from ${filteredData.length} data points`);
+        return newGridCells;
+    }, [dataPoints, viewport]);
+
+    // Update grid cells only when viewport or resolution level changes significantly
+    useEffect(() => {
+        // Only update if viewport actually changed
+        const hasViewportChanged = !prevViewportRef.current ||
+            (viewport && (
+                !prevViewportRef.current ||
+                Math.abs(viewport.zoom - prevViewportRef.current.zoom) > 0.1 ||
+                Math.abs(viewport.north - prevViewportRef.current.north) > 0.1 ||
+                Math.abs(viewport.south - prevViewportRef.current.south) > 0.1 ||
+                Math.abs(viewport.east - prevViewportRef.current.east) > 0.1 ||
+                Math.abs(viewport.west - prevViewportRef.current.west) > 0.1
+            ));
+
+        const hasResolutionChanged = resolutionLevel !== prevResolutionRef.current;
+
+        // Only update if something relevant has changed
+        if (hasViewportChanged || hasResolutionChanged) {
+            const newGridCells = generateAdaptiveGridCells();
+            setGridCells(newGridCells);
+
+            // Update refs
+            prevViewportRef.current = viewport;
+            prevResolutionRef.current = resolutionLevel;
+        }
+    }, [viewport, resolutionLevel, generateAdaptiveGridCells]);
+
+    // Get color based on temperature
+    const getColorForTemperature = useCallback((temp: number): string => {
+        if (temp > 30) return '#FF0000';      // Red (hot)
+        if (temp > 20) return '#FFAA00';      // Orange
+        if (temp > 10) return '#FFFF00';      // Yellow
+        if (temp > 0) return '#00FF00';       // Green
+        if (temp > -10) return '#00FFFF';     // Cyan
+        if (temp > -20) return '#0000FF';     // Blue
+        return '#800080';                     // Purple (cold)
+    }, []);
+
+    return (
+        <>
+            {gridCells.map((cell) => (
+                <Rectangle
+                    key={cell.id}
+                    bounds={cell.bounds}
+                    pathOptions={{
+                        color: 'transparent',
+                        fillColor: getColorForTemperature(cell.temperature),
+                        fillOpacity: 0.7,
+                        weight: 0
+                    }}
+                >
+                    <Popup>
+                        <div>
+                            <h4>Grid Cell</h4>
+                            <p>Temperature: {cell.temperature.toFixed(1)}°C</p>
+                        </div>
+                    </Popup>
+                </Rectangle>
+            ))}
+        </>
+    );
+};
+
 const ClimateMap: React.FC = () => {
     const [nutsGeoJSON, setNutsGeoJSON] = useState<NutsGeoJSON | null>(null);
     const [loading, setLoading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
     const [stats, setStats] = useState<ProcessingStats>({ processed: 0, skipped: 0, errors: 0 });
     const [outbreaks, setOutbreaks] = useState<OutbreakData[]>([]);
+    const [temperatureData, setTemperatureData] = useState<any[]>([]);
+    const [viewport, setViewport] = useState<ViewportBounds | null>(null);
+    const [resolutionLevel, setResolutionLevel] = useState<number>(1);
+    const [processedDataPoints, setProcessedDataPoints] = useState<number>(0);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    const [viewport, setViewport] = useState(null);
+    // Load temperature data from CSV using the approach from Implementation 3
+    const loadTemperatureData = useCallback(async () => {
+        try {
+            // Exact same file and fetch method as in the original code
+            // const response = await fetch("era5_data_2024_01_02_monthly_area_celsius_january_03res.csv");
+            const response = await fetch("era5_data_2024_01_02_monthly_area_celsius_january.csv");
+            const text = await response.text();
 
+            // Parse CSV
+            const rows = text.split('\n').slice(1).filter(row => row.trim() !== '');
+
+            // Use only a small percentage of data points for performance
+            const sampleRate = 1; // 1% sampling
+            const sampleSize = Math.ceil(rows.length * sampleRate);
+            const indices = new Set<number>();
+
+            // Random sampling for better distribution
+            while (indices.size < sampleSize) {
+                indices.add(Math.floor(Math.random() * rows.length));
+            }
+
+            // Get sampled data points
+            const dataPoints = [];
+            let pointCount = 0;
+
+            // Create a stable set of data points
+            for (let i = 0; i < rows.length; i++) {
+                // Use deterministic sampling instead of random to ensure stability
+                if (i % Math.floor(1/sampleRate) === 0) {
+                    const row = rows[i];
+                    const values = row.split(',');
+                    if (values.length >= 4) {
+                        const temperature = parseFloat(values[3]) || 0;
+                        const lat = parseFloat(values[1]) || 0;
+                        const lng = parseFloat(values[2]) || 0;
+
+                        // Only add points with valid coordinates
+                        if (!isNaN(lat) && !isNaN(lng) && !isNaN(temperature)) {
+                            dataPoints.push({
+                                point: turf.point([lng, lat]),  // Keep turf point for compatibility
+                                temperature: temperature,
+                                lat: lat,
+                                lng: lng
+                            });
+                            pointCount++;
+                        }
+                    }
+                }
+            }
+
+            console.log(`Processing ${pointCount} of ${rows.length} data points (${(pointCount/rows.length*100).toFixed(2)}%)`);
+            setProcessedDataPoints(pointCount);
+            setTemperatureData(dataPoints);
+
+        } catch (err: any) {
+            console.error('Failed to load temperature data:', err);
+            setError('Failed to load temperature data: ' + err.message);
+        }
+    }, []);
+
+    // Load data on component mount
+    useEffect(() => {
+        loadTemperatureData();
+    }, [loadTemperatureData]);
 
     useEffect(() => {
         // Load demo outbreaks data from CSV file in public data folder
@@ -190,7 +390,52 @@ const ClimateMap: React.FC = () => {
         fileInputRef.current?.click();
     };
 
-    // Function to get color based on intensity
+    // Handle viewport changes from ViewportMonitor
+    const handleViewportChange = useCallback((newViewport: any) => {
+        // Extract and transform viewport data
+        if (newViewport) {
+            const bounds = newViewport.bounds;
+            const zoom = newViewport.zoom;
+
+            // Only update if changes are significant (reduce unnecessary renders)
+            setViewport(prevViewport => {
+                if (!prevViewport ||
+                    Math.abs(bounds.getNorth() - prevViewport.north) > 0.1 ||
+                    Math.abs(bounds.getSouth() - prevViewport.south) > 0.1 ||
+                    Math.abs(bounds.getEast() - prevViewport.east) > 0.1 ||
+                    Math.abs(bounds.getWest() - prevViewport.west) > 0.1 ||
+                    Math.abs(zoom - prevViewport.zoom) > 0.1) {
+
+                    return {
+                        north: bounds.getNorth(),
+                        south: bounds.getSouth(),
+                        east: bounds.getEast(),
+                        west: bounds.getWest(),
+                        zoom: zoom
+                    };
+                }
+                return prevViewport;
+            });
+
+            // Adjust resolution level based on zoom
+            let newResolution = 1;
+
+            if (zoom < 2.5) newResolution = 4.5;
+            else if (zoom < 4.5) newResolution = 3.5;
+            else if (zoom < 6) newResolution = 2.5;
+            else if (zoom < 8) newResolution = 1.5;
+            else newResolution = 1;
+
+            setResolutionLevel(prevResolution => {
+                if (prevResolution !== newResolution) {
+                    return newResolution;
+                }
+                return prevResolution;
+            });
+        }
+    }, []);
+
+    // Function to get color based on intensity for NUTS regions
     const getColor = (intensity: number | null): string => {
         if (intensity === null) return '#cccccc'; // Default gray for null values
 
@@ -281,12 +526,11 @@ const ClimateMap: React.FC = () => {
         }
     };
 
-
     return (
         <div className="nuts-map-container">
             <div className="controls">
-                <h2>NUTS Mapper V5</h2>
-                <p>Enhanced NUTS mapping with improved error handling</p>
+                <h2>Enhanced Climate Map</h2>
+                <p>Adaptive resolution cartesian grid with NUTS region overlay</p>
 
                 <div className="button-group">
                     <button
@@ -294,7 +538,7 @@ const ClimateMap: React.FC = () => {
                         disabled={loading}
                         className="load-button"
                     >
-                        {loading ? 'Loading...' : 'Generate with CSV'}
+                        {loading ? 'Loading...' : 'Load NUTS Regions'}
                     </button>
 
                     <button
@@ -302,7 +546,7 @@ const ClimateMap: React.FC = () => {
                         disabled={loading}
                         className="upload-button"
                     >
-                        Upload CSV
+                        Upload NUTS CSV
                     </button>
 
                     <input
@@ -316,19 +560,26 @@ const ClimateMap: React.FC = () => {
 
                 {error && (
                     <div className="error-message">
-                        <p>Error (or no data present... meaning you need to upload): {error}</p>
+                        <p>Error: {error}</p>
                     </div>
                 )}
 
                 {stats.processed > 0 && (
                     <div className="stats">
-                        <h3>Processing Stats</h3>
+                        <h3>NUTS Processing Stats</h3>
                         <p>Regions processed: {stats.processed}</p>
                         <p>Regions skipped: {stats.skipped}</p>
                         <p>Errors encountered: {stats.errors}</p>
                     </div>
                 )}
 
+                <div className="stats">
+                    <h3>Grid Data</h3>
+                    <p>Temperature points: {temperatureData.length}</p>
+                    {viewport && (
+                        <p>Current resolution: Level {resolutionLevel} (Zoom: {viewport.zoom.toFixed(1)})</p>
+                    )}
+                </div>
             </div>
 
             <div className="map-wrapper">
@@ -343,8 +594,18 @@ const ClimateMap: React.FC = () => {
                         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                     />
 
-                    {/* Fix: Put GeoJSON in a lower z-index pane - any grid heatmap data can be yet lower a ZIndex, though
-                    this layer is notably not 100% opacity (so that the underlying visual map displays) */}
+                    {/* Cartesian Grid Layer (highest z-index - don't change this) */}
+                    <Pane name="gridPane" style={{ zIndex: 1550, opacity: 0.5 }}>
+                        {temperatureData.length > 0 && viewport && (
+                            <AdaptiveGridLayer
+                                dataPoints={temperatureData}
+                                viewport={viewport}
+                                resolutionLevel={resolutionLevel}
+                            />
+                        )}
+                    </Pane>
+
+                    {/* NUTS Regions Layer (middle z-index) */}
                     <Pane name="geoJsonPane" style={{ zIndex: 200 }}>
                         {nutsGeoJSON && nutsGeoJSON.features && nutsGeoJSON.features.length > 0 && (
                             <GeoJSON
@@ -355,6 +616,7 @@ const ClimateMap: React.FC = () => {
                         )}
                     </Pane>
 
+                    {/* Outbreak Markers Layer (highest z-index) */}
                     <Pane name="markersPane" style={{ zIndex: 500 }}>
                         {outbreaks.map(outbreak => (
                             <CircleMarker
@@ -381,22 +643,33 @@ const ClimateMap: React.FC = () => {
                             </CircleMarker>
                         ))}
                     </Pane>
-                    <ViewportMonitor onViewportChange={setViewport} />
+
+                    {/* Monitor viewport changes */}
+                    <ViewportMonitor onViewportChange={handleViewportChange} />
                 </MapContainer>
             </div>
+
             <div className="controls">
                 <div className="legend">
-                    <h3>Temperature</h3>
-                    <div><span style={{ backgroundColor: getColor(30) }}></span> &gt; 25°C</div>
-                    <div><span style={{ backgroundColor: getColor(23) }}></span> 20-25°C</div>
-                    <div><span style={{ backgroundColor: getColor(18) }}></span> 15-20°C</div>
-                    <div><span style={{ backgroundColor: getColor(13) }}></span> 10-15°C</div>
-                    <div><span style={{ backgroundColor: getColor(8) }}></span> 5-10°C</div>
-                    <div><span style={{ backgroundColor: getColor(3) }}></span> 0-5°C</div>
-                    <div><span style={{ backgroundColor: getColor(-3) }}></span> -5-0°C</div>
-                    <div><span style={{ backgroundColor: getColor(-8) }}></span> -10--5°C</div>
-                    <div><span style={{ backgroundColor: getColor(-13) }}></span> -15--10°C</div>
-                    <div><span style={{ backgroundColor: getColor(-18) }}></span> &lt; -15°C</div>
+                    <h3>Temperature Legend</h3>
+                    <div><span style={{ backgroundColor: getColor(14) }}></span> &gt; 14°C</div>
+                    <div><span style={{ backgroundColor: getColor(10) }}></span> 10-14°C</div>
+                    <div><span style={{ backgroundColor: getColor(6) }}></span> 6-10°C</div>
+                    <div><span style={{ backgroundColor: getColor(2) }}></span> 2-6°C</div>
+                    <div><span style={{ backgroundColor: getColor(0) }}></span> 0-2°C</div>
+                    <div><span style={{ backgroundColor: getColor(-4) }}></span> -4-0°C</div>
+                    <div><span style={{ backgroundColor: getColor(-8) }}></span> -8--4°C</div>
+                    <div><span style={{ backgroundColor: getColor(-12) }}></span> -12--8°C</div>
+                    <div><span style={{ backgroundColor: getColor(-16) }}></span> &lt; -12°C</div>
+                </div>
+
+                <div className="legend">
+                    <h3>Outbreak Types</h3>
+                    {['Zika virus', 'Dengue', 'Malaria', 'West Nile', 'COVID-19'].map(category => (
+                        <div key={category}>
+                            <span style={{ backgroundColor: getOutbreakColor(category) }}></span> {category}
+                        </div>
+                    ))}
                 </div>
             </div>
 
@@ -486,6 +759,15 @@ const ClimateMap: React.FC = () => {
                 .leaflet-popup-content-wrapper, 
                 .leaflet-popup-tip {
                     z-index: 1000 !important;
+                }
+                
+                .map-wrapper {
+                    position: relative;
+                    height: 800px;
+                    width: 100%;
+                    border-radius: 8px;
+                    overflow: hidden;
+                    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
                 }
             `}</style>
         </div>

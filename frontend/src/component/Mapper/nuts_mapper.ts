@@ -1,6 +1,9 @@
 /**
  * Enhanced NUTS Mapper that works with pre-processed NUTS data
  * Improved error handling and WKT parsing for problematic geometries
+ *
+ *
+ * Deprecated. Use nuts_mapper_v5.ts
  */
 
 // Define TypeScript interfaces for GeoJSON structures

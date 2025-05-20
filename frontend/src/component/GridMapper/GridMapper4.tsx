@@ -87,9 +87,13 @@ export default () => {
             // Parse CSV
             const rows = text.split('\n').slice(1).filter(row => row.trim() !== '');
 
-            // Use only 1% of data points
-            const sampleSize = Math.ceil(rows.length * 0.01);
-            const sampledRows = [];
+            const sampleSize = Math.ceil(rows.length * 0.5);
+            // problem: Sampling 50% of data points takes quite a while (10-15s)
+            // and gets almost all countries but not say one-or-two small ones in europe.
+            // instead we could reverse engineer it e.g. make a dict/map of lat/long buckets for points
+            // iterate each country and select as many points as possible from within it's bounds, up to
+            // 50 points, then move on to the next country. To guarantee we have data and processing would be faster.
+            // my real thoughts though are that backend could well do this a lot better, as with the NUTS processing.
 
             // Random sampling for better distribution
             const indices = new Set();
@@ -148,6 +152,8 @@ export default () => {
                 if (!countryCode && !countryName) return;
 
                 const key = countryCode || countryName;
+
+                console.log('Calculating data for country: ', key)
 
                 // Create polygon for country
                 let polygon;
@@ -286,7 +292,8 @@ export default () => {
             weight: 1,
             opacity: 1,
             color: 'white',
-            fillOpacity: 0.7
+            fillOpacity: 0.7,
+            zIndex: 1500,
         };
     }, [temperatureData]);
 

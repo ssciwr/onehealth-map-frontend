@@ -94,8 +94,8 @@ class NutsMapperV5 {
 
                 const nutsId: string = columns[nutsIdIndex];
                 // Skip whole-countries NUTS regions (these ones overlap the other fields)
-                if (["FR", "IT", "DE", "NL"].indexOf(nutsId) !== -1) {
-                    continue;
+                if (nutsId.length === 2) {
+                    continue; // NUTS country level, so skip, only display subregions, not whole countries.
                 }
                 const wktGeometry: string = columns[geometryIndex];
                 const intensity: number = parseFloat(columns[intensityIndex]);
