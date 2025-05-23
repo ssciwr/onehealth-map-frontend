@@ -9,13 +9,13 @@ import './Map.css'
 import {
     Layers,
 } from 'lucide-react';
-import ModelSelector from "./ModelSelector.tsx";
-import TimelineSelector from "./TimelineSelector.tsx";
+import ModelSelector from "./InterfaceInputs/ModelSelector.tsx";
 import AntdTimelineSelector from "./AntdTimelineSelector.tsx";
 import {VIRUSES} from "./virusConstants.ts";
-import OptimismLevelSelector from "./OptimistimSelector.tsx";
+import OptimismLevelSelector from "./InterfaceInputs/OptimistimSelector.tsx";
 import MapLegend from "./MapLegend.tsx";
 import {getColorFromGradient} from "./mapGradientUtilities.tsx";
+import GeneralCard from "./Multiuse/GeneralCard.tsx";
 
 // Types
 interface NutsProperties {
@@ -130,7 +130,8 @@ const AdaptiveGridLayer = ({ dataPoints, viewport, resolutionLevel, gradientKey 
         else if (zoom < 5) gridSize = 1;
         else if (zoom < 7) gridSize = 0.5;
         else if (zoom < 9) gridSize = 0.3;
-        else gridSize = 0.1;
+        else gridSize = 0.1; // todo: Update to "smallestDataResolution" which should be precalcualted
+        // It already was calculated in old code when determining the grid cells
 
         const cellMap = new Map<string, { sum: number; count: number; bounds: L.LatLngBoundsExpression }>();
         const buffer = gridSize * 2;
@@ -240,7 +241,7 @@ const EnhancedClimateMap: React.FC = () => {
     const [map, setMap] = useState(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    const getOptimismLevels = (model) => ['optimistic', 'normal', 'pessimistic']
+    const getOptimismLevels = (model) => ['optimistic', 'realistic', 'pessimistic']
 
     // Load temperature data
     const loadTemperatureData = async (year) => {
@@ -497,42 +498,43 @@ const EnhancedClimateMap: React.FC = () => {
 
     return (
         <div className="climate-map-container">
-            <div className="map-header">
-                <div className="logo-section">
-                    <h1 className="map-title">
-                        <span className="title-one">One</span>
-                        <span className="title-health">Health</span>
-                        <span className="title-platform">Platform</span>
-                    </h1>
-                </div>
+            <div className="header-section center">
+                <GeneralCard>
+                    <div className="logo-section">
+                        {/* Todo: Replace with logo once we have permission */}
+                        <h1 className="map-title">
+                            <span className="title-one">One</span>
+                            <span className="title-health">Health</span>
+                            <span className="title-platform">Platform</span>
+                        </h1>
+                    </div>
 
-                <ModelSelector
-                    selectedModel={selectedModel}
-                    onModelSelect={handleModelSelect}
-                />
-                &nbsp;
-                with&nbsp;
-                <OptimismLevelSelector
-                    availableOptimismLevels={getOptimismLevels(selectedModel)}
-                    selectedOptimism={selectedOptimism}
-                    setOptimism={setSelectedOptimism}
+                    <ModelSelector
+                        selectedModel={selectedModel}
+                        onModelSelect={handleModelSelect}
+                    />
+                    &nbsp;
+                    with&nbsp;
+                    <OptimismLevelSelector
+                        availableOptimismLevels={getOptimismLevels(selectedModel)}
+                        selectedOptimism={selectedOptimism}
+                        setOptimism={setSelectedOptimism}
+                    />
+                </GeneralCard>
+
+                <AntdTimelineSelector
+                    year={currentYear}
+                    month={currentMonth}
+                    onYearChange={setCurrentYear}
+                    onMonthChange={setCurrentMonth}
                 />
             </div>
 
-            <AntdTimelineSelector
-                year={currentYear}
-                month={currentMonth}
-                onYearChange={setCurrentYear}
-                onMonthChange={setCurrentMonth}
-            />
-
             <div className="map-content">
-                <div className="map-wrapper">
                     <MapContainer
-                        className="full-height-map leaflet-map"
+                        className="full-height-map"
                         center={[10, 12]}
                         zoom={5}
-                        style={{ height: '100%', width: '100%' }}
                         whenCreated={setMap}
                     >
                         <TileLayer
@@ -639,7 +641,6 @@ const EnhancedClimateMap: React.FC = () => {
                         unit="°C"
                     />
 
-                </div>
             </div>
 
         </div>
