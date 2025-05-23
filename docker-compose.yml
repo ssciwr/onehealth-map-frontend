@@ -1,0 +1,20 @@
+services:
+  frontend:
+    image: ghcr.io/jmsssc/mock-mapping-frontend:${ONEHEALTH_FRONTEND_DOCKER_IMAGE_TAG:-latest}
+    build:
+      context: ./frontend
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ${ONEHEALTH_SSL_CERT:-./cert.pem}:/onehealth_ssl_cert.pem
+      - ${ONEHEALTH_SSL_KEY:-./key.pem}:/onehealth_ssl_key.pem
+      # to allow certbot to renew SSL certificates:
+      - /var/www/certbot:/var/www/certbot:ro
+    logging:
+      driver: "local"
+      options:
+        max-size: 20m
+        max-file: 25
+
+#  WIP in progress based on similar repo (Mondey) GHCR not set up yet/CI not set up yet.
