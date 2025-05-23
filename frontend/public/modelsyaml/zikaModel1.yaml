@@ -1,0 +1,11 @@
+id: zika-f91
+virus-type: zika
+model-name: Model F91
+title: Zika Virus
+description: Mosquito-transmitted disease with mild symptoms
+emoji: 🌡️
+icon: Activity
+color: '#99ff00'
+details: Integrated Zika surveillance model combining climate variables with demographic
+  and mobility data. Uses temperature and precipitation forecasts to predict vector
+  activity and disease spread patterns across urban environments.

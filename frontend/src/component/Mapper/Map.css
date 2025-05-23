@@ -12,13 +12,26 @@
     padding:10px;
 }
 
+.map-content-wrapper {
+    display: flex;
+    gap: 20px;
+    padding: 20px;
+}
+
+.map-content {
+    flex: 1;
+}
+
+.legend-sidebar {
+    width: 200px;
+    flex-shrink: 0;
+}
+
 .full-height-map {
-    height: 80vh; /* needed to expand out otherwise, it won't appear! */
+    height: 80vh;
     min-height: 80vh;
-    min-width: 70vw;
-    width:100%;
-    padding: 10px;
-    margin: 10px;
+    width: 100%;
+    border-radius: 16px;
 }
 
 .map-header {
@@ -52,12 +65,9 @@
     margin: 0;
 }
 
-.map-content {
-    padding: 20px
-}
-
 .map-bottom-bar {
     border-top: 1px solid grey;
+    padding: 20px;
 }
 
 .control-section {
@@ -158,11 +168,13 @@
     color: #DE350B;
 }
 
-.map-legend {
+.dynamic-legend {
     background: white;
     border: 1px solid #DFE1E6;
     border-radius: 0.5rem;
     padding: 1rem;
+    position: sticky;
+    top: 20px;
 }
 
 .legend-title {
@@ -172,28 +184,31 @@
     margin: 0 0 0.75rem 0;
 }
 
-.legend-items {
+.legend-gradient {
     display: flex;
-    flex-direction: column;
+    align-items: stretch;
+    height: 200px;
     gap: 0.5rem;
 }
 
-.legend-item {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    font-size: 0.813rem;
-}
-
-.legend-color {
-    width: 24px;
-    height: 18px;
+.gradient-bar {
+    width: 20px;
+    height: 100%;
     border-radius: 0.25rem;
     border: 1px solid rgba(0, 0, 0, 0.1);
 }
 
-.legend-label {
+.legend-labels {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    font-size: 0.75rem;
     color: #42526E;
+    padding: 0.25rem 0;
+}
+
+.legend-max, .legend-mid, .legend-min {
+    font-weight: 500;
 }
 
 .model-selector {
@@ -346,10 +361,6 @@
     height: 16px;
 }
 
-.map-wrapper {
-    background: #E5E7EB;
-}
-
 .leaflet-popup-content-wrapper {
     border-radius: 0.5rem;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
@@ -381,6 +392,10 @@
     color: #172B4D;
 }
 
+.tertiary {
+    color: #6B778C;
+    font-size: 0.813rem;
+}
 
 .map-sidebar::-webkit-scrollbar-track,
 .virus-list::-webkit-scrollbar-track {
@@ -401,23 +416,39 @@
 
 /* Responsive Design */
 @media (max-width: 1024px) {
-
     .model-dropdown {
         min-width: 280px;
+    }
+
+    .map-content-wrapper {
+        flex-direction: column;
+    }
+
+    .legend-sidebar {
+        width: 100%;
+    }
+
+    .legend-gradient {
+        height: 60px;
+        flex-direction: row;
+    }
+
+    .gradient-bar {
+        width: 100%;
+        height: 20px;
+    }
+
+    .legend-labels {
+        flex-direction: row;
+        justify-content: space-between;
+        padding: 0.25rem;
     }
 }
 
 @media (max-width: 768px) {
-    .map-header {
-        /*
-        flex-direction: column;
-        gap: 1rem;
-        align-items: flex-start;
-        */
-    }
-
-    .map-content {
-        /*flex-direction: column;*/
+    .map-content-wrapper {
+        padding: 10px;
+        gap: 10px;
     }
 
     .map-sidebar {
@@ -425,7 +456,7 @@
         max-height: 300px;
         border-right: none;
         border-top: 1px solid #e5e7eb;
-        margin-top:50px
+        margin-top: 50px;
     }
 
     .map-wrapper {

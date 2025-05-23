@@ -1,0 +1,11 @@
+id: west-nile-b34
+virus-type: west-nile
+model-name: Model B34
+title: West Nile Virus
+description: Mosquito-borne disease affecting humans and animals
+emoji: 🦟
+icon: Bug
+color: '#754910'
+details: Comprehensive epidemiological model combining satellite imagery, ground-based
+  weather data, and vector surveillance. Integrates CDC surveillance data with real-time
+  climate monitoring to forecast outbreak probability and intensity.

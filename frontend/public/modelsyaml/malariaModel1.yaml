@@ -1,0 +1,11 @@
+id: malaria-d45
+virus-type: malaria
+model-name: Model D45
+title: Malaria
+description: Parasitic disease spread through infected mosquitoes
+emoji: 🩸
+icon: Droplets
+color: '#9c27b0'
+details: Dynamic malaria risk assessment model utilizing temperature, humidity, and
+  rainfall data from regional meteorological networks. Accounts for altitude, vegetation
+  indices, and water body proximity to predict Anopheles mosquito habitats.

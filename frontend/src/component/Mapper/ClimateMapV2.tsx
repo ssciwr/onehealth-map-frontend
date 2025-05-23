@@ -13,8 +13,6 @@ import ModelSelector from "./InterfaceInputs/ModelSelector.tsx";
 import AntdTimelineSelector from "./AntdTimelineSelector.tsx";
 import {VIRUSES} from "./virusConstants.ts";
 import OptimismLevelSelector from "./InterfaceInputs/OptimistimSelector.tsx";
-import MapLegend from "./MapLegend.tsx";
-import {getColorFromGradient} from "./mapGradientUtilities.tsx";
 import GeneralCard from "./Multiuse/GeneralCard.tsx";
 
 // Types
@@ -71,6 +69,110 @@ interface ViewportBounds {
     zoom: number;
 }
 
+interface DataExtremes {
+    min: number;
+    max: number;
+}
+
+// Color schemes based on data type
+const COLOR_SCHEMES = {
+    virus: {
+        low: '#4ade80', // green
+        high: '#8b5cf6'  // purple
+    },
+    climate: {
+        low: '#22c55e', // green
+        high: '#ef4444'  // red
+    },
+    rainfall: {
+        low: '#ffffff', // white
+        high: '#3b82f6'  // blue
+    },
+    default: {
+        low: '#22c55e', // green
+        high: '#ef4444'  // red
+    }
+};
+
+// Utility functions for color interpolation
+const hexToRgb = (hex: string) => {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? {
+        r: parseInt(result[1], 16),
+        g: parseInt(result[2], 16),
+        b: parseInt(result[3], 16)
+    } : null;
+};
+
+const rgbToHex = (r: number, g: number, b: number) => {
+    return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+};
+
+const interpolateColor = (color1: string, color2: string, factor: number) => {
+    const c1 = hexToRgb(color1);
+    const c2 = hexToRgb(color2);
+
+    if (!c1 || !c2) return color1;
+
+    const r = Math.round(c1.r + factor * (c2.r - c1.r));
+    const g = Math.round(c1.g + factor * (c2.g - c1.g));
+    const b = Math.round(c1.b + factor * (c2.b - c1.b));
+
+    return rgbToHex(r, g, b);
+};
+
+const getColorFromGradient = (value: number, extremes: DataExtremes, dataType: string) => {
+    if (extremes.min === extremes.max) return COLOR_SCHEMES[dataType]?.low || COLOR_SCHEMES.default.low;
+
+    const normalizedValue = (value - extremes.min) / (extremes.max - extremes.min);
+    const clampedValue = Math.max(0, Math.min(1, normalizedValue));
+
+    const scheme = COLOR_SCHEMES[dataType] || COLOR_SCHEMES.default;
+    return interpolateColor(scheme.low, scheme.high, clampedValue);
+};
+
+const detectDataType = (csvName: string): string => {
+    const name = csvName.toLowerCase();
+    if (name.includes('virus')) return 'virus';
+    if (name.includes('climate')) return 'climate';
+    if (name.includes('rainfall') || name.includes('rain')) return 'rainfall';
+    return 'default';
+};
+
+// Dynamic Legend Component
+const DynamicLegend = ({ extremes, dataType, unit = "°C" }) => {
+    if (!extremes) return null;
+
+    const scheme = COLOR_SCHEMES[dataType] || COLOR_SCHEMES.default;
+    const steps = 10;
+    const gradientStops = [];
+
+    for (let i = 0; i <= steps; i++) {
+        const factor = i / steps;
+        const color = interpolateColor(scheme.low, scheme.high, factor);
+        const value = extremes.min + (extremes.max - extremes.min) * factor;
+        gradientStops.push({ color, value, factor });
+    }
+
+    return (
+        <div className="dynamic-legend">
+            <h4 className="legend-title">Data Range</h4>
+            <div className="legend-gradient">
+                <div
+                    className="gradient-bar"
+                    style={{
+                        background: `linear-gradient(to top, ${scheme.low}, ${scheme.high})`
+                    }}
+                />
+                <div className="legend-labels">
+                    <span className="legend-max">{extremes.max.toFixed(1)}{unit}</span>
+                    <span className="legend-mid">{((extremes.min + extremes.max) / 2).toFixed(1)}{unit}</span>
+                    <span className="legend-min">{extremes.min.toFixed(1)}{unit}</span>
+                </div>
+            </div>
+        </div>
+    );
+};
 
 // Stats Panel Component
 const StatsPanel = ({ stats, temperatureDataCount, currentResolution, viewport }) => {
@@ -114,7 +216,7 @@ const StatsPanel = ({ stats, temperatureDataCount, currentResolution, viewport }
 };
 
 // Adaptive Grid - will autodetect data size and rescale according to viewport zoom.
-const AdaptiveGridLayer = ({ dataPoints, viewport, resolutionLevel, gradientKey }) => {
+const AdaptiveGridLayer = ({ dataPoints, viewport, resolutionLevel, extremes, dataType }) => {
     const [gridCells, setGridCells] = useState<GridCell[]>([]);
     const prevViewportRef = useRef<ViewportBounds | null>(null);
     const prevResolutionRef = useRef<number>(resolutionLevel);
@@ -130,8 +232,7 @@ const AdaptiveGridLayer = ({ dataPoints, viewport, resolutionLevel, gradientKey 
         else if (zoom < 5) gridSize = 1;
         else if (zoom < 7) gridSize = 0.5;
         else if (zoom < 9) gridSize = 0.3;
-        else gridSize = 0.1; // todo: Update to "smallestDataResolution" which should be precalcualted
-        // It already was calculated in old code when determining the grid cells
+        else gridSize = 0.1;
 
         const cellMap = new Map<string, { sum: number; count: number; bounds: L.LatLngBoundsExpression }>();
         const buffer = gridSize * 2;
@@ -207,7 +308,7 @@ const AdaptiveGridLayer = ({ dataPoints, viewport, resolutionLevel, gradientKey 
                     bounds={cell.bounds}
                     pathOptions={{
                         color: 'transparent',
-                        fillColor: getColorFromGradient(cell.temperature, gradientKey),
+                        fillColor: getColorFromGradient(cell.temperature, extremes, dataType),
                         fillOpacity: 0.7,
                         weight: 0
                     }}
@@ -235,24 +336,33 @@ const EnhancedClimateMap: React.FC = () => {
     const [resolutionLevel, setResolutionLevel] = useState<number>(1);
     const [selectedModel, setSelectedModel] = useState<string>('temperature');
     const [selectedOptimism, setSelectedOptimism] = useState<string>('optimistic');
-    const [selectedGradient, setSelectedGradient] = useState<string>('temperature');
     const [currentYear, setCurrentYear] = useState<number>(2025);
     const [currentMonth, setCurrentMonth] = useState<number>(1);
     const [map, setMap] = useState(null);
+    const [dataExtremes, setDataExtremes] = useState<DataExtremes | null>(null);
+    const [dataType, setDataType] = useState<string>('default');
+    const [currentDataName, setCurrentDataName] = useState<string>('');
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const getOptimismLevels = (model) => ['optimistic', 'realistic', 'pessimistic']
 
+    // Calculate data extremes
+    const calculateExtremes = (data: any[]): DataExtremes => {
+        if (!data || data.length === 0) return { min: 0, max: 0 };
+
+        const temperatures = data.map(point => point.temperature).filter(temp => !isNaN(temp));
+        return {
+            min: Math.min(...temperatures),
+            max: Math.max(...temperatures)
+        };
+    };
+
     // Load temperature data
     const loadTemperatureData = async (year) => {
         try {
-            // Full highest granularity 0.1 data:
-            //const response = await fetch("era5_data_2024_01_02_monthly_area_celsius_january.csv");
-
-            // Full highest granualrity dynamic data:
-            // const dataPath = currentYear.toString() + "_data_05res.csv"
             const dataPath = year.toString() + "_data_january_05res.csv"
             console.log("DataPath:", dataPath)
+            setCurrentDataName(dataPath);
             const response = await fetch(dataPath);
             const text = await response.text();
             const rows = text.split('\n').slice(1).filter(row => row.trim() !== '');
@@ -284,7 +394,10 @@ const EnhancedClimateMap: React.FC = () => {
                 }
             }
 
-            setTemperatureData([...dataPoints]); // need to respread so React... reacts!
+            setTemperatureData([...dataPoints]);
+            const extremes = calculateExtremes(dataPoints);
+            setDataExtremes(extremes);
+            setDataType(detectDataType(dataPath));
             console.log("Updated temperature data!")
         } catch (err: any) {
             console.error('Failed to load temperature data:', err);
@@ -357,6 +470,7 @@ const EnhancedClimateMap: React.FC = () => {
 
         setLoading(true);
         setError(null);
+        setCurrentDataName(file.name);
 
         const reader = new FileReader();
         reader.onload = (e) => {
@@ -383,6 +497,22 @@ const EnhancedClimateMap: React.FC = () => {
             const geoJSON = nutsMapper.parseNutsCSV(csvData);
             setNutsGeoJSON(geoJSON as NutsGeoJSON);
             setStats(nutsMapper.getStats());
+
+            // Calculate extremes for NUTS data
+            if (geoJSON && geoJSON.features) {
+                const intensities = geoJSON.features
+                    .map(feature => feature.properties.intensity)
+                    .filter(intensity => intensity !== null && !isNaN(intensity));
+
+                if (intensities.length > 0) {
+                    const extremes = {
+                        min: Math.min(...intensities),
+                        max: Math.max(...intensities)
+                    };
+                    setDataExtremes(extremes);
+                    setDataType(detectDataType(currentDataName));
+                }
+            }
         } catch (err: any) {
             console.error('Error processing CSV data:', err);
             setError(err.message);
@@ -437,8 +567,6 @@ const EnhancedClimateMap: React.FC = () => {
 
     const handleModelSelect = (modelId: string) => {
         setSelectedModel(modelId);
-        // TODO: Load model-specific data based on year and month
-        // const filename = `${modelId}_${currentYear}-${String(currentMonth).padStart(2, '0')}.csv`;
     };
 
     const getOutbreakColor = (category: string): string => {
@@ -448,7 +576,7 @@ const EnhancedClimateMap: React.FC = () => {
 
     const style = (feature: any) => {
         return {
-            fillColor: getColorFromGradient(feature.properties.intensity || 0, selectedGradient),
+            fillColor: dataExtremes ? getColorFromGradient(feature.properties.intensity || 0, dataExtremes, dataType) : '#cccccc',
             weight: 1,
             opacity: 1,
             color: 'white',
@@ -499,9 +627,8 @@ const EnhancedClimateMap: React.FC = () => {
     return (
         <div className="climate-map-container">
             <div className="header-section center">
-                <GeneralCard>
+                <GeneralCard style={{ width: 'fit-content' }}>
                     <div className="logo-section">
-                        {/* Todo: Replace with logo once we have permission */}
                         <h1 className="map-title">
                             <span className="title-one">One</span>
                             <span className="title-health">Health</span>
@@ -530,7 +657,8 @@ const EnhancedClimateMap: React.FC = () => {
                 />
             </div>
 
-            <div className="map-content">
+            <div className="map-content-wrapper">
+                <div className="map-content">
                     <MapContainer
                         className="full-height-map"
                         center={[10, 12]}
@@ -543,12 +671,13 @@ const EnhancedClimateMap: React.FC = () => {
                         />
 
                         <Pane name="gridPane" style={{ zIndex: 1550, opacity: 0.5 }}>
-                            {temperatureData.length > 0 && viewport && (
+                            {temperatureData.length > 0 && viewport && dataExtremes && (
                                 <AdaptiveGridLayer
                                     dataPoints={[...temperatureData]}
                                     viewport={viewport}
                                     resolutionLevel={resolutionLevel}
-                                    gradientKey={selectedGradient}
+                                    extremes={dataExtremes}
+                                    dataType={dataType}
                                 />
                             )}
                         </Pane>
@@ -593,56 +722,57 @@ const EnhancedClimateMap: React.FC = () => {
                         <ViewportMonitor onViewportChange={handleViewportChange} />
                     </MapContainer>
                 </div>
-                <div className="map-bottom-bar">
-                    <div className="control-section">
-                        <button
-                            onClick={loadNutsData}
-                            disabled={loading}
-                            className="primary-button"
-                        >
-                            <Layers size={18} />
-                            {loading ? 'Loading...' : 'Load NUTS Regions'}
-                        </button>
 
-                        <button
-                            onClick={handleUploadClick}
-                            disabled={loading}
-                            className="secondary-button"
-                        >
-                            Upload NUTS CSV
-                        </button>
-
-                        <input
-                            type="file"
-                            ref={fileInputRef}
-                            onChange={handleFileUpload}
-                            accept=".csv"
-                            style={{ display: 'none' }}
-                        />
-                    </div>
-
-                    {error && (
-                        <div className="error-message">
-                            <p>{error}</p>
-                        </div>
-                    )}
-
-                    <StatsPanel
-                        stats={stats}
-                        temperatureDataCount={temperatureData.length}
-                        currentResolution={resolutionLevel}
-                        viewport={viewport}
-                    />
-
-                    <MapLegend
-                        gradientKey={selectedGradient}
-                        minValue={-20}
-                        maxValue={40}
+                <div className="legend-sidebar">
+                    <DynamicLegend
+                        extremes={dataExtremes}
+                        dataType={dataType}
                         unit="°C"
                     />
-
+                </div>
             </div>
 
+            <div className="map-bottom-bar">
+                <div className="control-section">
+                    <button
+                        onClick={loadNutsData}
+                        disabled={loading}
+                        className="primary-button"
+                    >
+                        <Layers size={18} />
+                        {loading ? 'Loading...' : 'Load NUTS Regions'}
+                    </button>
+
+                    <button
+                        onClick={handleUploadClick}
+                        disabled={loading}
+                        className="secondary-button"
+                    >
+                        Upload NUTS CSV
+                    </button>
+
+                    <input
+                        type="file"
+                        ref={fileInputRef}
+                        onChange={handleFileUpload}
+                        accept=".csv"
+                        style={{ display: 'none' }}
+                    />
+                </div>
+
+                {error && (
+                    <div className="error-message">
+                        <p>{error}</p>
+                    </div>
+                )}
+
+                <StatsPanel
+                    stats={stats}
+                    temperatureDataCount={temperatureData.length}
+                    currentResolution={resolutionLevel}
+                    viewport={viewport}
+                />
+            </div>
         </div>
     );
 };
