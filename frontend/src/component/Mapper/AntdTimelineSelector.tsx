@@ -1,6 +1,7 @@
 import React from 'react';
 import { Slider, Select, Card, Typography, Space, Tooltip } from 'antd';
 import { CalendarOutlined } from '@ant-design/icons';
+import GeneralCard from "./Multiuse/GeneralCard.tsx";
 
 const { Text } = Typography;
 const { Option } = Select;
@@ -23,14 +24,7 @@ const AntdTimelineSelector = ({ year, month, onYearChange, onMonthChange }) => {
     };
 
     return (
-        <Card
-            style={{
-                borderRadius: 16,
-                boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-                border: "1px solid lightgray",
-                margin:"10px"
-            }}
-        >
+        <GeneralCard>
             <Space size="large" style={{ width: '100%', alignItems: 'center' }}>
                 <div style={{ flex: 1, minWidth: 600, padding: '0 16px' }}>
                     <Text type="secondary" style={{ fontSize: 12, marginBottom: 8 }}>
@@ -63,7 +57,7 @@ const AntdTimelineSelector = ({ year, month, onYearChange, onMonthChange }) => {
                     ))}
                 </Select>
             </Space>
-        </Card>
+        </GeneralCard>
     );
 };
 

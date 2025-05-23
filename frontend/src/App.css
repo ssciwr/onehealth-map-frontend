@@ -1,1 +1,12 @@
 /* None for now */
+
+.text-primary {
+    color: black;
+    font-size:2em;
+}
+
+.tertiary {
+    color: rgb(100,100,100);
+}
+
+.center { text-align: center; }
