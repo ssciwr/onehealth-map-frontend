@@ -2,10 +2,12 @@ import pandas as pd
 import numpy as np
 import os
 
+high_res = False # just do 0.5 for now.
+
 def calculate_temperature_increase(latitude, max_increase=10, gradient_strength=1.0):
     """
     Calculate temperature increase based on latitude.
-    Higher absolute latitudes get higher increases.
+    Lower absolute latitudes get higher increases.
 
     Args:
         latitude: The latitude value (-90 to 90)
@@ -22,7 +24,8 @@ def calculate_temperature_increase(latitude, max_increase=10, gradient_strength=
     # Power of 2 makes the increase more pronounced at higher latitudes
     increase = max_increase * (normalized_lat ** 2) * gradient_strength
 
-    return increase
+    # Flip to make a decrease generally at higher extreme latitudes
+    return -increase
 
 def process_climate_data(input_file, output_dir=None):
     """
@@ -57,9 +60,9 @@ def process_climate_data(input_file, output_dir=None):
         # Base gradient strength varies between 0.7 and 1.3
         # with some random variation
         years_since_2025 = year - 2025
-        base_gradient = 0.7 + (years_since_2025 / 20) * 0.6  # Linear increase
+        base_gradient = 0.7 + (years_since_2025 / 20) * 3  # Linear increase
         random_variation = np.random.uniform(-0.1, 0.1)  # Random variation
-        gradient_strength = np.clip(base_gradient + random_variation, 0.5, 1.5)
+        gradient_strength = np.clip(base_gradient + random_variation, 0.5, 8)
 
         # Apply temperature adjustments
         temperature_increases = []
@@ -67,11 +70,11 @@ def process_climate_data(input_file, output_dir=None):
             latitude = row['latitude']
             temp_increase = calculate_temperature_increase(
                 latitude,
-                max_increase=10,
+                max_increase=40,
                 gradient_strength=gradient_strength
             )
-            # Add small random noise to each point (±0.2°C)
-            noise = np.random.uniform(-0.2, 0.2)
+            # Add small random noise to each point (±0.5°C)
+            noise = np.random.uniform(-0.5, 0.5)
             temp_increase += noise
 
             temperature_increases.append(temp_increase)
@@ -83,7 +86,7 @@ def process_climate_data(input_file, output_dir=None):
         df_year['valid_time'] = df_year['valid_time'].str.replace('2024', str(year))
 
         # Save the file
-        output_filename = f"{year}_data_05res.csv"
+        output_filename = f"{year}_data_january.csv" if high_res else f"{year}_data_january_05res.csv"
         output_path = os.path.join(output_dir, output_filename)
         df_year.to_csv(output_path, index=False)
 
@@ -100,7 +103,8 @@ def main():
     Main function to run the climate data processor.
     """
     # Configuration
-    input_file = "era5_data_2024_01_02_monthly_area_celsius_january.csv"  # Adjust this path as needed
+    input_file = "era5_data_2024_01_02_monthly_area_celsius_january.csv" if high_res else \
+    "era5_data_2024_01_02_monthly_area_celsius_january_05res.csv"
     output_dir = None  # Will save in same directory as input file
 
     # Check if input file exists
