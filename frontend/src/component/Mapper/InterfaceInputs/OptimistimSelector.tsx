@@ -1,48 +1,52 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { ChevronDown, TrendingUp, BarChart3, Info } from "lucide-react";
+import { observer } from 'mobx-react-lite';
+import { viewingMode } from "../../../stores/ViewingModeStore.ts";
 
-const OPTIMISM_LEVELS = [
-    {
-        id: 'pessimistic',
-        title: 'Pessimistic',
-        description: 'Conservative estimates with worst-case scenarios',
-        emoji: '📉',
-        icon: TrendingUp,
-        color: '#DE350B'
-    },
-    {
-        id: 'realistic',
-        title: 'Realistic',
-        description: 'Balanced projections based on current trends',
-        emoji: '📊',
-        icon: BarChart3,
-        color: '#0052CC'
-    },
-    {
-        id: 'optimistic',
-        title: 'Optimistic',
-        description: 'Best-case scenarios with favorable conditions',
-        emoji: '📈',
-        icon: TrendingUp,
-        color: '#36B37E'
-    }
-];
-
-const OptimismLevelSelector = ({ availableOptimismLevels, selectedOptimism, setOptimism } : {
+const OptimismLevelSelector = observer(({ availableOptimismLevels, selectedOptimism, setOptimism } : {
     availableOptimismLevels: Array<string>, selectedOptimism: string, setOptimism: (newOptimismLevel: string) => void;
 }) => {
     const [isOpen, setIsOpen] = useState(false);
 
-    // Filter available levels based on what's passed in
-    const filteredLevels = OPTIMISM_LEVELS.filter(level =>
-        availableOptimismLevels.includes(level.id)
+    // Define OPTIMISM_LEVELS with reactive title based on viewingMode
+    const OPTIMISM_LEVELS = useMemo(() => [
+        {
+            id: 'pessimistic',
+            title: 'Pessimistic',
+            description: 'Conservative estimates with worst-case scenarios',
+            emoji: '📉',
+            icon: TrendingUp,
+            color: '#DE350B'
+        },
+        {
+            id: 'realistic',
+            title: viewingMode.isExpert ? "Normative" : "Realistic",
+            description: 'Balanced projections based on current trends',
+            emoji: '📊',
+            icon: BarChart3,
+            color: '#0052CC'
+        },
+        {
+            id: 'optimistic',
+            title: 'Optimistic',
+            description: 'Best-case scenarios with favorable conditions',
+            emoji: '📈',
+            icon: TrendingUp,
+            color: '#36B37E'
+        }
+    ], [viewingMode.isExpert, viewingMode.isCitizen]);
+
+    // Filter available levels based on what's passed in - also reactive
+    const filteredLevels = useMemo(() =>
+        OPTIMISM_LEVELS.filter(level =>
+            availableOptimismLevels.includes(level.id)
+        ), [OPTIMISM_LEVELS, availableOptimismLevels]
     );
 
     const selectedLevel = OPTIMISM_LEVELS.find(level => level.id === selectedOptimism);
 
     return (
         <span className="model-selector">
-
             <button
                 className="model-selector-button"
                 onClick={() => setIsOpen(!isOpen)}
@@ -91,6 +95,6 @@ const OptimismLevelSelector = ({ availableOptimismLevels, selectedOptimism, setO
             )}
         </span>
     );
-};
+});
 
 export default OptimismLevelSelector;

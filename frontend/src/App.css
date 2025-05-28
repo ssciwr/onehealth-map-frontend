@@ -10,3 +10,11 @@
 }
 
 .center { text-align: center; }
+
+:root {
+    --primary: #00437d;
+    --brand: #a2274c; /* using brand rather than second/secondary because secondary is already a text type (lighter
+    smaller text) and in this case, this color is certainly not secondary/depromoting, just one of two equal parts. */
+    --white: #ffffff;
+    --dark: #303030;
+}

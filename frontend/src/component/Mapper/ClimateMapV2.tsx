@@ -14,6 +14,7 @@ import AntdTimelineSelector from "./AntdTimelineSelector.tsx";
 import {VIRUSES} from "./virusConstants.ts";
 import OptimismLevelSelector from "./InterfaceInputs/OptimistimSelector.tsx";
 import GeneralCard from "./Multiuse/GeneralCard.tsx";
+import {viewingMode} from "../../stores/ViewingModeStore.ts";
 
 // Types
 interface NutsProperties {
@@ -325,7 +326,7 @@ const AdaptiveGridLayer = ({ dataPoints, viewport, resolutionLevel, extremes, da
     );
 };
 
-const EnhancedClimateMap: React.FC = () => {
+const EnhancedClimateMap = ({onMount}) => {
     const [nutsGeoJSON, setNutsGeoJSON] = useState<NutsGeoJSON | null>(null);
     const [loading, setLoading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
@@ -343,6 +344,10 @@ const EnhancedClimateMap: React.FC = () => {
     const [dataType, setDataType] = useState<string>('default');
     const [currentDataName, setCurrentDataName] = useState<string>('');
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    useEffect(() => {
+        onMount();
+    })
 
     const getOptimismLevels = (model) => ['optimistic', 'realistic', 'pessimistic']
 
@@ -633,6 +638,7 @@ const EnhancedClimateMap: React.FC = () => {
                             <span className="title-one">One</span>
                             <span className="title-health">Health</span>
                             <span className="title-platform">Platform</span>
+                            <small className="tertiary"><i>&nbsp;{viewingMode.isExpert && "Expert Mode"}</i></small>
                         </h1>
                     </div>
 
