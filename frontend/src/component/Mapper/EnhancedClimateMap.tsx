@@ -8,92 +8,22 @@ import * as turf from '@turf/turf';
 import './Map.css'
 import {
     Layers,
+    MapPin,
 } from 'lucide-react';
+import { Button, message } from 'antd';
 import ModelSelector from "./InterfaceInputs/ModelSelector.tsx";
 import AntdTimelineSelector from "./AntdTimelineSelector.tsx";
 import {VIRUSES} from "./virusConstants.ts";
-import OptimismLevelSelector from "./InterfaceInputs/OptimistimSelector.tsx";
+import OptimismLevelSelector from "./InterfaceInputs/OptimismSelector.tsx";
 import GeneralCard from "./Multiuse/GeneralCard.tsx";
 import {viewingMode} from "../../stores/ViewingModeStore.ts";
+import AdaptiveGridLayer from "./AdaptiveGridLayer.tsx";
+import {COLOR_SCHEMES, DataExtremes, NutsGeoJSON, OutbreakData, ProcessingStats, ViewportBounds} from "./types.ts";
+import {getColorFromGradient} from "./gradientUtilities.ts";
+import DebugStatsPanel from "./DebugStatsPanel.tsx";
 
-// Types
-interface NutsProperties {
-    NUTS_ID: string;
-    intensity: number | null;
-}
-
-interface NutsGeometry {
-    type: string;
-    coordinates: any[][];
-}
-
-interface NutsFeature {
-    type: string;
-    properties: NutsProperties;
-    geometry: NutsGeometry;
-}
-
-interface NutsGeoJSON {
-    type: "FeatureCollection";
-    features: NutsFeature[];
-}
-
-interface OutbreakData {
-    id: string;
-    category: string;
-    location: string;
-    latitude: number;
-    longitude: number;
-    date: string;
-    cases: number;
-    notes?: string;
-}
-
-interface ProcessingStats {
-    processed: number;
-    skipped: number;
-    errors: number;
-    skippedRegions?: string[];
-}
-
-interface GridCell {
-    bounds: L.LatLngBoundsExpression;
-    temperature: number;
-    id: string;
-}
-
-interface ViewportBounds {
-    north: number;
-    south: number;
-    east: number;
-    west: number;
-    zoom: number;
-}
-
-interface DataExtremes {
-    min: number;
-    max: number;
-}
-
-// Color schemes based on data type
-const COLOR_SCHEMES = {
-    virus: {
-        low: '#4ade80', // green
-        high: '#8b5cf6'  // purple
-    },
-    climate: {
-        low: '#22c55e', // green
-        high: '#ef4444'  // red
-    },
-    rainfall: {
-        low: '#ffffff', // white
-        high: '#3b82f6'  // blue
-    },
-    default: {
-        low: '#22c55e', // green
-        high: '#ef4444'  // red
-    }
-};
+const MIN_ZOOM = 3.4;
+const MAX_ZOOM = 7;
 
 // Utility functions for color interpolation
 const hexToRgb = (hex: string) => {
@@ -120,16 +50,6 @@ const interpolateColor = (color1: string, color2: string, factor: number) => {
     const b = Math.round(c1.b + factor * (c2.b - c1.b));
 
     return rgbToHex(r, g, b);
-};
-
-const getColorFromGradient = (value: number, extremes: DataExtremes, dataType: string) => {
-    if (extremes.min === extremes.max) return COLOR_SCHEMES[dataType]?.low || COLOR_SCHEMES.default.low;
-
-    const normalizedValue = (value - extremes.min) / (extremes.max - extremes.min);
-    const clampedValue = Math.max(0, Math.min(1, normalizedValue));
-
-    const scheme = COLOR_SCHEMES[dataType] || COLOR_SCHEMES.default;
-    return interpolateColor(scheme.low, scheme.high, clampedValue);
 };
 
 const detectDataType = (csvName: string): string => {
@@ -175,158 +95,9 @@ const DynamicLegend = ({ extremes, dataType, unit = "°C" }) => {
     );
 };
 
-// Stats Panel Component
-const StatsPanel = ({ stats, temperatureDataCount, currentResolution, viewport }) => {
-    return (
-        <div className="stats-panel">
-            {stats.processed > 0 && (
-                <div className="stat-section">
-                    <h3>NUTS Processing</h3>
-                    <div className="stat-item">
-                        <span className="stat-label">Regions processed:</span>
-                        <span className="stat-value">{stats.processed}</span>
-                    </div>
-                    <div className="stat-item">
-                        <span className="stat-label">Regions skipped:</span>
-                        <span className="stat-value">{stats.skipped}</span>
-                    </div>
-                    {stats.errors > 0 && (
-                        <div className="stat-item error">
-                            <span className="stat-label">Errors:</span>
-                            <span className="stat-value">{stats.errors}</span>
-                        </div>
-                    )}
-                </div>
-            )}
 
-            <div className="stat-section">
-                <h3>Grid Data</h3>
-                <div className="stat-item">
-                    <span className="stat-label">Temperature points:</span>
-                    <span className="stat-value">{temperatureDataCount}</span>
-                </div>
-                {viewport && (
-                    <div className="stat-item">
-                        <span className="stat-label">Resolution:</span>
-                        <span className="stat-value">Level {currentResolution}</span>
-                    </div>
-                )}
-            </div>
-        </div>
-    );
-};
-
-// Adaptive Grid - will autodetect data size and rescale according to viewport zoom.
-const AdaptiveGridLayer = ({ dataPoints, viewport, resolutionLevel, extremes, dataType }) => {
-    const [gridCells, setGridCells] = useState<GridCell[]>([]);
-    const prevViewportRef = useRef<ViewportBounds | null>(null);
-    const prevResolutionRef = useRef<number>(resolutionLevel);
-    const prevFirstDatapointTemperature = useRef<number>(dataPoints[0].temperature);
-
-    const generateAdaptiveGridCells = useCallback(() => {
-        if (!viewport || !dataPoints || dataPoints.length === 0) return [];
-
-        const { north, south, east, west, zoom } = viewport;
-        let gridSize = 0.1;
-
-        if (zoom < 3) gridSize = 2;
-        else if (zoom < 5) gridSize = 1;
-        else if (zoom < 7) gridSize = 0.5;
-        else if (zoom < 9) gridSize = 0.3;
-        else gridSize = 0.1;
-
-        const cellMap = new Map<string, { sum: number; count: number; bounds: L.LatLngBoundsExpression }>();
-        const buffer = gridSize * 2;
-        const filteredData = dataPoints.filter(point =>
-            point.lat >= south - buffer &&
-            point.lat <= north + buffer &&
-            point.lng >= west - buffer &&
-            point.lng <= east + buffer
-        );
-
-        filteredData.forEach(point => {
-            const cellLat = Math.floor(point.lat / gridSize) * gridSize;
-            const cellLng = Math.floor(point.lng / gridSize) * gridSize;
-            const cellId = `${cellLat.toFixed(4)}_${cellLng.toFixed(4)}`;
-
-            const bounds: L.LatLngBoundsExpression = [
-                [cellLat, cellLng],
-                [cellLat + gridSize, cellLng + gridSize]
-            ];
-
-            if (cellMap.has(cellId)) {
-                const cell = cellMap.get(cellId)!;
-                cell.sum += point.temperature;
-                cell.count += 1;
-            } else {
-                cellMap.set(cellId, {
-                    sum: point.temperature,
-                    count: 1,
-                    bounds
-                });
-            }
-        });
-
-        const newGridCells: GridCell[] = [];
-        cellMap.forEach((cell, id) => {
-            newGridCells.push({
-                bounds: cell.bounds,
-                temperature: cell.sum / cell.count,
-                id
-            });
-        });
-
-        return newGridCells;
-    }, [dataPoints, viewport]);
-
-    useEffect(() => {
-        const hasViewportChanged = !prevViewportRef.current ||
-            (viewport && (
-                Math.abs(viewport.zoom - prevViewportRef.current.zoom) > 0.1 ||
-                Math.abs(viewport.north - prevViewportRef.current.north) > 0.1 ||
-                Math.abs(viewport.south - prevViewportRef.current.south) > 0.1 ||
-                Math.abs(viewport.east - prevViewportRef.current.east) > 0.1 ||
-                Math.abs(viewport.west - prevViewportRef.current.west) > 0.1
-            ));
-
-        const hasResolutionChanged = resolutionLevel !== prevResolutionRef.current;
-
-        const hasDataPointsChanged = prevFirstDatapointTemperature != dataPoints[0].temperature;
-
-        if (hasViewportChanged || hasResolutionChanged || hasDataPointsChanged) {
-            const newGridCells = generateAdaptiveGridCells();
-            setGridCells(newGridCells);
-            prevViewportRef.current = viewport;
-            prevResolutionRef.current = resolutionLevel;
-        }
-    }, [viewport, resolutionLevel, generateAdaptiveGridCells, dataPoints]);
-
-    return (
-        <>
-            {gridCells.map((cell) => (
-                <Rectangle
-                    key={cell.id}
-                    bounds={cell.bounds}
-                    pathOptions={{
-                        color: 'transparent',
-                        fillColor: getColorFromGradient(cell.temperature, extremes, dataType),
-                        fillOpacity: 0.7,
-                        weight: 0
-                    }}
-                >
-                    <Popup>
-                        <div className="grid-popup">
-                            <h4>Grid Cell</h4>
-                            <p>Temperature: {cell.temperature.toFixed(1)}°C</p>
-                        </div>
-                    </Popup>
-                </Rectangle>
-            ))}
-        </>
-    );
-};
-
-const EnhancedClimateMap = ({onMount}) => {
+// todo: Align with file name.
+const EnhancedClimateMap = ({onMount=() => false}) => {
     const [nutsGeoJSON, setNutsGeoJSON] = useState<NutsGeoJSON | null>(null);
     const [loading, setLoading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
@@ -344,6 +115,7 @@ const EnhancedClimateMap = ({onMount}) => {
     const [dataType, setDataType] = useState<string>('default');
     const [currentDataName, setCurrentDataName] = useState<string>('');
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const [isLocating, setIsLocating] = useState<boolean>(false);
 
     useEffect(() => {
         onMount();
@@ -372,6 +144,7 @@ const EnhancedClimateMap = ({onMount}) => {
             const text = await response.text();
             const rows = text.split('\n').slice(1).filter(row => row.trim() !== '');
 
+            // this doesn't seem to load sometimes?
             const sampleRate = 1;
             const dataPoints = [];
 
@@ -507,7 +280,7 @@ const EnhancedClimateMap = ({onMount}) => {
             if (geoJSON && geoJSON.features) {
                 const intensities = geoJSON.features
                     .map(feature => feature.properties.intensity)
-                    .filter(intensity => intensity !== null && !isNaN(intensity));
+                    .filter((intensity): intensity is number => intensity !== null && !isNaN(intensity));
 
                 if (intensities.length > 0) {
                     const extremes = {
@@ -577,6 +350,52 @@ const EnhancedClimateMap = ({onMount}) => {
     const getOutbreakColor = (category: string): string => {
         const virus = VIRUSES.find(v => v.title === category);
         return virus?.color || '#8A2BE2';
+    };
+
+    const handleLocationRequest = () => {
+        setIsLocating(true);
+
+        if (!navigator.geolocation) {
+            console.error('Geolocation is not supported by this browser');
+            setIsLocating(false);
+            return;
+        }
+
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const { latitude, longitude } = position.coords;
+                console.log("Have current position", latitude, longitude);
+                console.log("Let it rerender!")
+                // todo: Fix, this isn't working.
+                if (map) {
+                    console.log('Setting map psoition to: ', latitude, longitude);
+                    map.setView([latitude, longitude], 8);
+                    console.log('Zoomed to your location');
+                }
+                setIsLocating(false);
+            },
+            (error) => {
+                let errorMessage = 'Unable to get your location';
+                switch (error.code) {
+                    case error.PERMISSION_DENIED:
+                        errorMessage = 'Location permission denied';
+                        break;
+                    case error.POSITION_UNAVAILABLE:
+                        errorMessage = 'Location information unavailable';
+                        break;
+                    case error.TIMEOUT:
+                        errorMessage = 'Location request timed out';
+                        break;
+                }
+                console.error(errorMessage);
+                setIsLocating(false);
+            },
+            {
+                enableHighAccuracy: true,
+                timeout: 10000,
+                maximumAge: 60000
+            }
+        );
     };
 
     const style = (feature: any) => {
@@ -669,6 +488,8 @@ const EnhancedClimateMap = ({onMount}) => {
                         className="full-height-map"
                         center={[10, 12]}
                         zoom={5}
+                        minZoom={MIN_ZOOM}
+                        maxZoom={MAX_ZOOM}
                         whenCreated={setMap}
                     >
                         <TileLayer
@@ -727,6 +548,25 @@ const EnhancedClimateMap = ({onMount}) => {
 
                         <ViewportMonitor onViewportChange={handleViewportChange} />
                     </MapContainer>
+
+                    {viewingMode.isCitizen && (
+                        <div style={{
+                            position: 'absolute',
+                            bottom: '20px',
+                            left: '20px',
+                            zIndex: 1000
+                        }}>
+                            <Button
+                                type="primary"
+                                icon={<MapPin size={16} />}
+                                loading={isLocating}
+                                onClick={handleLocationRequest}
+                                size="large"
+                            >
+                                Show me
+                            </Button>
+                        </div>
+                    )}
                 </div>
 
                 <div className="legend-sidebar">
@@ -772,7 +612,7 @@ const EnhancedClimateMap = ({onMount}) => {
                     </div>
                 )}
 
-                <StatsPanel
+                <DebugStatsPanel
                     stats={stats}
                     temperatureDataCount={temperatureData.length}
                     currentResolution={resolutionLevel}

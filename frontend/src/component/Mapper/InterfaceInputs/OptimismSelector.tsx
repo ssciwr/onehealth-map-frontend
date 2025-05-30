@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import { ChevronDown, TrendingUp, BarChart3, Info } from "lucide-react";
 import { observer } from 'mobx-react-lite';
 import { viewingMode } from "../../../stores/ViewingModeStore.ts";

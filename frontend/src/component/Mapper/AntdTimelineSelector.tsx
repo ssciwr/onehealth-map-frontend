@@ -1,5 +1,5 @@
 import React from 'react';
-import { Slider, Select, Card, Typography, Space, Tooltip, Grid } from 'antd';
+import { Slider, Select, Typography, Tooltip, Grid } from 'antd';
 import { CalendarOutlined } from '@ant-design/icons';
 import GeneralCard from "./Multiuse/GeneralCard.tsx";
 
@@ -7,7 +7,19 @@ const { Text } = Typography;
 const { Option } = Select;
 const { useBreakpoint } = Grid;
 
-const AntdTimelineSelector = ({ year, month, onYearChange, onMonthChange }) => {
+interface AntdTimelineSelectorProps {
+    year: number;
+    month: number;
+    onYearChange: (value: number) => void;
+    onMonthChange: (value: number) => void;
+}
+
+const AntdTimelineSelector: React.FC<AntdTimelineSelectorProps> = ({
+                                                                       year,
+                                                                       month,
+                                                                       onYearChange,
+                                                                       onMonthChange
+                                                                   }) => {
     const screens = useBreakpoint();
     const isMobile = !screens.md; // Mobile when screen is smaller than md breakpoint
 
@@ -47,7 +59,7 @@ const AntdTimelineSelector = ({ year, month, onYearChange, onMonthChange }) => {
                     width: '100%'
                 }}>
                     {/* Year input - slider on desktop, dropdown on mobile */}
-                    <div style={{ flex: 1, paddingRight:"10px" }}>
+                    <div style={{ flex: 1, paddingRight: "10px" }}>
                         {isMobile ? (
                             <Select
                                 value={year}
@@ -56,7 +68,7 @@ const AntdTimelineSelector = ({ year, month, onYearChange, onMonthChange }) => {
                                 placeholder="Select Year"
                                 showSearch
                                 filterOption={(input, option) =>
-                                    option.children.toString().toLowerCase().includes(input.toLowerCase())
+                                    option?.children?.toString().toLowerCase().includes(input.toLowerCase()) ?? false
                                 }
                             >
                                 {yearOptions.map((yearOption) => (
@@ -72,9 +84,15 @@ const AntdTimelineSelector = ({ year, month, onYearChange, onMonthChange }) => {
                                     min={1960}
                                     max={2100}
                                     marks={marks}
-                                    included={true}
+                                    included={false}
                                     onChange={onYearChange}
-                                    trackStyle={{ background: '#1890ff' }}
+                                    trackStyle={{ background: 'transparent' }}
+                                    railStyle={{ background: '#d9d9d9' }}
+                                    handleStyle={{
+                                        borderColor: '#1890ff',
+                                        backgroundColor: '#1890ff',
+                                        boxShadow: '0 2px 6px rgba(24, 144, 255, 0.3)'
+                                    }}
                                     style={{ width: '100%' }}
                                 />
                             </Tooltip>

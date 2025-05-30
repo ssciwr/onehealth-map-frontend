@@ -3,7 +3,7 @@ import { ChevronDown, Plug } from "lucide-react";
 import { Button, Dropdown, Space, Typography } from 'antd';
 import type { MenuProps } from 'antd';
 import ModelDetailsModal from './ModelDetailsModal';
-const { Title, Text, Paragraph } = Typography;
+const { Title } = Typography;
 
 // YAML parsing function
 const parseYamlText = (yamlText: string): any => {
