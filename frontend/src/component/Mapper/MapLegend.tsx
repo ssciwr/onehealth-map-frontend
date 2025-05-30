@@ -1,8 +1,13 @@
-// Legend Component
 import {GRADIENT_PRESETS} from "./gradientUtilities.ts";
 
-// currently unused, should go on the right side of the map so theuser can scroll.
-export default ({ gradientKey, minValue, maxValue, unit = '' }) => {
+interface MapLegendProps {
+    gradientKey: string;
+    minValue: number;
+    maxValue: number;
+    unit?: string;
+}
+
+export default ({ gradientKey, unit = '' }: MapLegendProps) => {
     const gradient = GRADIENT_PRESETS[gradientKey];
     if (!gradient) return null;
 

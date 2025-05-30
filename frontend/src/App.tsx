@@ -3,12 +3,19 @@ import { observer } from 'mobx-react-lite'
 import './App.css'
 import Overview from './pages/Overview'
 import NutsMapV5 from "./component/NUTSMapper/NutsMapV5.tsx";
-import ClimateMapV2 from "./component/Mapper/ClimateMapV2.tsx";
-import MapWithModal from './components/MapWithModal.tsx';
+import EnhancedClimateMap from "./component/Mapper/EnhancedClimateMap.tsx";
 import { viewingMode } from './stores/ViewingModeStore';
 import MapWithExpertiseModal from "./component/Mapper/InterfaceInputs/MapWithExpertiseModal.tsx";
+import NotFound from "./pages/NotFound.tsx";
 
 const App = observer(() => {
+
+    /*
+
+    Note if you edit these routes: The order matters. An earlier matching route can match what you really intended
+    a later route to match. that is why the not found and / route are last.
+
+     */
     return (
         <>
             <Routes>
@@ -16,7 +23,7 @@ const App = observer(() => {
                 <Route
                     path="/map/citizen"
                     element={
-                        <ClimateMapV2
+                        <EnhancedClimateMap
                             onMount={() => {
                                 viewingMode.isCitizen = true;
                                 viewingMode.isExpert = false;
@@ -27,7 +34,7 @@ const App = observer(() => {
                 <Route
                     path="/map/expert"
                     element={
-                        <ClimateMapV2
+                        <EnhancedClimateMap
                             onMount={() => {
                                 viewingMode.isExpert = true;
                                 viewingMode.isCitizen = false;
@@ -35,9 +42,16 @@ const App = observer(() => {
                         />
                     }
                 />
+                <Route
+                    path="/map/third"
+                    element={
+                        <EnhancedClimateMap />
+                    }
+                />
                 <Route path="/map" element={<MapWithExpertiseModal />} />
-                <Route path="/" element={<ClimateMapV2 />} />
                 <Route path="/OldOverview" element={<Overview />} />
+                <Route path="/" element={<EnhancedClimateMap />} />
+                <Route path="*" element={<NotFound />} />
             </Routes>
         </>
     )

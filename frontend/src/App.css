@@ -18,3 +18,9 @@
     --white: #ffffff;
     --dark: #303030;
 }
+
+@media (min-width: 768px) {
+    .horizontal-margin-on-medium-up {
+        margin: 10vh 15vw;
+    }
+}
