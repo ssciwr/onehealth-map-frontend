@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { MapContainer, TileLayer, GeoJSON, Popup, CircleMarker, Pane } from 'react-leaflet';
 import NutsMapperV5 from '../NUTSMapper/nuts_mapper_v5';
 import 'leaflet/dist/leaflet.css';
@@ -404,7 +404,9 @@ const EnhancedClimateMap = ({onMount=() => true}) => {
         );
     };
 
-    const style = (feature: L.GeoJSON.Feature) => {
+    const style = (feature: GeoJSON.Feature) => {
+        if (!feature || !feature.properties) return {};
+
         return {
             fillColor: dataExtremes ? getColorFromGradient(feature.properties.intensity || 0, dataExtremes, dataType, COLOR_SCHEMES[dataType as keyof typeof COLOR_SCHEMES]?.high || '#8b5cf6') : '#cccccc',
             weight: 1,
@@ -431,13 +433,13 @@ const EnhancedClimateMap = ({onMount=() => true}) => {
 
     const resetHighlight = (e: L.LeafletMouseEvent) => {
         if (nutsGeoJSON) {
-            const geoJSONLayer = e.target as L.Path & { feature: L.geoJSON.Feature };
+            const geoJSONLayer = e.target as L.Path & { feature: GeoJSON.Feature };
             geoJSONLayer.setStyle(style(geoJSONLayer.feature));
         }
     };
 
 
-    const onEachFeature = (feature: L.GeoJSON.Feature, layer: L.Layer) => {
+    const onEachFeature = (feature: GeoJSON.Feature, layer: L.Layer) => {
         layer.on({
             mouseover: highlightFeature,
             mouseout: resetHighlight
@@ -528,7 +530,8 @@ const EnhancedClimateMap = ({onMount=() => true}) => {
                             {nutsGeoJSON && nutsGeoJSON.features && nutsGeoJSON.features.length > 0 && (
                                 <GeoJSON
                                     data={nutsGeoJSON}
-                                    style={style}
+                                    // eslint-disable-next-line @typescript-eslint/no-misused-promises
+                                    style={(f) => f ? style(f) : {}}
                                     onEachFeature={onEachFeature}
                                 />
                             )}
@@ -585,11 +588,13 @@ const EnhancedClimateMap = ({onMount=() => true}) => {
                 </div>
 
                 <div className="legend-sidebar">
-                    <DynamicLegend
-                        extremes={dataExtremes}
-                        dataType={dataType}
-                        unit="°C"
-                    />
+                    {dataExtremes && (
+                        <DynamicLegend
+                            extremes={dataExtremes}
+                            dataType={dataType}
+                            unit="°C"
+                        />
+                    )}
                 </div>
             </div>
 

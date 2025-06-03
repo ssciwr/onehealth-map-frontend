@@ -16,7 +16,6 @@ interface AdaptiveGridLayerProps {
     viewport: ViewportBounds;
     resolutionLevel: number;
     extremes: DataExtremes;
-    dataType: string;
 }
 
 const AdaptiveGridLayer = ({ dataPoints, viewport, resolutionLevel, extremes }: AdaptiveGridLayerProps) => {
