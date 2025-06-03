@@ -25,7 +25,7 @@ const AdaptiveGridLayer = ({ dataPoints, viewport, resolutionLevel, extremes, da
     const prevResolutionRef = useRef<number>(resolutionLevel);
     const prevFirstDatapointTemperature = useRef<number>(dataPoints[0]?.temperature);
 
-    console.log("Adaptive Grid Layer debug, dataType source:", dataType)
+
 
     const generateAdaptiveGridCells = useCallback(() => {
         if (!viewport || !dataPoints || dataPoints.length === 0) return [];
@@ -114,7 +114,7 @@ const AdaptiveGridLayer = ({ dataPoints, viewport, resolutionLevel, extremes, da
                     bounds={cell.bounds}
                     pathOptions={{
                         color: 'transparent',
-                        fillColor: getColorFromGradient(cell.temperature, extremes),
+                        fillColor: getColorFromGradient(cell.temperature, extremes, '#000080', '#FFDE21'),
                         fillOpacity: 0.7,
                         weight: 0
                     }}

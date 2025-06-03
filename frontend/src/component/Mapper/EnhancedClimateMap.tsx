@@ -123,15 +123,30 @@ const EnhancedClimateMap = ({onMount=() => false}) => {
 
     const getOptimismLevels = (model) => ['optimistic', 'realistic', 'pessimistic']
 
-    // Calculate data extremes
-    const calculateExtremes = (data: any[]): DataExtremes => {
+    const calculateExtremes = (data: any[], calculatePercentiles: boolean = true): DataExtremes => {
         if (!data || data.length === 0) return { min: 0, max: 0 };
 
         const temperatures = data.map(point => point.temperature).filter(temp => !isNaN(temp));
-        return {
-            min: Math.min(...temperatures),
-            max: Math.max(...temperatures)
-        };
+
+        if (temperatures.length === 0) return { min: 0, max: 0 };
+
+        if (calculatePercentiles) {
+            const sortedTemps = [...temperatures].sort((a, b) => a - b);
+
+            const p5Index = Math.floor((25 / 100) * (sortedTemps.length - 1));
+            const p95Index = Math.floor((75 / 100) * (sortedTemps.length - 1));
+
+            return {
+                min: sortedTemps[p5Index],
+                max: sortedTemps[p95Index]
+            };
+        } else {
+            // Use absolute min/max
+            return {
+                min: Math.min(...temperatures),
+                max: Math.max(...temperatures)
+            };
+        }
     };
 
     // Load temperature data
@@ -496,9 +511,16 @@ const EnhancedClimateMap = ({onMount=() => false}) => {
                             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                         />
+                        {temperatureData.length > 0 &&   <div style={{zIndex:"15923904234", top:"30px", left:"10px", backgroundColor:"yellow"}}>
+                            Adaptive Grid Layer 1: {temperatureData.length}
+                        </div>}
 
                         <Pane name="gridPane" style={{ zIndex: 1550, opacity: 0.5 }}>
                             {temperatureData.length > 0 && viewport && dataExtremes && (
+                                <div>
+                                    <div style={{zIndex:"15923904", top:"0px", left:"10px"}}>
+                                        Adaptive Grid Layer: {temperatureData.length}
+                                    </div>
                                 <AdaptiveGridLayer
                                     dataPoints={[...temperatureData]}
                                     viewport={viewport}
@@ -506,6 +528,7 @@ const EnhancedClimateMap = ({onMount=() => false}) => {
                                     extremes={dataExtremes}
                                     dataType={dataType}
                                 />
+                                </div>
                             )}
                         </Pane>
 
