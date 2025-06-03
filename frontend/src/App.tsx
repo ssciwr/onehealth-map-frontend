@@ -27,6 +27,7 @@ const App = observer(() => {
                             onMount={() => {
                                 viewingMode.isCitizen = true;
                                 viewingMode.isExpert = false;
+                                return true;
                             }}
                         />
                     }
@@ -38,14 +39,9 @@ const App = observer(() => {
                             onMount={() => {
                                 viewingMode.isExpert = true;
                                 viewingMode.isCitizen = false;
+                                return true;
                             }}
                         />
-                    }
-                />
-                <Route
-                    path="/map/third"
-                    element={
-                        <EnhancedClimateMap />
                     }
                 />
                 <Route path="/map" element={<MapWithExpertiseModal />} />

@@ -519,7 +519,6 @@ const EnhancedClimateMap = ({onMount=() => true}) => {
                                         viewport={viewport}
                                         resolutionLevel={resolutionLevel}
                                         extremes={dataExtremes}
-                                        dataType={dataType}
                                     />
                                 </div>
                             )}
