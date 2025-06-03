@@ -5,7 +5,7 @@ import type { MenuProps } from 'antd';
 import ModelDetailsModal from './ModelDetailsModal';
 const { Title } = Typography;
 
-// YAML parsing function
+
 const parseYamlText = (yamlText: string): any => {
     const lines = yamlText.split('\n');
     const result: any = {};
@@ -174,9 +174,9 @@ const ModelSelector = ({
         onClick: () => onModelSelect(model.id)
     }));
 
-    const dropdownRender = (menu: React.ReactElement) => (
+    const dropdownRender = (originNode: React.ReactNode) => (
         <div style={{backgroundColor:"white", borderRadius:"16px", border: "1px solid rgb(240,240,240)"}}>
-            <div style={{ padding: '16px 20px', }}>
+            <div style={{ padding: '16px 20px' }}>
                 <Title level={5} style={{ margin: '0 0 8px 0' }}>
                     Disease Models
                 </Title>
@@ -186,7 +186,7 @@ const ModelSelector = ({
                             'Select a disease model to visualize spread patterns'}
                 </p>
             </div>
-            {menu}
+            {originNode}
             <div style={{ padding: '12px 20px', borderTop: '1px solid #EBECF0' }}>
                 <Button
                     type="link"

@@ -371,12 +371,12 @@ const EnhancedClimateMap = ({onMount=() => true}) => {
         navigator.geolocation.getCurrentPosition(
             (position) => {
                 const { latitude, longitude } = position.coords;
-                console.log("Have current position", latitude, longitude);
-                console.log("Let it rerender!")
                 if (map) {
                     console.log('Setting map psoition to: ', latitude, longitude);
-                    map.setView([latitude, longitude], 8);
-                    console.log('Zoomed to your location');
+                    map.flyTo([latitude, longitude], 8, {
+                        duration: 2, // Duration in seconds
+                        easeLinearity: 0.1 // Controls the smoothness (0-1, lower = smoother)
+                    });
                 }
                 setIsLocating(false);
             },
@@ -431,7 +431,7 @@ const EnhancedClimateMap = ({onMount=() => true}) => {
 
     const resetHighlight = (e: L.LeafletMouseEvent) => {
         if (nutsGeoJSON) {
-            const geoJSONLayer = e.target as L.Path & { feature: L.GeoJSON.Feature };
+            const geoJSONLayer = e.target as L.Path & { feature: L.geoJSON.Feature };
             geoJSONLayer.setStyle(style(geoJSONLayer.feature));
         }
     };
@@ -498,7 +498,7 @@ const EnhancedClimateMap = ({onMount=() => true}) => {
                         zoom={5}
                         minZoom={MIN_ZOOM}
                         maxZoom={MAX_ZOOM}
-                        whenReady={setMap}
+                        ref={setMap}
                     >
                         <TileLayer
                             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -579,7 +579,7 @@ const EnhancedClimateMap = ({onMount=() => true}) => {
                                 onClick={handleLocationRequest}
                                 size="large"
                             >
-                                Show me
+                                Zoom to my location
                             </Button>
                         </div>
                     )}
