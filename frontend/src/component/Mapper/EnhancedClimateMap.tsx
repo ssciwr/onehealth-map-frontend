@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { MapContainer, TileLayer, GeoJSON, Popup, CircleMarker, Pane, Rectangle } from 'react-leaflet';
+import { MapContainer, TileLayer, GeoJSON, Popup, CircleMarker, Pane } from 'react-leaflet';
 import NutsMapperV5 from '../NUTSMapper/nuts_mapper_v5';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
@@ -10,7 +10,7 @@ import {
     Layers,
     MapPin,
 } from 'lucide-react';
-import { Button, message } from 'antd';
+import { Button } from 'antd';
 import ModelSelector from "./InterfaceInputs/ModelSelector.tsx";
 import AntdTimelineSelector from "./AntdTimelineSelector.tsx";
 import {VIRUSES} from "./virusConstants.ts";
@@ -25,7 +25,6 @@ import DebugStatsPanel from "./DebugStatsPanel.tsx";
 const MIN_ZOOM = 3.4;
 const MAX_ZOOM = 7;
 
-// Utility functions for color interpolation
 const hexToRgb = (hex: string) => {
     const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
     return result ? {
@@ -60,11 +59,10 @@ const detectDataType = (csvName: string): string => {
     return 'default';
 };
 
-// Dynamic Legend Component
-const DynamicLegend = ({ extremes, dataType, unit = "°C" }) => {
+const DynamicLegend = ({ extremes, dataType, unit = "°C" }: { extremes: DataExtremes, dataType: string, unit?: string }) => {
     if (!extremes) return null;
 
-    const scheme = COLOR_SCHEMES[dataType] || COLOR_SCHEMES.default;
+    const scheme = COLOR_SCHEMES[dataType as keyof typeof COLOR_SCHEMES] || COLOR_SCHEMES.default;
     const steps = 10;
     const gradientStops = [];
 
@@ -95,9 +93,7 @@ const DynamicLegend = ({ extremes, dataType, unit = "°C" }) => {
     );
 };
 
-
-// todo: Align with file name.
-const EnhancedClimateMap = ({onMount=() => false}) => {
+const EnhancedClimateMap = ({onMount=() => true}) => {
     const [nutsGeoJSON, setNutsGeoJSON] = useState<NutsGeoJSON | null>(null);
     const [loading, setLoading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
@@ -110,7 +106,7 @@ const EnhancedClimateMap = ({onMount=() => false}) => {
     const [selectedOptimism, setSelectedOptimism] = useState<string>('optimistic');
     const [currentYear, setCurrentYear] = useState<number>(2025);
     const [currentMonth, setCurrentMonth] = useState<number>(1);
-    const [map, setMap] = useState(null);
+    const [map, setMap] = useState<L.Map | null>(null);
     const [dataExtremes, setDataExtremes] = useState<DataExtremes | null>(null);
     const [dataType, setDataType] = useState<string>('default');
     const [currentDataName, setCurrentDataName] = useState<string>('');
@@ -121,7 +117,7 @@ const EnhancedClimateMap = ({onMount=() => false}) => {
         onMount();
     })
 
-    const getOptimismLevels = (model) => ['optimistic', 'realistic', 'pessimistic']
+    const getOptimismLevels = () => ['optimistic', 'realistic', 'pessimistic']
 
     const calculateExtremes = (data: any[], calculatePercentiles: boolean = true): DataExtremes => {
         if (!data || data.length === 0) return { min: 0, max: 0 };
@@ -141,7 +137,6 @@ const EnhancedClimateMap = ({onMount=() => false}) => {
                 max: sortedTemps[p95Index]
             };
         } else {
-            // Use absolute min/max
             return {
                 min: Math.min(...temperatures),
                 max: Math.max(...temperatures)
@@ -149,8 +144,7 @@ const EnhancedClimateMap = ({onMount=() => false}) => {
         }
     };
 
-    // Load temperature data
-    const loadTemperatureData = async (year) => {
+    const loadTemperatureData = async (year: number) => {
         try {
             const dataPath = year.toString() + "_data_january_05res.csv"
             console.log("DataPath:", dataPath)
@@ -159,7 +153,6 @@ const EnhancedClimateMap = ({onMount=() => false}) => {
             const text = await response.text();
             const rows = text.split('\n').slice(1).filter(row => row.trim() !== '');
 
-            // this doesn't seem to load sometimes?
             const sampleRate = 1;
             const dataPoints = [];
 
@@ -291,7 +284,6 @@ const EnhancedClimateMap = ({onMount=() => false}) => {
             setNutsGeoJSON(geoJSON as NutsGeoJSON);
             setStats(nutsMapper.getStats());
 
-            // Calculate extremes for NUTS data
             if (geoJSON && geoJSON.features) {
                 const intensities = geoJSON.features
                     .map(feature => feature.properties.intensity)
@@ -381,7 +373,6 @@ const EnhancedClimateMap = ({onMount=() => false}) => {
                 const { latitude, longitude } = position.coords;
                 console.log("Have current position", latitude, longitude);
                 console.log("Let it rerender!")
-                // todo: Fix, this isn't working.
                 if (map) {
                     console.log('Setting map psoition to: ', latitude, longitude);
                     map.setView([latitude, longitude], 8);
@@ -413,9 +404,9 @@ const EnhancedClimateMap = ({onMount=() => false}) => {
         );
     };
 
-    const style = (feature: any) => {
+    const style = (feature: L.GeoJSON.Feature) => {
         return {
-            fillColor: dataExtremes ? getColorFromGradient(feature.properties.intensity || 0, dataExtremes, dataType) : '#cccccc',
+            fillColor: dataExtremes ? getColorFromGradient(feature.properties.intensity || 0, dataExtremes, dataType, COLOR_SCHEMES[dataType as keyof typeof COLOR_SCHEMES]?.high || '#8b5cf6') : '#cccccc',
             weight: 1,
             opacity: 1,
             color: 'white',
@@ -424,8 +415,8 @@ const EnhancedClimateMap = ({onMount=() => false}) => {
         };
     };
 
-    const highlightFeature = (e: any) => {
-        const layer = e.target;
+    const highlightFeature = (e: L.LeafletMouseEvent) => {
+        const layer = e.target as L.Path;
         layer.setStyle({
             weight: 3,
             color: '#666',
@@ -438,14 +429,15 @@ const EnhancedClimateMap = ({onMount=() => false}) => {
         }
     };
 
-    const resetHighlight = (e: any) => {
+    const resetHighlight = (e: L.LeafletMouseEvent) => {
         if (nutsGeoJSON) {
-            const geoJSONLayer = e.target;
-            geoJSONLayer.setStyle(style(e.target.feature));
+            const geoJSONLayer = e.target as L.Path & { feature: L.GeoJSON.Feature };
+            geoJSONLayer.setStyle(style(geoJSONLayer.feature));
         }
     };
 
-    const onEachFeature = (feature: any, layer: any) => {
+
+    const onEachFeature = (feature: L.GeoJSON.Feature, layer: L.Layer) => {
         layer.on({
             mouseover: highlightFeature,
             mouseout: resetHighlight
@@ -459,9 +451,10 @@ const EnhancedClimateMap = ({onMount=() => false}) => {
           <p>Value: ${intensity !== null ? `${intensity.toFixed(1)}°C` : 'N/A'}</p>
         </div>
       `;
-            layer.bindPopup(popupContent);
+            (layer as L.Layer & { bindPopup: (content: string) => void }).bindPopup(popupContent);
         }
     };
+
 
     return (
         <div className="climate-map-container">
@@ -483,7 +476,7 @@ const EnhancedClimateMap = ({onMount=() => false}) => {
                     &nbsp;
                     with&nbsp;
                     <OptimismLevelSelector
-                        availableOptimismLevels={getOptimismLevels(selectedModel)}
+                        availableOptimismLevels={getOptimismLevels()}
                         selectedOptimism={selectedOptimism}
                         setOptimism={setSelectedOptimism}
                     />
@@ -505,7 +498,7 @@ const EnhancedClimateMap = ({onMount=() => false}) => {
                         zoom={5}
                         minZoom={MIN_ZOOM}
                         maxZoom={MAX_ZOOM}
-                        whenCreated={setMap}
+                        whenReady={setMap}
                     >
                         <TileLayer
                             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -521,13 +514,13 @@ const EnhancedClimateMap = ({onMount=() => false}) => {
                                     <div style={{zIndex:"15923904", top:"0px", left:"10px"}}>
                                         Adaptive Grid Layer: {temperatureData.length}
                                     </div>
-                                <AdaptiveGridLayer
-                                    dataPoints={[...temperatureData]}
-                                    viewport={viewport}
-                                    resolutionLevel={resolutionLevel}
-                                    extremes={dataExtremes}
-                                    dataType={dataType}
-                                />
+                                    <AdaptiveGridLayer
+                                        dataPoints={[...temperatureData]}
+                                        viewport={viewport}
+                                        resolutionLevel={resolutionLevel}
+                                        extremes={dataExtremes}
+                                        dataType={dataType}
+                                    />
                                 </div>
                             )}
                         </Pane>
@@ -635,12 +628,14 @@ const EnhancedClimateMap = ({onMount=() => false}) => {
                     </div>
                 )}
 
-                <DebugStatsPanel
-                    stats={stats}
-                    temperatureDataCount={temperatureData.length}
-                    currentResolution={resolutionLevel}
-                    viewport={viewport}
-                />
+                {viewport && (
+                    <DebugStatsPanel
+                        stats={stats}
+                        temperatureDataCount={temperatureData.length}
+                        currentResolution={resolutionLevel}
+                        viewport={viewport}
+                    />
+                )}
             </div>
         </div>
     );
