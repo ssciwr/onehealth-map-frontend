@@ -8,9 +8,7 @@ import * as turf from '@turf/turf';
 import './Map.css'
 import {
     Layers,
-    MapPin,
 } from 'lucide-react';
-import { Button } from 'antd';
 import ModelSelector from "./InterfaceInputs/ModelSelector.tsx";
 import AntdTimelineSelector from "./AntdTimelineSelector.tsx";
 import {VIRUSES} from "./virusConstants.ts";
@@ -21,6 +19,7 @@ import AdaptiveGridLayer from "./AdaptiveGridLayer.tsx";
 import {COLOR_SCHEMES, DataExtremes, NutsGeoJSON, OutbreakData, ProcessingStats, ViewportBounds} from "./types.ts";
 import {getColorFromGradient} from "./gradientUtilities.ts";
 import DebugStatsPanel from "./DebugStatsPanel.tsx";
+import ControlBar from "./InterfaceInputs/ControlBar.tsx";
 
 const MIN_ZOOM = 3.4;
 const MAX_ZOOM = 7;
@@ -51,9 +50,6 @@ const interpolateColor = (color1: string, color2: string, factor: number) => {
     return rgbToHex(r, g, b);
 };
 
-
-
-// color schemes: blue-yellow-red works well for all these data types and the overwhelming these of climate suites that data
 const DynamicLegend = ({ extremes,  unit = "°C" }: { extremes: DataExtremes, unit?: string }) => {
     if (!extremes) return null;
 
@@ -105,7 +101,6 @@ const EnhancedClimateMap = ({onMount=() => true}) => {
     const [dataExtremes, setDataExtremes] = useState<DataExtremes | null>(null);
     const [currentDataName, setCurrentDataName] = useState<string>('');
     const fileInputRef = useRef<HTMLInputElement>(null);
-    const [isLocating, setIsLocating] = useState<boolean>(false);
 
     useEffect(() => {
         onMount();
@@ -349,51 +344,6 @@ const EnhancedClimateMap = ({onMount=() => true}) => {
         return virus?.color || '#8A2BE2';
     };
 
-    const handleLocationRequest = () => {
-        setIsLocating(true);
-
-        if (!navigator.geolocation) {
-            console.error('Geolocation is not supported by this browser');
-            setIsLocating(false);
-            return;
-        }
-
-        navigator.geolocation.getCurrentPosition(
-            (position) => {
-                const { latitude, longitude } = position.coords;
-                if (map) {
-                    console.log('Setting map psoition to: ', latitude, longitude);
-                    map.flyTo([latitude, longitude], 8, {
-                        duration: 2, // Duration in seconds
-                        easeLinearity: 0.1 // Controls the smoothness (0-1, lower = smoother)
-                    });
-                }
-                setIsLocating(false);
-            },
-            (error) => {
-                let errorMessage = 'Unable to get your location';
-                switch (error.code) {
-                    case error.PERMISSION_DENIED:
-                        errorMessage = 'Location permission denied';
-                        break;
-                    case error.POSITION_UNAVAILABLE:
-                        errorMessage = 'Location information unavailable';
-                        break;
-                    case error.TIMEOUT:
-                        errorMessage = 'Location request timed out';
-                        break;
-                }
-                console.error(errorMessage);
-                setIsLocating(false);
-            },
-            {
-                enableHighAccuracy: true,
-                timeout: 10000,
-                maximumAge: 60000
-            }
-        );
-    };
-
     const style = (feature: GeoJSON.Feature) => {
         if (!feature || !feature.properties) return {};
 
@@ -428,7 +378,6 @@ const EnhancedClimateMap = ({onMount=() => true}) => {
         }
     };
 
-
     const onEachFeature = (feature: GeoJSON.Feature, layer: L.Layer) => {
         layer.on({
             mouseover: highlightFeature,
@@ -446,7 +395,6 @@ const EnhancedClimateMap = ({onMount=() => true}) => {
             (layer as L.Layer & { bindPopup: (content: string) => void }).bindPopup(popupContent);
         }
     };
-
 
     return (
         <div className="climate-map-container">
@@ -491,14 +439,12 @@ const EnhancedClimateMap = ({onMount=() => true}) => {
                         minZoom={MIN_ZOOM}
                         maxZoom={MAX_ZOOM}
                         ref={setMap}
+                        zoomControl={false}
                     >
                         <TileLayer
                             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                         />
-                        {temperatureData.length > 0 &&   <div style={{zIndex:"15923904234", top:"30px", left:"10px", backgroundColor:"yellow"}}>
-                            Adaptive Grid Layer 1: {temperatureData.length}
-                        </div>}
 
                         <Pane name="gridPane" style={{ zIndex: 1550, opacity: 0.5 }}>
                             {temperatureData.length > 0 && viewport && dataExtremes && (
@@ -557,24 +503,7 @@ const EnhancedClimateMap = ({onMount=() => true}) => {
                         <ViewportMonitor onViewportChange={handleViewportChange} />
                     </MapContainer>
 
-                    {viewingMode.isCitizen && (
-                        <div style={{
-                            position: 'absolute',
-                            bottom: '20px',
-                            left: '20px',
-                            zIndex: 1000
-                        }}>
-                            <Button
-                                type="primary"
-                                icon={<MapPin size={16} />}
-                                loading={isLocating}
-                                onClick={handleLocationRequest}
-                                size="large"
-                            >
-                                Zoom to my location
-                            </Button>
-                        </div>
-                    )}
+                    <ControlBar map={map} />
                 </div>
 
                 <div className="legend-sidebar">
