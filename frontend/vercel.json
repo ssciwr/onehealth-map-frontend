@@ -1,6 +1,11 @@
 {
   "buildCommand": "npm run build",
-  "installCommand": "npm install",
+  "installCommand": "npm ci --cache .npm --prefer-offline",
   "outputDirectory": "dist",
-  "devCommand": "pnpm run dev"
+  "devCommand": "pnpm run dev",
+  "functions": {
+    "**": {
+      "runtime": "nodejs20.x"
+    }
+  }
 }
