@@ -51,18 +51,13 @@ const interpolateColor = (color1: string, color2: string, factor: number) => {
     return rgbToHex(r, g, b);
 };
 
-const detectDataType = (csvName: string): string => {
-    const name = csvName.toLowerCase();
-    if (name.includes('virus')) return 'virus';
-    if (name.includes('climate')) return 'climate';
-    if (name.includes('rainfall') || name.includes('rain')) return 'rainfall';
-    return 'default';
-};
 
-const DynamicLegend = ({ extremes, dataType, unit = "°C" }: { extremes: DataExtremes, dataType: string, unit?: string }) => {
+
+// color schemes: blue-yellow-red works well for all these data types and the overwhelming these of climate suites that data
+const DynamicLegend = ({ extremes,  unit = "°C" }: { extremes: DataExtremes, unit?: string }) => {
     if (!extremes) return null;
 
-    const scheme = COLOR_SCHEMES[dataType as keyof typeof COLOR_SCHEMES] || COLOR_SCHEMES.default;
+    const scheme = COLOR_SCHEMES.default;
     const steps = 10;
     const gradientStops = [];
 
@@ -108,7 +103,6 @@ const EnhancedClimateMap = ({onMount=() => true}) => {
     const [currentMonth, setCurrentMonth] = useState<number>(1);
     const [map, setMap] = useState<L.Map | null>(null);
     const [dataExtremes, setDataExtremes] = useState<DataExtremes | null>(null);
-    const [dataType, setDataType] = useState<string>('default');
     const [currentDataName, setCurrentDataName] = useState<string>('');
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [isLocating, setIsLocating] = useState<boolean>(false);
@@ -183,10 +177,7 @@ const EnhancedClimateMap = ({onMount=() => true}) => {
             setTemperatureData([...dataPoints]);
             const extremes = calculateExtremes(dataPoints);
             setDataExtremes(extremes);
-            setDataType(detectDataType(dataPath));
-            console.log("Updated temperature data!")
         } catch (err: any) {
-            console.error('Failed to load temperature data:', err);
             setError('Failed to load temperature data: ' + err.message);
         }
     }
@@ -295,7 +286,6 @@ const EnhancedClimateMap = ({onMount=() => true}) => {
                         max: Math.max(...intensities)
                     };
                     setDataExtremes(extremes);
-                    setDataType(detectDataType(currentDataName));
                 }
             }
         } catch (err: any) {
@@ -408,7 +398,7 @@ const EnhancedClimateMap = ({onMount=() => true}) => {
         if (!feature || !feature.properties) return {};
 
         return {
-            fillColor: dataExtremes ? getColorFromGradient(feature.properties.intensity || 0, dataExtremes, dataType, COLOR_SCHEMES[dataType as keyof typeof COLOR_SCHEMES]?.high || '#8b5cf6') : '#cccccc',
+            fillColor: dataExtremes ? getColorFromGradient(feature.properties.intensity || 0, dataExtremes, '#8b5cf6', '#cccccc') : "blue",
             weight: 1,
             opacity: 1,
             color: 'white',
@@ -591,7 +581,6 @@ const EnhancedClimateMap = ({onMount=() => true}) => {
                     {dataExtremes && (
                         <DynamicLegend
                             extremes={dataExtremes}
-                            dataType={dataType}
                             unit="°C"
                         />
                     )}
