@@ -11,7 +11,6 @@ import {
 } from 'lucide-react';
 import ModelSelector from "./InterfaceInputs/ModelSelector.tsx";
 import AntdTimelineSelector from "./AntdTimelineSelector.tsx";
-import {VIRUSES} from "./virusConstants.ts";
 import OptimismLevelSelector from "./InterfaceInputs/OptimismSelector.tsx";
 import GeneralCard from "./Multiuse/GeneralCard.tsx";
 import {viewingMode} from "../../stores/ViewingModeStore.ts";
@@ -339,11 +338,6 @@ const EnhancedClimateMap = ({onMount=() => true}) => {
         setSelectedModel(modelId);
     };
 
-    const getOutbreakColor = (category: string): string => {
-        const virus = VIRUSES.find(v => v.title === category);
-        return virus?.color || '#8A2BE2';
-    };
-
     const style = (feature: GeoJSON.Feature) => {
         if (!feature || !feature.properties) return {};
 
@@ -449,9 +443,6 @@ const EnhancedClimateMap = ({onMount=() => true}) => {
                         <Pane name="gridPane" style={{ zIndex: 1550, opacity: 0.5 }}>
                             {temperatureData.length > 0 && viewport && dataExtremes && (
                                 <div>
-                                    <div style={{zIndex:"15923904", top:"0px", left:"10px"}}>
-                                        Adaptive Grid Layer: {temperatureData.length}
-                                    </div>
                                     <AdaptiveGridLayer
                                         dataPoints={[...temperatureData]}
                                         viewport={viewport}
@@ -480,7 +471,7 @@ const EnhancedClimateMap = ({onMount=() => true}) => {
                                     center={[outbreak.latitude, outbreak.longitude]}
                                     radius={10}
                                     pathOptions={{
-                                        fillColor: getOutbreakColor(outbreak.category),
+                                        fillColor: "#8A2BE2",
                                         color: '#000',
                                         weight: 1,
                                         opacity: 1,
