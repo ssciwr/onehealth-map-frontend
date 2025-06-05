@@ -118,6 +118,8 @@ const ModelSelector = ({
 	const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
+	// State to control dropdown visibility
+	const [dropdownOpen, setDropdownOpen] = useState(false);
 
 	useEffect(() => {
 		const loadData = async () => {
@@ -195,8 +197,18 @@ const ModelSelector = ({
 				</div>
 			</div>
 		),
-		onClick: () => onModelSelect(model.id),
+		onClick: () => {
+			onModelSelect(model.id);
+			// Close dropdown after model selection
+			setDropdownOpen(false);
+		},
 	}));
+
+	// Handler to open modal and close dropdown
+	const handleViewDetailsClick = () => {
+		setIsDetailsModalOpen(true);
+		setDropdownOpen(false); // Close dropdown when modal opens
+	};
 
 	const dropdownRender = (originNode: React.ReactNode) => (
 		<div
@@ -223,7 +235,7 @@ const ModelSelector = ({
 				<Button
 					type="link"
 					size="small"
-					onClick={() => setIsDetailsModalOpen(true)}
+					onClick={handleViewDetailsClick}
 					style={{ padding: 0, height: "auto", color: "#0052CC" }}
 					disabled={loading}
 				>
@@ -242,6 +254,8 @@ const ModelSelector = ({
 				dropdownRender={dropdownRender}
 				overlayStyle={{ minWidth: "350px" }}
 				disabled={loading}
+				open={dropdownOpen}
+				onOpenChange={setDropdownOpen}
 			>
 				<Button
 					style={{

@@ -12,7 +12,7 @@ const GeneralCard = ({ children, style }: GeneralCardProps) => (
 			borderRadius: 16,
 			boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
 			border: "1px solid lightgray",
-			margin: "10px",
+			margin: "20px", // match to the map padding.
 			...style,
 		}}
 	>
