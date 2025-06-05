@@ -30,7 +30,11 @@ const MapWithModal = observer(() => {
 	return (
 		<>
 			<Modal
-				title={<Title level={3}>What view do you prefer?</Title>}
+				title={
+					<Title style={{ zIndex: 10000 }} level={3}>
+						What view do you prefer?
+					</Title>
+				}
 				open={showModal}
 				footer={null}
 				closable={false}
