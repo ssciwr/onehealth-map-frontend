@@ -28,8 +28,8 @@
 }
 
 .full-height-map {
-	height: 80vh;
-	min-height: 80vh;
+	height: 100vh;
+	min-height: 100vh;
 	width: 100%;
 	border-radius: 16px;
 }

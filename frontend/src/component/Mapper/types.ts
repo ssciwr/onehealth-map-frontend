@@ -84,7 +84,7 @@ export const COLOR_SCHEMES = {
 		high: "#3b82f6",
 	},
 	default: {
-		low: "#22c55e",
+		low: "#2656ac",
 		high: "#ef4444",
 	},
 } as const; // preserve literal types

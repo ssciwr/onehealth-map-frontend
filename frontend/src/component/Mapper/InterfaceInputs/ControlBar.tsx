@@ -66,11 +66,13 @@ const ControlBar = ({ map }: ControlBarProps) => {
 		);
 	};
 
+	const circularButtonSize = 20;
+
 	return (
 		<div
 			style={{
 				position: "fixed",
-				left: "4vw",
+				right: "6vw",
 				top: "50%",
 				transform: "translateY(-50%)",
 				zIndex: 9000,
@@ -83,8 +85,8 @@ const ControlBar = ({ map }: ControlBarProps) => {
 				type="button"
 				onClick={handleZoomIn}
 				style={{
-					width: "40px",
-					height: "40px",
+					width: "50px",
+					height: "50px",
 					backgroundColor: "rgba(255, 255, 255, 0.75)",
 					border: "none",
 					borderRadius: "50%",
@@ -96,15 +98,15 @@ const ControlBar = ({ map }: ControlBarProps) => {
 					padding: 0,
 				}}
 			>
-				<Plus size={20} style={{ color: "#333", opacity: 1 }} />
+				<Plus size={circularButtonSize} style={{ color: "#333", opacity: 1 }} />
 			</button>
 
 			<button
 				type="button"
 				onClick={handleZoomOut}
 				style={{
-					width: "40px",
-					height: "40px",
+					width: "50px",
+					height: "50px",
 					backgroundColor: "rgba(255, 255, 255, 0.75)",
 					border: "none",
 					borderRadius: "50%",
@@ -116,7 +118,10 @@ const ControlBar = ({ map }: ControlBarProps) => {
 					padding: 0,
 				}}
 			>
-				<Minus size={20} style={{ color: "#333", opacity: 1 }} />
+				<Minus
+					size={circularButtonSize}
+					style={{ color: "#333", opacity: 1 }}
+				/>
 			</button>
 
 			<button
@@ -124,8 +129,8 @@ const ControlBar = ({ map }: ControlBarProps) => {
 				onClick={handleLocationRequest}
 				disabled={isLocating}
 				style={{
-					width: "40px",
-					height: "40px",
+					width: "50px",
+					height: "50px",
 					backgroundColor: "rgba(255, 255, 255, 0.75)",
 					border: "none",
 					borderRadius: "50%",
@@ -138,7 +143,10 @@ const ControlBar = ({ map }: ControlBarProps) => {
 					opacity: isLocating ? 0.6 : 1,
 				}}
 			>
-				<MapPin size={20} style={{ color: "#333", opacity: 1 }} />
+				<MapPin
+					size={circularButtonSize}
+					style={{ color: "#333", opacity: 1 }}
+				/>
 			</button>
 		</div>
 	);
