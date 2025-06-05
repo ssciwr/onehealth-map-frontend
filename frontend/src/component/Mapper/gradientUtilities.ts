@@ -38,7 +38,7 @@ function hexToRgb(hex: string): RGBColor {
 function rgbToHex(rgb: RGBColor): string {
 	const toHex = (value: number): string => {
 		const hex = Math.round(Math.max(0, Math.min(255, value))).toString(16);
-		return hex.length === 1 ? "0" + hex : hex;
+		return hex.length === 1 ? `0${hex}` : hex;
 	};
 
 	return `#${toHex(rgb.r)}${toHex(rgb.g)}${toHex(rgb.b)}`.toUpperCase();
@@ -58,7 +58,7 @@ export const getColorFromGradient = (
 	minColor: string,
 	maxColor: string,
 ): string => {
-	if (typeof value !== "number" || !isFinite(value)) {
+	if (typeof value !== "number" || !Number.isFinite(value)) {
 		throw new Error("Value must be a finite number");
 	}
 
