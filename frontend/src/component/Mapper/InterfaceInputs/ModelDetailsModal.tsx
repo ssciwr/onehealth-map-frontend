@@ -272,7 +272,7 @@ const ModelDetailsModal: React.FC<ModelDetailsModalProps> = ({
 										>
 											{selectedDetailModel.authors.map((author, index) => (
 												<Badge
-													key={index}
+													key={index.toString() + author}
 													count={author}
 													style={{
 														backgroundColor: "#f0f0f0",

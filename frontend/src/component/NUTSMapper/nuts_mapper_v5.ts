@@ -109,30 +109,16 @@ class NutsMapperV5 {
 
 				// Process the geometry data
 				let coordinates: GeometryResult = null;
-				try {
-					// Handle different WKT formats and try to recover from some errors
-					coordinates = this.parseWKTGeometry(wktGeometry, nutsId);
 
-					if (!coordinates) {
-						if (skipInvalid) {
-							this.skippedRegions.push(nutsId);
-							continue;
-						} else {
-							throw new Error("Failed to parse WKT geometry");
-						}
-					}
-				} catch (geometryError) {
-					this.errorCount++;
-					console.warn(
-						`Error parsing geometry for region ${nutsId}: ${(geometryError as Error).message}`,
-					);
+				// Handle different WKT formats and try to recover from some errors
+				coordinates = this.parseWKTGeometry(wktGeometry, nutsId);
 
+				if (!coordinates) {
 					if (skipInvalid) {
 						this.skippedRegions.push(nutsId);
 						continue;
-					} else {
-						throw geometryError;
 					}
+					throw new Error("Failed to parse WKT geometry");
 				}
 
 				// Validate coordinates before adding the feature

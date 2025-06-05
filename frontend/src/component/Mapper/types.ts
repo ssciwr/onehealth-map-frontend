@@ -1,15 +1,17 @@
+import type L from "leaflet";
+
 export interface NutsProperties {
 	NUTS_ID: string;
 	intensity: number | null;
 }
 
 export interface NutsGeometry {
-	type: string;
-	coordinates: any[][];
+	type: "Polygon" | "MultiPolygon";
+	coordinates: number[][][] | number[][][][]; // Proper coordinate typing
 }
 
 export interface NutsFeature {
-	type: string;
+	type: "Feature";
 	properties: NutsProperties;
 	geometry: NutsGeometry;
 }
@@ -54,6 +56,16 @@ export interface ViewportBounds {
 export interface DataExtremes {
 	min: number;
 	max: number;
+}
+
+// Temperature data point interface
+export interface TemperatureDataPoint {
+	lat: number;
+	lng: number;
+	temperature: number;
+	point: any; // turf.js point
+	date?: string;
+	id?: string;
 }
 
 // Export constants
