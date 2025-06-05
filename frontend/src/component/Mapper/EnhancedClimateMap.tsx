@@ -98,7 +98,6 @@ const EnhancedClimateMap = ({onMount=() => true}) => {
     const [currentMonth, setCurrentMonth] = useState<number>(1);
     const [map, setMap] = useState<L.Map | null>(null);
     const [dataExtremes, setDataExtremes] = useState<DataExtremes | null>(null);
-    const [currentDataName, setCurrentDataName] = useState<string>('');
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
@@ -136,7 +135,6 @@ const EnhancedClimateMap = ({onMount=() => true}) => {
         try {
             const dataPath = year.toString() + "_data_january_05res.csv"
             console.log("DataPath:", dataPath)
-            setCurrentDataName(dataPath);
             const response = await fetch(dataPath);
             const text = await response.text();
             const rows = text.split('\n').slice(1).filter(row => row.trim() !== '');
@@ -241,7 +239,6 @@ const EnhancedClimateMap = ({onMount=() => true}) => {
 
         setLoading(true);
         setError(null);
-        setCurrentDataName(file.name);
 
         const reader = new FileReader();
         reader.onload = (e) => {
