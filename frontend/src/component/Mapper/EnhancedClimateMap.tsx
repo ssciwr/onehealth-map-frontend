@@ -29,6 +29,7 @@ import {
 	type NutsGeoJSON,
 	type OutbreakData,
 	type ProcessingStats,
+	type TemperatureDataPoint,
 	type ViewportBounds,
 } from "./types.ts";
 import { VIRUSES } from "./virusConstants.ts";
@@ -120,7 +121,9 @@ const EnhancedClimateMap = ({ onMount = () => true }) => {
 		errors: 0,
 	});
 	const [outbreaks, setOutbreaks] = useState<OutbreakData[]>([]);
-	const [temperatureData, setTemperatureData] = useState<any[]>([]);
+	const [temperatureData, setTemperatureData] = useState<
+		TemperatureDataPoint[]
+	>([]);
 	const [viewport, setViewport] = useState<ViewportBounds | null>(null);
 	const [resolutionLevel, setResolutionLevel] = useState<number>(1);
 	const [selectedModel, setSelectedModel] = useState<string>("temperature");
@@ -139,7 +142,7 @@ const EnhancedClimateMap = ({ onMount = () => true }) => {
 	const getOptimismLevels = () => ["optimistic", "realistic", "pessimistic"];
 
 	const calculateExtremes = (
-		data: any[],
+		data: TemperatureDataPoint[],
 		calculatePercentiles = true,
 	): DataExtremes => {
 		if (!data || data.length === 0) return { min: 0, max: 0 };
@@ -160,17 +163,16 @@ const EnhancedClimateMap = ({ onMount = () => true }) => {
 				min: sortedTemps[p5Index],
 				max: sortedTemps[p95Index],
 			};
-		} else {
-			return {
-				min: Math.min(...temperatures),
-				max: Math.max(...temperatures),
-			};
 		}
+		return {
+			min: Math.min(...temperatures),
+			max: Math.max(...temperatures),
+		};
 	};
 
 	const loadTemperatureData = async (year: number) => {
 		try {
-			const dataPath = year.toString() + "_data_january_05res.csv";
+			const dataPath = `${year.toString()}_data_january_05res.csv`;
 			console.log("DataPath:", dataPath);
 			const response = await fetch(dataPath);
 			const text = await response.text();
@@ -180,7 +182,7 @@ const EnhancedClimateMap = ({ onMount = () => true }) => {
 				.filter((row) => row.trim() !== "");
 
 			const sampleRate = 1;
-			const dataPoints = [];
+			const dataPoints: TemperatureDataPoint[] = [];
 
 			for (let i = 0; i < rows.length; i++) {
 				if (i % Math.floor(1 / sampleRate) === 0) {
@@ -213,8 +215,9 @@ const EnhancedClimateMap = ({ onMount = () => true }) => {
 			setTemperatureData([...dataPoints]);
 			const extremes = calculateExtremes(dataPoints);
 			setDataExtremes(extremes);
-		} catch (err: any) {
-			setError("Failed to load temperature data: " + err.message);
+		} catch (err: unknown) {
+			const error = err as Error;
+			setError(`Failed to load temperature data: ${error.message}`);
 		}
 	};
 
@@ -241,7 +244,7 @@ const EnhancedClimateMap = ({ onMount = () => true }) => {
 
 		return lines.slice(1).map((line, index) => {
 			const values = line.split(",");
-			const outbreak: any = {};
+			const outbreak: Partial<OutbreakData> = {};
 
 			headers.forEach((header, i) => {
 				const value = values[i];
@@ -250,9 +253,9 @@ const EnhancedClimateMap = ({ onMount = () => true }) => {
 					header === "longitude" ||
 					header === "cases"
 				) {
-					outbreak[header] = Number.parseFloat(value);
+					(outbreak as any)[header] = Number.parseFloat(value);
 				} else {
-					outbreak[header] = value;
+					(outbreak as any)[header] = value;
 				}
 			});
 
@@ -293,9 +296,10 @@ const EnhancedClimateMap = ({ onMount = () => true }) => {
 			try {
 				const csvData = e.target?.result as string;
 				processCSVData(csvData);
-			} catch (err: any) {
-				console.error("Error processing uploaded file:", err);
-				setError(err.message);
+			} catch (err: unknown) {
+				const error = err as Error;
+				console.error("Error processing uploaded file:", error);
+				setError(error.message);
 				setLoading(false);
 			}
 		};
@@ -314,7 +318,7 @@ const EnhancedClimateMap = ({ onMount = () => true }) => {
 			setNutsGeoJSON(geoJSON as NutsGeoJSON);
 			setStats(nutsMapper.getStats());
 
-			if (geoJSON && geoJSON.features) {
+			if (geoJSON?.features) {
 				const intensities = geoJSON.features
 					.map((feature) => feature.properties.intensity)
 					.filter(
@@ -330,9 +334,10 @@ const EnhancedClimateMap = ({ onMount = () => true }) => {
 					setDataExtremes(extremes);
 				}
 			}
-		} catch (err: any) {
-			console.error("Error processing CSV data:", err);
-			setError(err.message);
+		} catch (err: unknown) {
+			const error = err as Error;
+			console.error("Error processing CSV data:", error);
+			setError(error.message);
 		} finally {
 			setLoading(false);
 		}
@@ -583,6 +588,7 @@ const EnhancedClimateMap = ({ onMount = () => true }) => {
 			<div className="map-bottom-bar">
 				<div className="control-section">
 					<button
+						type="button"
 						onClick={loadNutsData}
 						disabled={loading}
 						className="primary-button"
@@ -592,6 +598,7 @@ const EnhancedClimateMap = ({ onMount = () => true }) => {
 					</button>
 
 					<button
+						type="button"
 						onClick={handleUploadClick}
 						disabled={loading}
 						className="secondary-button"
