@@ -26,13 +26,13 @@ import { getColorFromGradient } from "./gradientUtilities.ts";
 import {
 	COLOR_SCHEMES,
 	type DataExtremes,
+	type NutsFeature,
 	type NutsGeoJSON,
 	type OutbreakData,
 	type ProcessingStats,
 	type TemperatureDataPoint,
 	type ViewportBounds,
 } from "./types.ts";
-import { VIRUSES } from "./virusConstants.ts";
 
 const MIN_ZOOM = 3.4;
 const MAX_ZOOM = 7;
@@ -111,6 +111,11 @@ const DynamicLegend = ({
 	);
 };
 
+interface ViewportChangeData {
+	bounds: L.LatLngBounds;
+	zoom: number;
+}
+
 const EnhancedClimateMap = ({ onMount = () => true }) => {
 	const [nutsGeoJSON, setNutsGeoJSON] = useState<NutsGeoJSON | null>(null);
 	const [loading, setLoading] = useState<boolean>(false);
@@ -141,36 +146,36 @@ const EnhancedClimateMap = ({ onMount = () => true }) => {
 
 	const getOptimismLevels = () => ["optimistic", "realistic", "pessimistic"];
 
-	const calculateExtremes = (
-		data: TemperatureDataPoint[],
-		calculatePercentiles = true,
-	): DataExtremes => {
-		if (!data || data.length === 0) return { min: 0, max: 0 };
+	const loadTemperatureData = useCallback(async (year: number) => {
+		const calculateExtremes = (
+			data: TemperatureDataPoint[],
+			calculatePercentiles = true,
+		): DataExtremes => {
+			if (!data || data.length === 0) return { min: 0, max: 0 };
 
-		const temperatures = data
-			.map((point) => point.temperature)
-			.filter((temp) => !Number.isNaN(temp));
+			const temperatures = data
+				.map((point) => point.temperature)
+				.filter((temp) => !Number.isNaN(temp));
 
-		if (temperatures.length === 0) return { min: 0, max: 0 };
+			if (temperatures.length === 0) return { min: 0, max: 0 };
 
-		if (calculatePercentiles) {
-			const sortedTemps = [...temperatures].sort((a, b) => a - b);
+			if (calculatePercentiles) {
+				const sortedTemps = [...temperatures].sort((a, b) => a - b);
 
-			const p5Index = Math.floor((25 / 100) * (sortedTemps.length - 1));
-			const p95Index = Math.floor((75 / 100) * (sortedTemps.length - 1));
+				const p5Index = Math.floor((25 / 100) * (sortedTemps.length - 1));
+				const p95Index = Math.floor((75 / 100) * (sortedTemps.length - 1));
 
+				return {
+					min: sortedTemps[p5Index],
+					max: sortedTemps[p95Index],
+				};
+			}
 			return {
-				min: sortedTemps[p5Index],
-				max: sortedTemps[p95Index],
+				min: Math.min(...temperatures),
+				max: Math.max(...temperatures),
 			};
-		}
-		return {
-			min: Math.min(...temperatures),
-			max: Math.max(...temperatures),
 		};
-	};
 
-	const loadTemperatureData = async (year: number) => {
 		try {
 			const dataPath = `${year.toString()}_data_january_05res.csv`;
 			console.log("DataPath:", dataPath);
@@ -219,11 +224,11 @@ const EnhancedClimateMap = ({ onMount = () => true }) => {
 			const error = err as Error;
 			setError(`Failed to load temperature data: ${error.message}`);
 		}
-	};
+	}, []);
 
 	useEffect(() => {
 		loadTemperatureData(currentYear);
-	}, [currentYear]);
+	}, [currentYear, loadTemperatureData]);
 
 	useEffect(() => {
 		fetch("/data/outbreaks.csv")
@@ -244,7 +249,7 @@ const EnhancedClimateMap = ({ onMount = () => true }) => {
 
 		return lines.slice(1).map((line, index) => {
 			const values = line.split(",");
-			const outbreak: Partial<OutbreakData> = {};
+			const outbreak: Record<string, string | number> = {};
 
 			headers.forEach((header, i) => {
 				const value = values[i];
@@ -253,9 +258,9 @@ const EnhancedClimateMap = ({ onMount = () => true }) => {
 					header === "longitude" ||
 					header === "cases"
 				) {
-					(outbreak as any)[header] = Number.parseFloat(value);
+					outbreak[header] = Number.parseFloat(value);
 				} else {
-					(outbreak as any)[header] = value;
+					outbreak[header] = value;
 				}
 			});
 
@@ -347,63 +352,63 @@ const EnhancedClimateMap = ({ onMount = () => true }) => {
 		fileInputRef.current?.click();
 	};
 
-	const handleViewportChange = useCallback((newViewport: any) => {
-		if (newViewport) {
-			const bounds = newViewport.bounds;
-			const zoom = newViewport.zoom;
+	const handleViewportChange = useCallback(
+		(newViewport: ViewportChangeData) => {
+			if (newViewport) {
+				const bounds = newViewport.bounds;
+				const zoom = newViewport.zoom;
 
-			setViewport((prevViewport) => {
-				if (
-					!prevViewport ||
-					Math.abs(bounds.getNorth() - prevViewport.north) > 0.1 ||
-					Math.abs(bounds.getSouth() - prevViewport.south) > 0.1 ||
-					Math.abs(bounds.getEast() - prevViewport.east) > 0.1 ||
-					Math.abs(bounds.getWest() - prevViewport.west) > 0.1 ||
-					Math.abs(zoom - prevViewport.zoom) > 0.1
-				) {
-					return {
-						north: bounds.getNorth(),
-						south: bounds.getSouth(),
-						east: bounds.getEast(),
-						west: bounds.getWest(),
-						zoom: zoom,
-					};
-				}
-				return prevViewport;
-			});
+				setViewport((prevViewport) => {
+					if (
+						!prevViewport ||
+						Math.abs(bounds.getNorth() - prevViewport.north) > 0.1 ||
+						Math.abs(bounds.getSouth() - prevViewport.south) > 0.1 ||
+						Math.abs(bounds.getEast() - prevViewport.east) > 0.1 ||
+						Math.abs(bounds.getWest() - prevViewport.west) > 0.1 ||
+						Math.abs(zoom - prevViewport.zoom) > 0.1
+					) {
+						return {
+							north: bounds.getNorth(),
+							south: bounds.getSouth(),
+							east: bounds.getEast(),
+							west: bounds.getWest(),
+							zoom: zoom,
+						};
+					}
+					return prevViewport;
+				});
 
-			let newResolution = 1;
-			if (zoom < 2.5) newResolution = 4.5;
-			else if (zoom < 4.5) newResolution = 3.5;
-			else if (zoom < 6) newResolution = 2.5;
-			else if (zoom < 8) newResolution = 1.5;
-			else newResolution = 1;
+				let newResolution = 1;
+				if (zoom < 2.5) newResolution = 4.5;
+				else if (zoom < 4.5) newResolution = 3.5;
+				else if (zoom < 6) newResolution = 2.5;
+				else if (zoom < 8) newResolution = 1.5;
+				else newResolution = 1;
 
-			setResolutionLevel((prevResolution) => {
-				if (prevResolution !== newResolution) {
-					return newResolution;
-				}
-				return prevResolution;
-			});
-		}
-	}, []);
+				setResolutionLevel((prevResolution) => {
+					if (prevResolution !== newResolution) {
+						return newResolution;
+					}
+					return prevResolution;
+				});
+			}
+		},
+		[],
+	);
 
 	const handleModelSelect = (modelId: string) => {
 		setSelectedModel(modelId);
 	};
 
-	const getOutbreakColor = (category: string): string => {
-		const virus = VIRUSES.find((v) => v.title === category);
-		return virus?.color || "#8A2BE2";
-	};
-
 	const style = (feature: GeoJSON.Feature) => {
 		if (!feature || !feature.properties) return {};
+
+		const properties = feature.properties as { intensity?: number };
 
 		return {
 			fillColor: dataExtremes
 				? getColorFromGradient(
-						feature.properties.intensity || 0,
+						properties.intensity || 0,
 						dataExtremes,
 						"#8b5cf6",
 						"#cccccc",
@@ -445,11 +450,15 @@ const EnhancedClimateMap = ({ onMount = () => true }) => {
 		});
 
 		if (feature.properties) {
-			const { NUTS_ID, intensity } = feature.properties;
+			const properties = feature.properties as {
+				NUTS_ID?: string;
+				intensity?: number;
+			};
+			const { NUTS_ID, intensity } = properties;
 			const popupContent = `
         <div class="nuts-popup">
-          <h4>NUTS Region: ${NUTS_ID}</h4>
-          <p>Value: ${intensity !== null ? `${intensity.toFixed(1)}°C` : "N/A"}</p>
+          <h4>NUTS Region: ${NUTS_ID || "Unknown"}</h4>
+          <p>Value: ${intensity !== null && intensity !== undefined ? `${intensity.toFixed(1)}°C` : "N/A"}</p>
         </div>
       `;
 			(layer as L.Layer & { bindPopup: (content: string) => void }).bindPopup(
@@ -528,7 +537,6 @@ const EnhancedClimateMap = ({ onMount = () => true }) => {
 							{nutsGeoJSON?.features && nutsGeoJSON.features.length > 0 && (
 								<GeoJSON
 									data={nutsGeoJSON}
-									// eslint-disable-next-line @typescript-eslint/no-misused-promises
 									style={(f) => (f ? style(f) : {})}
 									onEachFeature={onEachFeature}
 								/>
@@ -542,7 +550,7 @@ const EnhancedClimateMap = ({ onMount = () => true }) => {
 									center={[outbreak.latitude, outbreak.longitude]}
 									radius={10}
 									pathOptions={{
-										fillColor: getOutbreakColor(outbreak.category),
+										fillColor: "#8A2BE2",
 										color: "#000",
 										weight: 1,
 										opacity: 1,
