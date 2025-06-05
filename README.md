@@ -21,7 +21,7 @@ You can also share the link directly to a specific view mode:
 # Set up
 
 ## Python
-Create a VENV with Python 12, activate it.
+Create a VENV with Python 3.12, activate it.
 ```bash
 python3.12 -m venv ~/.venvs/oh
 source ~/.venvs/oh/bin/activate
