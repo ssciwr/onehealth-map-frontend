@@ -1,4 +1,5 @@
 import { BarChart3, ChevronDown, Info, TrendingUp } from "lucide-react";
+import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
 import { useMemo, useState } from "react";
 import { viewingMode } from "../../../stores/ViewingModeStore.ts";
@@ -15,35 +16,38 @@ const OptimismLevelSelector = observer(
 	}) => {
 		const [isOpen, setIsOpen] = useState(false);
 
+		// Use MobX computed for the MobX observable part, wrapped in useMemo for React props, so pre-commit doesn't complain
+		// about viewingMode.isExpert (which it felt was not a dependency, even though removing it broke this code :P)
 		const OPTIMISM_LEVELS = useMemo(
-			() => [
-				{
-					id: "pessimistic",
-					title: "Pessimistic",
-					description: "Conservative estimates with worst-case scenarios",
-					emoji: "📉",
-					icon: TrendingUp,
-					color: "#DE350B",
-				},
-				{
-					id: "realistic",
-					title: viewingMode.isExpert ? "Normative" : "Realistic",
-					description: "Balanced projections based on current trends",
-					emoji: "📊",
-					icon: BarChart3,
-					color: "#0052CC",
-				},
-				{
-					id: "optimistic",
-					title: "Optimistic",
-					description: "Best-case scenarios with favorable conditions",
-					emoji: "📈",
-					icon: TrendingUp,
-					color: "#36B37E",
-				},
-			],
-			[viewingMode.isExpert],
-		);
+			() =>
+				computed(() => [
+					{
+						id: "pessimistic",
+						title: "Pessimistic",
+						description: "Conservative estimates with worst-case scenarios",
+						emoji: "📉",
+						icon: TrendingUp,
+						color: "#DE350B",
+					},
+					{
+						id: "realistic",
+						title: viewingMode.isExpert ? "Normative" : "Realistic",
+						description: "Balanced projections based on current trends",
+						emoji: "📊",
+						icon: BarChart3,
+						color: "#0052CC",
+					},
+					{
+						id: "optimistic",
+						title: "Optimistic",
+						description: "Best-case scenarios with favorable conditions",
+						emoji: "📈",
+						icon: TrendingUp,
+						color: "#36B37E",
+					},
+				]),
+			[],
+		).get();
 
 		const filteredLevels = useMemo(
 			() =>
