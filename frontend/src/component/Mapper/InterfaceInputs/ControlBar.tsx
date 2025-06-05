@@ -65,8 +65,7 @@ const ControlBar = ({ map }: ControlBarProps) => {
 			},
 		);
 	};
-	// Eventually, this should go onthe right with right: '10px' when doing that design.
-	// And the distance should be proportion of page to work well on mobile.
+
 	return (
 		<div
 			style={{
@@ -81,6 +80,7 @@ const ControlBar = ({ map }: ControlBarProps) => {
 			}}
 		>
 			<button
+				type="button"
 				onClick={handleZoomIn}
 				style={{
 					width: "40px",
@@ -100,6 +100,7 @@ const ControlBar = ({ map }: ControlBarProps) => {
 			</button>
 
 			<button
+				type="button"
 				onClick={handleZoomOut}
 				style={{
 					width: "40px",
@@ -119,6 +120,7 @@ const ControlBar = ({ map }: ControlBarProps) => {
 			</button>
 
 			<button
+				type="button"
 				onClick={handleLocationRequest}
 				disabled={isLocating}
 				style={{

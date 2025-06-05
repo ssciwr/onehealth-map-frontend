@@ -15,7 +15,6 @@ const OptimismLevelSelector = observer(
 	}) => {
 		const [isOpen, setIsOpen] = useState(false);
 
-		// Define OPTIMISM_LEVELS with reactive title based on viewingMode
 		const OPTIMISM_LEVELS = useMemo(
 			() => [
 				{
@@ -43,10 +42,9 @@ const OptimismLevelSelector = observer(
 					color: "#36B37E",
 				},
 			],
-			[viewingMode.isExpert, viewingMode.isCitizen],
+			[viewingMode.isExpert],
 		);
 
-		// Filter available levels based on what's passed in - also reactive
 		const filteredLevels = useMemo(
 			() =>
 				OPTIMISM_LEVELS.filter((level) =>
@@ -62,6 +60,7 @@ const OptimismLevelSelector = observer(
 		return (
 			<span className="model-selector">
 				<button
+					type="button"
 					className="model-selector-button"
 					onClick={() => setIsOpen(!isOpen)}
 				>
@@ -82,6 +81,7 @@ const OptimismLevelSelector = observer(
 						<div className="virus-list">
 							{filteredLevels.map((level) => (
 								<button
+									type="button"
 									key={level.id}
 									className={`virus-item ${selectedOptimism === level.id ? "selected" : ""}`}
 									onClick={() => {
