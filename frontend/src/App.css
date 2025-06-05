@@ -1,26 +1,28 @@
 /* None for now */
 
 .text-primary {
-    color: black;
-    font-size:2em;
+	color: black;
+	font-size: 2em;
 }
 
 .tertiary {
-    color: rgb(100,100,100);
+	color: rgb(100, 100, 100);
 }
 
-.center { text-align: center; }
+.center {
+	text-align: center;
+}
 
 :root {
-    --primary: #00437d;
-    --brand: #a2274c; /* using brand rather than second/secondary because secondary is already a text type (lighter
+	--primary: #00437d;
+	--brand: #a2274c; /* using brand rather than second/secondary because secondary is already a text type (lighter
     smaller text) and in this case, this color is certainly not secondary/depromoting, just one of two equal parts. */
-    --white: #ffffff;
-    --dark: #303030;
+	--white: #ffffff;
+	--dark: #303030;
 }
 
 @media (min-width: 768px) {
-    .horizontal-margin-on-medium-up {
-        margin: 10vh 15vw;
-    }
+	.horizontal-margin-on-medium-up {
+		margin: 10vh 15vw;
+	}
 }

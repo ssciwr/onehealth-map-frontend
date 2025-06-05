@@ -1,12 +1,12 @@
 interface ExtremePoints {
-    min: number;
-    max: number;
+	min: number;
+	max: number;
 }
 
 interface RGBColor {
-    r: number;
-    g: number;
-    b: number;
+	r: number;
+	g: number;
+	b: number;
 }
 
 /**
@@ -15,19 +15,19 @@ interface RGBColor {
  * @returns RGB color object
  */
 function hexToRgb(hex: string): RGBColor {
-    // Remove # if present and ensure uppercase
-    const cleanHex = hex.replace('#', '').toUpperCase();
+	// Remove # if present and ensure uppercase
+	const cleanHex = hex.replace("#", "").toUpperCase();
 
-    // Validate hex format
-    if (!/^[0-9A-F]{6}$/.test(cleanHex)) {
-        throw new Error(`Invalid hex color format: ${hex}`);
-    }
+	// Validate hex format
+	if (!/^[0-9A-F]{6}$/.test(cleanHex)) {
+		throw new Error(`Invalid hex color format: ${hex}`);
+	}
 
-    return {
-        r: parseInt(cleanHex.slice(0, 2), 16),
-        g: parseInt(cleanHex.slice(2, 4), 16),
-        b: parseInt(cleanHex.slice(4, 6), 16)
-    };
+	return {
+		r: Number.parseInt(cleanHex.slice(0, 2), 16),
+		g: Number.parseInt(cleanHex.slice(2, 4), 16),
+		b: Number.parseInt(cleanHex.slice(4, 6), 16),
+	};
 }
 
 /**
@@ -36,12 +36,12 @@ function hexToRgb(hex: string): RGBColor {
  * @returns Hex color string with # prefix
  */
 function rgbToHex(rgb: RGBColor): string {
-    const toHex = (value: number): string => {
-        const hex = Math.round(Math.max(0, Math.min(255, value))).toString(16);
-        return hex.length === 1 ? '0' + hex : hex;
-    };
+	const toHex = (value: number): string => {
+		const hex = Math.round(Math.max(0, Math.min(255, value))).toString(16);
+		return hex.length === 1 ? "0" + hex : hex;
+	};
 
-    return `#${toHex(rgb.r)}${toHex(rgb.g)}${toHex(rgb.b)}`.toUpperCase();
+	return `#${toHex(rgb.r)}${toHex(rgb.g)}${toHex(rgb.b)}`.toUpperCase();
 }
 
 /**
@@ -53,42 +53,46 @@ function rgbToHex(rgb: RGBColor): string {
  * @returns Interpolated hex color string
  */
 export const getColorFromGradient = (
-    value: number,
-    extremePoints: ExtremePoints,
-    minColor: string,
-    maxColor: string
+	value: number,
+	extremePoints: ExtremePoints,
+	minColor: string,
+	maxColor: string,
 ): string => {
-    if (typeof value !== 'number' || !isFinite(value)) {
-        throw new Error('Value must be a finite number');
-    }
+	if (typeof value !== "number" || !isFinite(value)) {
+		throw new Error("Value must be a finite number");
+	}
 
-    if (!extremePoints || typeof extremePoints.min !== 'number' || typeof extremePoints.max !== 'number') {
-        throw new Error('ExtremePoints must contain valid min and max numbers');
-    }
+	if (
+		!extremePoints ||
+		typeof extremePoints.min !== "number" ||
+		typeof extremePoints.max !== "number"
+	) {
+		throw new Error("ExtremePoints must contain valid min and max numbers");
+	}
 
-    if (!minColor || !maxColor) {
-        throw new Error('Both minColor and maxColor must be provided');
-    }
+	if (!minColor || !maxColor) {
+		throw new Error("Both minColor and maxColor must be provided");
+	}
 
-    const { min, max } = extremePoints;
+	const { min, max } = extremePoints;
 
-    if (min === max) {
-        return minColor;
-    }
+	if (min === max) {
+		return minColor;
+	}
 
-    const clampedValue = Math.max(min, Math.min(max, value));
+	const clampedValue = Math.max(min, Math.min(max, value));
 
-    const factor = (clampedValue - min) / (max - min);
+	const factor = (clampedValue - min) / (max - min);
 
-    const minRgb = hexToRgb(minColor);
-    const maxRgb = hexToRgb(maxColor);
+	const minRgb = hexToRgb(minColor);
+	const maxRgb = hexToRgb(maxColor);
 
-    const interpolatedRgb: RGBColor = {
-        r: minRgb.r + (maxRgb.r - minRgb.r) * factor,
-        g: minRgb.g + (maxRgb.g - minRgb.g) * factor,
-        b: minRgb.b + (maxRgb.b - minRgb.b) * factor
-    };
+	const interpolatedRgb: RGBColor = {
+		r: minRgb.r + (maxRgb.r - minRgb.r) * factor,
+		g: minRgb.g + (maxRgb.g - minRgb.g) * factor,
+		b: minRgb.b + (maxRgb.b - minRgb.b) * factor,
+	};
 
-    // Convert back to hex and return
-    return rgbToHex(interpolatedRgb);
-}
+	// Convert back to hex and return
+	return rgbToHex(interpolatedRgb);
+};
