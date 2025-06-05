@@ -83,7 +83,7 @@ const BottomLegend = ({
 				right: 0,
 				minHeight: "25px",
 				background: `linear-gradient(to right, ${scheme.low}, ${scheme.high})`,
-				zIndex: 1000,
+				zIndex: 400,
 				display: "flex",
 				alignItems: "center",
 				justifyContent: "space-between",
@@ -540,12 +540,9 @@ const EnhancedClimateMap = ({ onMount = () => true }) => {
 							attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
 						/>
 
-						<Pane name="gridPane" style={{ zIndex: 1550, opacity: 0.5 }}>
+						<Pane name="gridPane" style={{ zIndex: 340, opacity: 0.5 }}>
 							{temperatureData.length > 0 && viewport && dataExtremes && (
 								<div>
-									<div style={{ zIndex: "15923904", top: "0px", left: "10px" }}>
-										Adaptive Grid Layer: {temperatureData.length}
-									</div>
 									<AdaptiveGridLayer
 										dataPoints={[...temperatureData]}
 										viewport={viewport}
@@ -556,7 +553,7 @@ const EnhancedClimateMap = ({ onMount = () => true }) => {
 							)}
 						</Pane>
 
-						<Pane name="geoJsonPane" style={{ zIndex: 200 }}>
+						<Pane name="geoJsonPane" style={{ zIndex: 320 }}>
 							{nutsGeoJSON?.features && nutsGeoJSON.features.length > 0 && (
 								<GeoJSON
 									data={nutsGeoJSON}
@@ -566,7 +563,7 @@ const EnhancedClimateMap = ({ onMount = () => true }) => {
 							)}
 						</Pane>
 
-						<Pane name="markersPane" style={{ zIndex: 500 }}>
+						<Pane name="markersPane" style={{ zIndex: 330 }}>
 							{outbreaks.map((outbreak) => (
 								<CircleMarker
 									key={outbreak.id}

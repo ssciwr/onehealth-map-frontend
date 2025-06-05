@@ -75,7 +75,7 @@ const ControlBar = ({ map }: ControlBarProps) => {
 				right: "6vw",
 				top: "50%",
 				transform: "translateY(-50%)",
-				zIndex: 9000,
+				zIndex: 600, // 600-700 now reserved for control elements on map. 1000 for modals. 300-400 for map layers.
 				display: "flex",
 				flexDirection: "column",
 				gap: "4px",

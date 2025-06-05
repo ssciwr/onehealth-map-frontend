@@ -52,13 +52,12 @@ const AntdTimelineSelector: React.FC<AntdTimelineSelectorProps> = ({
 		yearOptions.push(y);
 	}
 
-	// Mobile-specific styles
 	const mobileContainerStyle: React.CSSProperties = {
 		position: "fixed",
 		bottom: "40px",
 		left: "50%",
 		transform: "translateX(-50%)",
-		zIndex: 1000,
+		zIndex: 500,
 	};
 
 	const containerStyle = isMobile ? mobileContainerStyle : {};
