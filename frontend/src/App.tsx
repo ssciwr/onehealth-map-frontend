@@ -1,56 +1,53 @@
-import { Routes, Route } from 'react-router-dom'
-import { observer } from 'mobx-react-lite'
-import './App.css'
-import Overview from './pages/Overview'
-import NutsMapV5 from "./component/NUTSMapper/NutsMapV5.tsx";
+import { observer } from "mobx-react-lite";
+import { Route, Routes } from "react-router-dom";
+import "./App.css";
 import EnhancedClimateMap from "./component/Mapper/EnhancedClimateMap.tsx";
-import { viewingMode } from './stores/ViewingModeStore';
 import MapWithExpertiseModal from "./component/Mapper/InterfaceInputs/MapWithExpertiseModal.tsx";
 import NotFound from "./pages/NotFound.tsx";
+import Overview from "./pages/Overview";
+import { viewingMode } from "./stores/ViewingModeStore";
 
 const App = observer(() => {
-
-    /*
+	/*
 
     Note if you edit these routes: The order matters. An earlier matching route can match what you really intended
     a later route to match. that is why the not found and / route are last.
 
      */
-    return (
-        <>
-            <Routes>
-                <Route path="/nuts5" element={<NutsMapV5 />} />
-                <Route
-                    path="/map/citizen"
-                    element={
-                        <EnhancedClimateMap
-                            onMount={() => {
-                                viewingMode.isCitizen = true;
-                                viewingMode.isExpert = false;
-                                return true;
-                            }}
-                        />
-                    }
-                />
-                <Route
-                    path="/map/expert"
-                    element={
-                        <EnhancedClimateMap
-                            onMount={() => {
-                                viewingMode.isExpert = true;
-                                viewingMode.isCitizen = false;
-                                return true;
-                            }}
-                        />
-                    }
-                />
-                <Route path="/map" element={<MapWithExpertiseModal />} />
-                <Route path="/OldOverview" element={<Overview />} />
-                <Route path="/" element={<EnhancedClimateMap />} />
-                <Route path="*" element={<NotFound />} />
-            </Routes>
-        </>
-    )
+	return (
+		<>
+			<Routes>
+				<Route
+					path="/map/citizen"
+					element={
+						<EnhancedClimateMap
+							onMount={() => {
+								viewingMode.isCitizen = true;
+								viewingMode.isExpert = false;
+								return true;
+							}}
+						/>
+					}
+				/>
+				<Route
+					path="/map/expert"
+					element={
+						<EnhancedClimateMap
+							onMount={() => {
+								viewingMode.isExpert = true;
+								viewingMode.isCitizen = false;
+								return true;
+							}}
+						/>
+					}
+				/>
+				<Route path="/map" element={<MapWithExpertiseModal />} />
+				<Route path="/OldOverview" element={<Overview />} />
+				<Route path="/" element={<EnhancedClimateMap />} />
+				<Route path="*" element={<NotFound />} />
+			</Routes>
+		</>
+	);
 });
 
 export default App;
