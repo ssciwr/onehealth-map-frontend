@@ -6,9 +6,27 @@ import { useEffect, useState } from "react";
 import ModelDetailsModal from "./ModelDetailsModal";
 const { Title } = Typography;
 
-const parseYamlText = (yamlText: string): any => {
+interface YamlData {
+	id?: string;
+	"virus-type"?: string;
+	"model-name"?: string;
+	title?: string;
+	description?: string;
+	emoji?: string;
+	icon?: string;
+	color?: string;
+	details?: string;
+	image?: string;
+	authors?: string[];
+	paper?: {
+		paperTitle?: string;
+		url?: string;
+	};
+}
+
+const parseYamlText = (yamlText: string): YamlData => {
 	const lines = yamlText.split("\n");
-	const result: any = {};
+	const result: Record<string, string> = {};
 
 	for (const line of lines) {
 		const trimmed = line.trim();
@@ -18,7 +36,6 @@ const parseYamlText = (yamlText: string): any => {
 				const key = trimmed.substring(0, colonIndex).trim();
 				let value = trimmed.substring(colonIndex + 1).trim();
 
-				// Remove quotes if present
 				if (
 					(value.startsWith("'") && value.endsWith("'")) ||
 					(value.startsWith('"') && value.endsWith('"'))
@@ -31,10 +48,21 @@ const parseYamlText = (yamlText: string): any => {
 		}
 	}
 
-	return result;
+	return result as YamlData;
 };
 
-// Function to load YAML models from the public directory
+interface Model {
+	id: string;
+	virusType: string;
+	modelName: string;
+	title: string;
+	description: string;
+	emoji: string;
+	icon: string;
+	color: string;
+	details: string;
+}
+
 const loadModels = async (): Promise<Model[]> => {
 	const modelFiles = [
 		"westNileModel1.yaml",
@@ -58,17 +86,16 @@ const loadModels = async (): Promise<Model[]> => {
 			const yamlText = await response.text();
 			const yamlData = parseYamlText(yamlText);
 
-			// Convert YAML data to Model interface
 			const model: Model = {
-				id: yamlData.id,
-				virusType: yamlData["virus-type"],
-				modelName: yamlData["model-name"],
-				title: yamlData.title,
-				description: yamlData.description,
-				emoji: yamlData.emoji,
-				icon: yamlData.icon,
-				color: yamlData.color,
-				details: yamlData.details,
+				id: yamlData.id || "",
+				virusType: yamlData["virus-type"] || "",
+				modelName: yamlData["model-name"] || "",
+				title: yamlData.title || "",
+				description: yamlData.description || "",
+				emoji: yamlData.emoji || "",
+				icon: yamlData.icon || "",
+				color: yamlData.color || "",
+				details: yamlData.details || "",
 			};
 
 			models.push(model);
@@ -79,18 +106,6 @@ const loadModels = async (): Promise<Model[]> => {
 
 	return models;
 };
-
-interface Model {
-	id: string;
-	virusType: string;
-	modelName: string;
-	title: string;
-	description: string;
-	emoji: string;
-	icon: string;
-	color: string;
-	details: string;
-}
 
 const ModelSelector = ({
 	selectedModel,
@@ -120,7 +135,6 @@ const ModelSelector = ({
 				console.error("Error loading models:", err);
 				setError("Failed to load models");
 
-				// Fallback to hardcoded data if YAML loading fails
 				console.log("Falling back to hardcoded model data");
 				setModels([
 					{

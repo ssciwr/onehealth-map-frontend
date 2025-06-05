@@ -125,7 +125,7 @@ const AntdTimelineSelector: React.FC<AntdTimelineSelectorProps> = ({
 						suffixIcon={<CalendarOutlined />}
 					>
 						{months.map((monthName, index) => (
-							<Option key={index + 1} value={index + 1}>
+							<Option key={index.toString() + monthName} value={index + 1}>
 								{monthName}
 							</Option>
 						))}

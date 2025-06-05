@@ -56,7 +56,7 @@ const AdaptiveGridLayer = ({
 				point.lng <= east + buffer,
 		);
 
-		filteredData.forEach((point: DataPoint) => {
+		for (const point of filteredData) {
 			const cellLat = Math.floor(point.lat / gridSize) * gridSize;
 			const cellLng = Math.floor(point.lng / gridSize) * gridSize;
 			const cellId = `${cellLat.toFixed(4)}_${cellLng.toFixed(4)}`;
@@ -79,16 +79,16 @@ const AdaptiveGridLayer = ({
 					bounds,
 				});
 			}
-		});
+		}
 
 		const newGridCells: GridCell[] = [];
-		cellMap.forEach((cell, id) => {
+		for (const [id, cell] of cellMap) {
 			newGridCells.push({
 				bounds: cell.bounds,
 				temperature: cell.sum / cell.count,
 				id,
 			});
-		});
+		}
 
 		return newGridCells;
 	}, [dataPoints, viewport]);

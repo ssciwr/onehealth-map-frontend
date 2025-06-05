@@ -525,16 +525,14 @@ const EnhancedClimateMap = ({ onMount = () => true }) => {
 						</Pane>
 
 						<Pane name="geoJsonPane" style={{ zIndex: 200 }}>
-							{nutsGeoJSON &&
-								nutsGeoJSON.features &&
-								nutsGeoJSON.features.length > 0 && (
-									<GeoJSON
-										data={nutsGeoJSON}
-										// eslint-disable-next-line @typescript-eslint/no-misused-promises
-										style={(f) => (f ? style(f) : {})}
-										onEachFeature={onEachFeature}
-									/>
-								)}
+							{nutsGeoJSON?.features && nutsGeoJSON.features.length > 0 && (
+								<GeoJSON
+									data={nutsGeoJSON}
+									// eslint-disable-next-line @typescript-eslint/no-misused-promises
+									style={(f) => (f ? style(f) : {})}
+									onEachFeature={onEachFeature}
+								/>
+							)}
 						</Pane>
 
 						<Pane name="markersPane" style={{ zIndex: 500 }}>
