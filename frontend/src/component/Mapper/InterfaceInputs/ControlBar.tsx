@@ -66,7 +66,7 @@ const ControlBar = ({ map }: ControlBarProps) => {
 		);
 	};
 
-	const circularButtonSize = 20;
+	const circularButtonSize = 22;
 
 	return (
 		<div
@@ -81,72 +81,25 @@ const ControlBar = ({ map }: ControlBarProps) => {
 				gap: "4px",
 			}}
 		>
-			<button
-				type="button"
-				onClick={handleZoomIn}
-				style={{
-					width: "50px",
-					height: "50px",
-					backgroundColor: "rgba(255, 255, 255, 0.75)",
-					border: "none",
-					borderRadius: "50%",
-					boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
-					cursor: "pointer",
-					display: "flex",
-					alignItems: "center",
-					justifyContent: "center",
-					padding: 0,
-				}}
-			>
-				<Plus size={circularButtonSize} style={{ color: "#333", opacity: 1 }} />
+			<button type="button" onClick={handleZoomIn} className="button-icon">
+				<Plus size={circularButtonSize} className="button-icon-text" />
 			</button>
 
-			<button
-				type="button"
-				onClick={handleZoomOut}
-				style={{
-					width: "50px",
-					height: "50px",
-					backgroundColor: "rgba(255, 255, 255, 0.75)",
-					border: "none",
-					borderRadius: "50%",
-					boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
-					cursor: "pointer",
-					display: "flex",
-					alignItems: "center",
-					justifyContent: "center",
-					padding: 0,
-				}}
-			>
-				<Minus
-					size={circularButtonSize}
-					style={{ color: "#333", opacity: 1 }}
-				/>
+			<button type="button" onClick={handleZoomOut} className="button-icon">
+				<Minus size={circularButtonSize} className="button-icon-text" />
 			</button>
 
 			<button
 				type="button"
 				onClick={handleLocationRequest}
 				disabled={isLocating}
+				className="button-icon"
 				style={{
-					width: "50px",
-					height: "50px",
-					backgroundColor: "rgba(255, 255, 255, 0.75)",
-					border: "none",
-					borderRadius: "50%",
-					boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
 					cursor: isLocating ? "not-allowed" : "pointer",
-					display: "flex",
-					alignItems: "center",
-					justifyContent: "center",
-					padding: 0,
 					opacity: isLocating ? 0.6 : 1,
 				}}
 			>
-				<MapPin
-					size={circularButtonSize}
-					style={{ color: "#333", opacity: 1 }}
-				/>
+				<MapPin size={circularButtonSize} className="button-icon-text" />
 			</button>
 		</div>
 	);
