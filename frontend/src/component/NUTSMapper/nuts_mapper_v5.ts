@@ -3,7 +3,25 @@
  * Improved error handling and WKT parsing for problematic geometries
  */
 
+// Type aliases for clarity
+type Coordinate = [number, number]; // [x, y] coordinate
+type Ring = Coordinate[]; // A closed ring of coordinates
+type Polygon = Ring[]; // Array of rings (first is exterior, rest are holes)
+type MultiPolygon = Polygon[]; // Array of polygons
+
 // Define TypeScript interfaces for GeoJSON structures
+interface GeoJSONPolygon {
+	type: "Polygon";
+	coordinates: Polygon;
+}
+
+interface GeoJSONMultiPolygon {
+	type: "MultiPolygon";
+	coordinates: MultiPolygon;
+}
+
+type GeoJSONGeometry = GeoJSONPolygon | GeoJSONMultiPolygon;
+
 interface GeoJSONFeature {
 	type: "Feature";
 	properties: {
@@ -17,17 +35,6 @@ interface GeoJSONFeatureCollection {
 	type: "FeatureCollection";
 	features: GeoJSONFeature[];
 }
-
-interface GeoJSONGeometry {
-	type: "Polygon" | "MultiPolygon";
-	coordinates: any[];
-}
-
-// Type aliases for clarity
-type Coordinate = [number, number]; // [x, y] coordinate
-type Ring = Coordinate[]; // A closed ring of coordinates
-type Polygon = Ring[]; // Array of rings (first is exterior, rest are holes)
-type MultiPolygon = Polygon[]; // Array of polygons
 
 // Possible return types from parsing functions
 type GeometryResult =
@@ -135,7 +142,7 @@ class NutsMapperV5 {
 								"coordinates" in coordinates
 									? coordinates.coordinates
 									: coordinates,
-						},
+						} as GeoJSONGeometry,
 					});
 					this.processedCount++;
 				} else {

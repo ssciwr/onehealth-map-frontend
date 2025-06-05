@@ -1,3 +1,4 @@
+import type { Point } from "@turf/turf";
 import type L from "leaflet";
 
 export interface NutsProperties {
@@ -63,7 +64,7 @@ export interface TemperatureDataPoint {
 	lat: number;
 	lng: number;
 	temperature: number;
-	point: any; // turf.js point
+	point: Point;
 	date?: string;
 	id?: string;
 }
