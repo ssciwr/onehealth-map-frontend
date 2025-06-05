@@ -2,7 +2,7 @@
 A project to render a map of NUTs regions with varied intensities, and later, with outbreaks.
 
 # How to run
-- Put "nutsRegion.csv" in the `frontend/data` folder.
+- Put "nutsRegions.csv" in the `frontend/data` folder.
 - cd to /frontend
 - Run `pnpm i`
 - Run `pnpm run dev`
