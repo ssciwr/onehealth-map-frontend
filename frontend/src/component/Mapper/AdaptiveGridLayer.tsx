@@ -69,7 +69,6 @@ const AdaptiveGridLayer = ({
 			if (cellMap.has(cellId)) {
 				const cell = cellMap.get(cellId);
 				if (cell) {
-					// ✅ Explicit null check
 					cell.sum += point.temperature;
 					cell.count += 1;
 				}
