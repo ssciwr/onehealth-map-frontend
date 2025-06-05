@@ -14,6 +14,7 @@ import L from "leaflet";
 import ViewportMonitor from "./ViewportMonitor.tsx";
 import "./Map.css";
 import { Layers } from "lucide-react";
+import { isMobile } from "react-device-detect";
 import { viewingMode } from "../../stores/ViewingModeStore.ts";
 import AdaptiveGridLayer from "./AdaptiveGridLayer.tsx";
 import AntdTimelineSelector from "./AntdTimelineSelector.tsx";
@@ -65,48 +66,56 @@ const interpolateColor = (color1: string, color2: string, factor: number) => {
 	return rgbToHex(r, g, b);
 };
 
-const DynamicLegend = ({
+const BottomLegend = ({
 	extremes,
 	unit = "°C",
 }: { extremes: DataExtremes; unit?: string }) => {
 	if (!extremes) return null;
 
 	const scheme = COLOR_SCHEMES.default;
-	const steps = 10;
-	const gradientStops = [];
-
-	for (let i = 0; i <= steps; i++) {
-		const factor = i / steps;
-		const color = interpolateColor(scheme.low, scheme.high, factor);
-		const value = extremes.min + (extremes.max - extremes.min) * factor;
-		gradientStops.push({ color, value, factor });
-	}
 
 	return (
-		<div className="dynamic-legend">
-			<h4 className="legend-title">Data Range</h4>
-			<div className="legend-gradient">
-				<div
-					className="gradient-bar"
-					style={{
-						background: `linear-gradient(to top, ${scheme.low}, ${scheme.high})`,
-					}}
-				/>
-				<div className="legend-labels">
-					<span className="legend-max">
-						{extremes.max.toFixed(1)}
-						{unit}
-					</span>
-					<span className="legend-mid">
-						{((extremes.min + extremes.max) / 2).toFixed(1)}
-						{unit}
-					</span>
-					<span className="legend-min">
-						{extremes.min.toFixed(1)}
-						{unit}
-					</span>
-				</div>
-			</div>
+		<div
+			style={{
+				position: "fixed",
+				bottom: 0,
+				left: 0,
+				right: 0,
+				minHeight: "25px",
+				background: `linear-gradient(to right, ${scheme.low}, ${scheme.high})`,
+				zIndex: 1000,
+				display: "flex",
+				alignItems: "center",
+				justifyContent: "space-between",
+				backgroundColor: "white",
+			}}
+		>
+			<span
+				style={{
+					fontSize: "12px",
+					minHeight: "100%",
+					fontWeight: "bold",
+					backgroundColor: "rgba(255,255,255,0.3)",
+					color: "white",
+					padding: "4px 2px",
+				}}
+			>
+				{extremes.min.toFixed(1)}
+				<small style={{ color: "rgba(255,255,255,0.5)" }}>{unit}</small>
+			</span>
+			<span
+				style={{
+					fontSize: "12px",
+					minHeight: "100%",
+					fontWeight: "bold",
+					backgroundColor: "rgba(255,255,255,0.3)",
+					color: "white",
+					padding: "4px 2px",
+				}}
+			>
+				{extremes.max.toFixed(1)}
+				<small style={{ color: "rgba(255,255,255,0.5)" }}>{unit}</small>
+			</span>
 		</div>
 	);
 };
@@ -469,37 +478,51 @@ const EnhancedClimateMap = ({ onMount = () => true }) => {
 
 	return (
 		<div className="climate-map-container">
-			<div className="header-section center">
-				<GeneralCard style={{ width: "fit-content" }}>
-					<div className="logo-section">
-						<h1 className="map-title">
-							<span className="title-one">One</span>
-							<span className="title-health">Health</span>
-							<span className="title-platform">Platform</span>
-							<small className="tertiary">
-								<i>&nbsp;{viewingMode.isExpert && "Expert Mode"}</i>
-							</small>
-						</h1>
+			{isMobile ? (
+				<div>
+					<AntdTimelineSelector
+						year={currentYear}
+						month={currentMonth}
+						onYearChange={setCurrentYear}
+						onMonthChange={setCurrentMonth}
+					/>
+					<div style={{ position: "fixed", top: "10px", opacity: 0 }}>
+						<GeneralCard>Hidden Mobile Header</GeneralCard>
 					</div>
-					<ModelSelector
-						selectedModel={selectedModel}
-						onModelSelect={handleModelSelect}
-					/>
-					&nbsp; with&nbsp;
-					<OptimismLevelSelector
-						availableOptimismLevels={getOptimismLevels()}
-						selectedOptimism={selectedOptimism}
-						setOptimism={setSelectedOptimism}
-					/>
-				</GeneralCard>
+				</div>
+			) : (
+				<div className="header-section center">
+					<GeneralCard style={{ width: "fit-content" }}>
+						<div className="logo-section">
+							<h1 className="map-title">
+								<span className="title-one">One</span>
+								<span className="title-health">Health</span>
+								<span className="title-platform">Platform</span>
+								<small className="tertiary">
+									<i>&nbsp;{viewingMode.isExpert && "Expert Mode"}</i>
+								</small>
+							</h1>
+						</div>
+						<ModelSelector
+							selectedModel={selectedModel}
+							onModelSelect={handleModelSelect}
+						/>
+						&nbsp; with&nbsp;
+						<OptimismLevelSelector
+							availableOptimismLevels={getOptimismLevels()}
+							selectedOptimism={selectedOptimism}
+							setOptimism={setSelectedOptimism}
+						/>
+					</GeneralCard>
 
-				<AntdTimelineSelector
-					year={currentYear}
-					month={currentMonth}
-					onYearChange={setCurrentYear}
-					onMonthChange={setCurrentMonth}
-				/>
-			</div>
+					<AntdTimelineSelector
+						year={currentYear}
+						month={currentMonth}
+						onYearChange={setCurrentYear}
+						onMonthChange={setCurrentMonth}
+					/>
+				</div>
+			)}
 
 			<div className="map-content-wrapper">
 				<div className="map-content">
@@ -585,10 +608,6 @@ const EnhancedClimateMap = ({ onMount = () => true }) => {
 
 					<ControlBar map={map} />
 				</div>
-
-				<div className="legend-sidebar">
-					{dataExtremes && <DynamicLegend extremes={dataExtremes} unit="°C" />}
-				</div>
 			</div>
 
 			<div className="map-bottom-bar">
@@ -636,6 +655,8 @@ const EnhancedClimateMap = ({ onMount = () => true }) => {
 					/>
 				)}
 			</div>
+
+			{dataExtremes && <BottomLegend extremes={dataExtremes} unit="°C" />}
 		</div>
 	);
 };
