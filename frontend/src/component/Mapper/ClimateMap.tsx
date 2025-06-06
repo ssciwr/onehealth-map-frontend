@@ -13,6 +13,7 @@ import L from "leaflet";
 import ViewportMonitor from "./ViewportMonitor.tsx";
 import "./Map.css";
 import { Layers } from "lucide-react";
+import Footer from "../../static/Footer.tsx";
 import AdaptiveGridLayer from "./AdaptiveGridLayer.tsx";
 import DebugStatsPanel from "./DebugStatsPanel.tsx";
 import ControlBar from "./InterfaceInputs/ControlBar.tsx";
@@ -303,151 +304,154 @@ const ClimateMap = ({ onMount = () => true }) => {
 	};
 
 	return (
-		<div className="climate-map-container">
-			<MapHeader
-				currentYear={currentYear}
-				currentMonth={currentMonth}
-				setCurrentYear={setCurrentYear}
-				setCurrentMonth={setCurrentMonth}
-				selectedModel={selectedModel}
-				handleModelSelect={handleModelSelect}
-				selectedOptimism={selectedOptimism}
-				setSelectedOptimism={setSelectedOptimism}
-				getOptimismLevels={getOptimismLevels}
-			/>
+		<div>
+			<div className="climate-map-container">
+				<MapHeader
+					currentYear={currentYear}
+					currentMonth={currentMonth}
+					setCurrentYear={setCurrentYear}
+					setCurrentMonth={setCurrentMonth}
+					selectedModel={selectedModel}
+					handleModelSelect={handleModelSelect}
+					selectedOptimism={selectedOptimism}
+					setSelectedOptimism={setSelectedOptimism}
+					getOptimismLevels={getOptimismLevels}
+				/>
 
-			<div className="map-content-wrapper">
-				<div className="map-content">
-					<MapContainer
-						className="full-height-map"
-						center={[10, 12]}
-						zoom={5}
-						minZoom={MIN_ZOOM}
-						maxZoom={MAX_ZOOM}
-						ref={setMap}
-						zoomControl={false}
-						worldCopyJump={false}
-					>
-						<TileLayer
-							url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-							attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-							noWrap={true}
-						/>
+				<div className="map-content-wrapper">
+					<div className="map-content">
+						<MapContainer
+							className="full-height-map"
+							center={[10, 12]}
+							zoom={5}
+							minZoom={MIN_ZOOM}
+							maxZoom={MAX_ZOOM}
+							ref={setMap}
+							zoomControl={false}
+							worldCopyJump={false}
+						>
+							<TileLayer
+								url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+								attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+								noWrap={true}
+							/>
 
-						<Pane name="gridPane" style={{ zIndex: 340, opacity: 0.5 }}>
-							{temperatureData.length > 0 && viewport && dataExtremes && (
-								<div>
-									<AdaptiveGridLayer
-										dataPoints={[...temperatureData]}
-										viewport={viewport}
-										resolutionLevel={resolutionLevel}
-										extremes={dataExtremes}
+							<Pane name="gridPane" style={{ zIndex: 340, opacity: 0.5 }}>
+								{temperatureData.length > 0 && viewport && dataExtremes && (
+									<div>
+										<AdaptiveGridLayer
+											dataPoints={[...temperatureData]}
+											viewport={viewport}
+											resolutionLevel={resolutionLevel}
+											extremes={dataExtremes}
+										/>
+									</div>
+								)}
+							</Pane>
+
+							<Pane name="geoJsonPane" style={{ zIndex: 320 }}>
+								{nutsGeoJSON?.features && nutsGeoJSON.features.length > 0 && (
+									<GeoJSON
+										data={nutsGeoJSON}
+										style={(f) => (f ? style(f) : {})}
+										onEachFeature={onEachFeature}
 									/>
-								</div>
-							)}
-						</Pane>
+								)}
+							</Pane>
 
-						<Pane name="geoJsonPane" style={{ zIndex: 320 }}>
-							{nutsGeoJSON?.features && nutsGeoJSON.features.length > 0 && (
-								<GeoJSON
-									data={nutsGeoJSON}
-									style={(f) => (f ? style(f) : {})}
-									onEachFeature={onEachFeature}
-								/>
-							)}
-						</Pane>
-
-						<Pane name="markersPane" style={{ zIndex: 330 }}>
-							{outbreaks.map((outbreak) => (
-								<CircleMarker
-									key={outbreak.id}
-									center={[outbreak.latitude, outbreak.longitude]}
-									radius={10}
-									pathOptions={{
-										fillColor: "#8A2BE2",
-										color: "#000",
-										weight: 1,
-										opacity: 1,
-										fillOpacity: 0.8,
-									}}
-								>
-									<Popup className="outbreak-popup">
-										<div>
-											<h3>{outbreak.category}</h3>
-											<p>
-												<strong>Location:</strong> {outbreak.location}
-											</p>
-											<p>
-												<strong>Date:</strong> {outbreak.date}
-											</p>
-											<p>
-												<strong>Cases:</strong> {outbreak.cases}
-											</p>
-											{outbreak.notes && (
+							<Pane name="markersPane" style={{ zIndex: 330 }}>
+								{outbreaks.map((outbreak) => (
+									<CircleMarker
+										key={outbreak.id}
+										center={[outbreak.latitude, outbreak.longitude]}
+										radius={10}
+										pathOptions={{
+											fillColor: "#8A2BE2",
+											color: "#000",
+											weight: 1,
+											opacity: 1,
+											fillOpacity: 0.8,
+										}}
+									>
+										<Popup className="outbreak-popup">
+											<div>
+												<h3>{outbreak.category}</h3>
 												<p>
-													<strong>Notes:</strong> {outbreak.notes}
+													<strong>Location:</strong> {outbreak.location}
 												</p>
-											)}
-										</div>
-									</Popup>
-								</CircleMarker>
-							))}
-						</Pane>
+												<p>
+													<strong>Date:</strong> {outbreak.date}
+												</p>
+												<p>
+													<strong>Cases:</strong> {outbreak.cases}
+												</p>
+												{outbreak.notes && (
+													<p>
+														<strong>Notes:</strong> {outbreak.notes}
+													</p>
+												)}
+											</div>
+										</Popup>
+									</CircleMarker>
+								))}
+							</Pane>
 
-						<ViewportMonitor onViewportChange={handleViewportChange} />
-					</MapContainer>
+							<ViewportMonitor onViewportChange={handleViewportChange} />
+						</MapContainer>
 
-					<ControlBar map={map} />
-				</div>
-			</div>
-
-			<div className="map-bottom-bar">
-				<div className="control-section">
-					<button
-						type="button"
-						onClick={loadNutsData}
-						disabled={loading}
-						className="primary-button"
-					>
-						<Layers size={18} />
-						{loading ? "Loading..." : "Load NUTS Regions"}
-					</button>
-
-					<button
-						type="button"
-						onClick={handleUploadClick}
-						disabled={loading}
-						className="secondary-button"
-					>
-						Upload NUTS CSV
-					</button>
-
-					<input
-						type="file"
-						ref={fileInputRef}
-						onChange={handleFileUpload}
-						accept=".csv"
-						style={{ display: "none" }}
-					/>
-				</div>
-
-				{error && (
-					<div className="error-message">
-						<p>{error}</p>
+						<ControlBar map={map} />
 					</div>
-				)}
+				</div>
 
-				{viewport && (
-					<DebugStatsPanel
-						stats={stats}
-						temperatureDataCount={temperatureData.length}
-						currentResolution={resolutionLevel}
-						viewport={viewport}
-					/>
-				)}
+				<div className="map-bottom-bar">
+					<div className="control-section">
+						<button
+							type="button"
+							onClick={loadNutsData}
+							disabled={loading}
+							className="primary-button"
+						>
+							<Layers size={18} />
+							{loading ? "Loading..." : "Load NUTS Regions"}
+						</button>
+
+						<button
+							type="button"
+							onClick={handleUploadClick}
+							disabled={loading}
+							className="secondary-button"
+						>
+							Upload NUTS CSV
+						</button>
+
+						<input
+							type="file"
+							ref={fileInputRef}
+							onChange={handleFileUpload}
+							accept=".csv"
+							style={{ display: "none" }}
+						/>
+					</div>
+
+					{error && (
+						<div className="error-message">
+							<p>{error}</p>
+						</div>
+					)}
+
+					{viewport && (
+						<DebugStatsPanel
+							stats={stats}
+							temperatureDataCount={temperatureData.length}
+							currentResolution={resolutionLevel}
+							viewport={viewport}
+						/>
+					)}
+				</div>
+
+				{dataExtremes && <BottomLegend extremes={dataExtremes} unit="°C" />}
 			</div>
-
-			{dataExtremes && <BottomLegend extremes={dataExtremes} unit="°C" />}
+			<Footer />
 		</div>
 	);
 };

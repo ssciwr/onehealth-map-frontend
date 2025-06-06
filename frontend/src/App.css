@@ -18,6 +18,17 @@ Z-index is reserved as such:
 	color: rgb(100, 100, 100);
 }
 
+.emphasize {
+	margin: 0 0 16px 0;
+	color: #172b4d;
+}
+
+.deemphasize {
+	color: #42526e;
+	line-height: 1.5;
+	margin: 0 0 12px 0;
+}
+
 .center {
 	text-align: center;
 }

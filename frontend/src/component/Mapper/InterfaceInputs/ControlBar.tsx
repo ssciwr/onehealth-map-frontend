@@ -1,6 +1,7 @@
 import type L from "leaflet";
-import { Camera, MapPin, Minus, Plus } from "lucide-react";
+import { Camera, Info, MapPin, Minus, Plus, X } from "lucide-react";
 import { useState } from "react";
+import { AboutContent } from "../../../static/Footer.tsx";
 
 interface ControlBarProps {
 	map: L.Map | null;
@@ -9,6 +10,7 @@ interface ControlBarProps {
 const ControlBar = ({ map }: ControlBarProps) => {
 	const [isLocating, setIsLocating] = useState<boolean>(false);
 	const [isSaving, setIsSaving] = useState<boolean>(false);
+	const [showInfo, setShowInfo] = useState<boolean>(false);
 
 	const handleZoomIn = () => {
 		if (map) {
@@ -131,60 +133,120 @@ const ControlBar = ({ map }: ControlBarProps) => {
 	const circularButtonSize = 22;
 
 	return (
-		<div
-			style={{
-				position: "fixed",
-				right: "7vw",
-				top: "50%",
-				transform: "translateY(-50%)",
-				zIndex: 600, // 600-700 now reserved for control elements on map. 1000 for modals. 300-400 for map layers.
-				display: "flex",
-				flexDirection: "column",
-				gap: "4px",
-			}}
-		>
-			<button
-				type="button"
-				onClick={handleZoomIn}
-				className="button-icon light-box-shadow"
-			>
-				<Plus size={circularButtonSize} className="button-icon-text" />
-			</button>
-
-			<button
-				type="button"
-				onClick={handleZoomOut}
-				className="button-icon light-box-shadow"
-			>
-				<Minus size={circularButtonSize} className="button-icon-text" />
-			</button>
-
-			<button
-				type="button"
-				onClick={handleLocationRequest}
-				disabled={isLocating}
-				className="button-icon light-box-shadow"
+		<>
+			<div
 				style={{
-					cursor: isLocating ? "not-allowed" : "pointer",
-					opacity: isLocating ? 0.6 : 1,
+					position: "fixed",
+					right: "7vw",
+					top: "50%",
+					transform: "translateY(-50%)",
+					zIndex: 600, // 600-700 now reserved for control elements on map. 1000 for modals. 300-400 for map layers.
+					display: "flex",
+					flexDirection: "column",
+					gap: "4px",
 				}}
 			>
-				<MapPin size={circularButtonSize} className="button-icon-text" />
-			</button>
+				<button
+					type="button"
+					onClick={handleZoomIn}
+					className="button-icon light-box-shadow"
+				>
+					<Plus size={circularButtonSize} className="button-icon-text" />
+				</button>
 
-			<button
-				type="button"
-				onClick={handleSaveScreenshot}
-				disabled={isSaving}
-				className="button-icon light-box-shadow"
-				style={{
-					cursor: isSaving ? "not-allowed" : "pointer",
-					opacity: isSaving ? 0.6 : 1,
-				}}
-			>
-				<Camera size={circularButtonSize} className="button-icon-text" />
-			</button>
-		</div>
+				<button
+					type="button"
+					onClick={handleZoomOut}
+					className="button-icon light-box-shadow"
+				>
+					<Minus size={circularButtonSize} className="button-icon-text" />
+				</button>
+
+				<button
+					type="button"
+					onClick={handleLocationRequest}
+					disabled={isLocating}
+					className="button-icon light-box-shadow"
+					style={{
+						cursor: isLocating ? "not-allowed" : "pointer",
+						opacity: isLocating ? 0.6 : 1,
+					}}
+				>
+					<MapPin size={circularButtonSize} className="button-icon-text" />
+				</button>
+
+				<button
+					type="button"
+					onClick={handleSaveScreenshot}
+					disabled={isSaving}
+					className="button-icon light-box-shadow"
+					style={{
+						cursor: isSaving ? "not-allowed" : "pointer",
+						opacity: isSaving ? 0.6 : 1,
+					}}
+				>
+					<Camera size={circularButtonSize} className="button-icon-text" />
+				</button>
+
+				<button
+					type="button"
+					onClick={() => setShowInfo(true)}
+					className="button-icon light-box-shadow"
+				>
+					<Info size={circularButtonSize} className="button-icon-text" />
+				</button>
+			</div>
+
+			{/* Info Modal */}
+			{showInfo && (
+				<div
+					style={{
+						position: "fixed",
+						top: 0,
+						left: 0,
+						right: 0,
+						bottom: 0,
+						backgroundColor: "rgba(0, 0, 0, 0.5)",
+						zIndex: 1000,
+						display: "flex",
+						alignItems: "center",
+						justifyContent: "center",
+						padding: "20px",
+					}}
+				>
+					<div
+						style={{
+							backgroundColor: "white",
+							borderRadius: "8px",
+							padding: "24px",
+							maxWidth: "400px",
+							width: "100%",
+							position: "relative",
+							boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
+						}}
+					>
+						<button
+							type="button"
+							onClick={() => setShowInfo(false)}
+							style={{
+								position: "absolute",
+								top: "12px",
+								right: "12px",
+								background: "none",
+								border: "none",
+								cursor: "pointer",
+								padding: "4px",
+								color: "#666",
+							}}
+						>
+							<X size={20} />
+						</button>
+
+						<AboutContent />
+					</div>
+				</div>
+			)}
+		</>
 	);
 };
 

@@ -26,7 +26,9 @@ export const BottomLegend = ({
 				left: 0,
 				right: 0,
 				minHeight: "25px",
-				background: `linear-gradient(to right, ${scheme.low}, ${scheme.high})`,
+				background: `linear-gradient(to right, ${scheme.low}, ${scheme.high})`, // putting the real yellow here makes it very ugly :/
+				// but yellow makes the map much easier to understand/read. Another color less contrasting could work. Grey maybe but thats bad.
+				// I would say white, but the BG is which generally.
 				zIndex: 400,
 				display: "flex",
 				alignItems: "center",

@@ -69,20 +69,7 @@ export interface TemperatureDataPoint {
 	id?: string;
 }
 
-// Export constants
 export const COLOR_SCHEMES = {
-	virus: {
-		low: "#4ade80",
-		high: "#8b5cf6",
-	},
-	climate: {
-		low: "#22c55e",
-		high: "#ef4444",
-	},
-	rainfall: {
-		low: "#ffffff",
-		high: "#3b82f6",
-	},
 	default: {
 		low: "#2656ac",
 		high: "#ef4444",
