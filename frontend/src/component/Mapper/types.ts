@@ -1,4 +1,4 @@
-import type { Point } from "@turf/turf";
+import type { Feature, Point as PointGeometry } from "geojson";
 import type L from "leaflet";
 
 export interface NutsProperties {
@@ -64,7 +64,7 @@ export interface TemperatureDataPoint {
 	lat: number;
 	lng: number;
 	temperature: number;
-	point: Point;
+	point: Feature<PointGeometry>;
 	date?: string;
 	id?: string;
 }

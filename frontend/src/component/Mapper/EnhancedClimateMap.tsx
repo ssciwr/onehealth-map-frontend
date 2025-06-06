@@ -27,7 +27,6 @@ import { getColorFromGradient } from "./gradientUtilities.ts";
 import {
 	COLOR_SCHEMES,
 	type DataExtremes,
-	type NutsFeature,
 	type NutsGeoJSON,
 	type OutbreakData,
 	type ProcessingStats,
@@ -37,34 +36,6 @@ import {
 
 const MIN_ZOOM = 3.4;
 const MAX_ZOOM = 7;
-
-const hexToRgb = (hex: string) => {
-	const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-	return result
-		? {
-				r: Number.parseInt(result[1], 16),
-				g: Number.parseInt(result[2], 16),
-				b: Number.parseInt(result[3], 16),
-			}
-		: null;
-};
-
-const rgbToHex = (r: number, g: number, b: number) => {
-	return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
-};
-
-const interpolateColor = (color1: string, color2: string, factor: number) => {
-	const c1 = hexToRgb(color1);
-	const c2 = hexToRgb(color2);
-
-	if (!c1 || !c2) return color1;
-
-	const r = Math.round(c1.r + factor * (c2.r - c1.r));
-	const g = Math.round(c1.g + factor * (c2.g - c1.g));
-	const b = Math.round(c1.b + factor * (c2.b - c1.b));
-
-	return rgbToHex(r, g, b);
-};
 
 const BottomLegend = ({
 	extremes,
@@ -147,6 +118,7 @@ const EnhancedClimateMap = ({ onMount = () => true }) => {
 	const [currentMonth, setCurrentMonth] = useState<number>(1);
 	const [map, setMap] = useState<L.Map | null>(null);
 	const [dataExtremes, setDataExtremes] = useState<DataExtremes | null>(null);
+	const [dataBounds, setDataBounds] = useState<L.LatLngBounds | null>(null);
 	const fileInputRef = useRef<HTMLInputElement>(null);
 
 	useEffect(() => {
@@ -229,6 +201,16 @@ const EnhancedClimateMap = ({ onMount = () => true }) => {
 			setTemperatureData([...dataPoints]);
 			const extremes = calculateExtremes(dataPoints);
 			setDataExtremes(extremes);
+
+			if (dataPoints.length > 0) {
+				const lats = dataPoints.map((p) => p.lat);
+				const lngs = dataPoints.map((p) => p.lng);
+				const bounds = L.latLngBounds([
+					[Math.min(...lats), Math.min(...lngs)],
+					[Math.max(...lats), Math.max(...lngs)],
+				]);
+				setDataBounds(bounds);
+			}
 		} catch (err: unknown) {
 			const error = err as Error;
 			setError(`Failed to load temperature data: ${error.message}`);
@@ -238,6 +220,12 @@ const EnhancedClimateMap = ({ onMount = () => true }) => {
 	useEffect(() => {
 		loadTemperatureData(currentYear);
 	}, [currentYear, loadTemperatureData]);
+
+	useEffect(() => {
+		if (map && dataBounds) {
+			map.setMaxBounds(dataBounds);
+		}
+	}, [map, dataBounds]);
 
 	useEffect(() => {
 		fetch("/data/outbreaks.csv")
@@ -267,17 +255,23 @@ const EnhancedClimateMap = ({ onMount = () => true }) => {
 					header === "longitude" ||
 					header === "cases"
 				) {
-					outbreak[header] = Number.parseFloat(value);
+					outbreak[header] = Number.parseFloat(value) || 0;
 				} else {
-					outbreak[header] = value;
+					outbreak[header] = value || "";
 				}
 			});
 
-			if (!outbreak.id) {
-				outbreak.id = `outbreak-${index}`;
-			}
-
-			return outbreak as OutbreakData;
+			// Ensure required properties exist
+			return {
+				id: (outbreak.id as string) || `outbreak-${index}`,
+				category: (outbreak.category as string) || "Unknown",
+				location: (outbreak.location as string) || "Unknown",
+				latitude: (outbreak.latitude as number) || 0,
+				longitude: (outbreak.longitude as number) || 0,
+				date: (outbreak.date as string) || "",
+				cases: (outbreak.cases as number) || 0,
+				notes: (outbreak.notes as string) || undefined,
+			} as OutbreakData;
 		});
 	};
 
@@ -534,10 +528,12 @@ const EnhancedClimateMap = ({ onMount = () => true }) => {
 						maxZoom={MAX_ZOOM}
 						ref={setMap}
 						zoomControl={false}
+						worldCopyJump={false}
 					>
 						<TileLayer
 							url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
 							attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+							noWrap={true}
 						/>
 
 						<Pane name="gridPane" style={{ zIndex: 340, opacity: 0.5 }}>

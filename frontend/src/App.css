@@ -1,4 +1,13 @@
-/* None for now */
+/*
+Style rules:
+
+Z-index is reserved as such:
+300-399: Map itself and map layers
+400: Interactive elements above the map
+500: Interactive elements above the map
+600: Dropdowns
+1000: Modals
+ */
 
 .text-primary {
 	color: black;
