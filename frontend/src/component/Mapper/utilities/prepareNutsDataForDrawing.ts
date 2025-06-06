@@ -1,6 +1,14 @@
 /**
- * Enhanced NUTS Mapper that works with pre-processed NUTS data
- * Improved error handling and WKT parsing for problematic geometries
+ * NUTS Mapper that works with pre-processed NUTS data
+ *
+ * Basically, backend can send NUTS region data, giving us the IDs and values, which we need to draw.
+ * This code handles actually downloading a reference of the polygon drawing points of all NUTS regions, then for each
+ * region provided in our backends API response, it provides the frontend Map component with a list of Polygons
+ * representing with the right intensity value the regions.
+ *
+ * I.e. Leaflet on it's own cannot take input of NUTS ID, Nuts intensity - it needs geometry values. That's why this
+ * exists.
+ *
  */
 
 // Type aliases for clarity

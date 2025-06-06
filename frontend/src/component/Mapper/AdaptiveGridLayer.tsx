@@ -2,8 +2,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Popup, Rectangle } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import type L from "leaflet";
-import { getColorFromGradient } from "./gradientUtilities";
 import type { DataExtremes, GridCell, ViewportBounds } from "./types";
+import { getColorFromGradient } from "./utilities/gradientUtilities";
 
 interface DataPoint {
 	lat: number;

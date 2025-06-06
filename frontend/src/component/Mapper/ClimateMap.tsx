@@ -7,7 +7,7 @@ import {
 	Popup,
 	TileLayer,
 } from "react-leaflet";
-import NutsMapperV5 from "../NUTSMapper/nuts_mapper_v5";
+import NutsMapperV5 from "./utilities/prepareNutsDataForDrawing";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import ViewportMonitor from "./ViewportMonitor.tsx";
@@ -17,14 +17,6 @@ import AdaptiveGridLayer from "./AdaptiveGridLayer.tsx";
 import DebugStatsPanel from "./DebugStatsPanel.tsx";
 import ControlBar from "./InterfaceInputs/ControlBar.tsx";
 import MapHeader from "./MapHeader.tsx";
-import { getColorFromGradient } from "./gradientUtilities.ts";
-import {
-	BottomLegend,
-	MAX_ZOOM,
-	MIN_ZOOM,
-	loadTemperatureData,
-	parseCSVToOutbreaks,
-} from "./mapDataUtils";
 import type {
 	DataExtremes,
 	NutsGeoJSON,
@@ -33,6 +25,14 @@ import type {
 	TemperatureDataPoint,
 	ViewportBounds,
 } from "./types.ts";
+import { getColorFromGradient } from "./utilities/gradientUtilities";
+import {
+	BottomLegend,
+	MAX_ZOOM,
+	MIN_ZOOM,
+	loadTemperatureData,
+	parseCSVToOutbreaks,
+} from "./utilities/mapDataUtils";
 
 interface ViewportChangeData {
 	bounds: L.LatLngBounds;

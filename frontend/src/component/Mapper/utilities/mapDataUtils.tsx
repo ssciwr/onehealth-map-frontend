@@ -5,7 +5,7 @@ import {
 	type DataExtremes,
 	type OutbreakData,
 	type TemperatureDataPoint,
-} from "./types.ts";
+} from "../types.ts";
 
 export const MIN_ZOOM = 3.4;
 export const MAX_ZOOM = 7;

@@ -1,3 +1,9 @@
+/**
+ * Utilities for calculating the different gradients on the map. Like similar projects, we may want to use
+ * Blue-Yellow-Red rather than a simple Blue-Red, to increase contrast, particularly in parts of the map where
+ * changes have high implications, but can be hard to see on a simple two color gradient.
+ */
+
 interface ExtremePoints {
 	min: number;
 	max: number;
