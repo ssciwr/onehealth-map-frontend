@@ -3,7 +3,7 @@ import { Button, Modal, Typography } from "antd";
 import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
 import { viewingMode } from "../../../stores/ViewingModeStore.ts";
-import EnhancedClimateMap from "../EnhancedClimateMap.tsx";
+import ClimateMap from "../ClimateMap.tsx";
 
 const { Title } = Typography;
 
@@ -63,7 +63,7 @@ const MapWithModal = observer(() => {
 				</div>
 			</Modal>
 
-			<EnhancedClimateMap onMount={() => false} />
+			<ClimateMap onMount={() => false} />
 		</>
 	);
 });

@@ -1,7 +1,7 @@
 import { observer } from "mobx-react-lite";
 import { Route, Routes } from "react-router-dom";
 import "./App.css";
-import EnhancedClimateMap from "./component/Mapper/EnhancedClimateMap.tsx";
+import ClimateMap from "./component/Mapper/ClimateMap.tsx";
 import MapWithExpertiseModal from "./component/Mapper/InterfaceInputs/MapWithExpertiseModal.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import Overview from "./pages/Overview";
@@ -20,7 +20,7 @@ const App = observer(() => {
 				<Route
 					path="/map/citizen"
 					element={
-						<EnhancedClimateMap
+						<ClimateMap
 							onMount={() => {
 								viewingMode.isCitizen = true;
 								viewingMode.isExpert = false;
@@ -32,7 +32,7 @@ const App = observer(() => {
 				<Route
 					path="/map/expert"
 					element={
-						<EnhancedClimateMap
+						<ClimateMap
 							onMount={() => {
 								viewingMode.isExpert = true;
 								viewingMode.isCitizen = false;
@@ -43,7 +43,7 @@ const App = observer(() => {
 				/>
 				<Route path="/map" element={<MapWithExpertiseModal />} />
 				<Route path="/OldOverview" element={<Overview />} />
-				<Route path="/" element={<EnhancedClimateMap />} />
+				<Route path="/" element={<ClimateMap />} />
 				<Route path="*" element={<NotFound />} />
 			</Routes>
 		</>

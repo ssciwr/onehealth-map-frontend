@@ -39,7 +39,7 @@ interface ViewportChangeData {
 	zoom: number;
 }
 
-const EnhancedClimateMap = ({ onMount = () => true }) => {
+const ClimateMap = ({ onMount = () => true }) => {
 	const [nutsGeoJSON, setNutsGeoJSON] = useState<NutsGeoJSON | null>(null);
 	const [loading, setLoading] = useState<boolean>(false);
 	const [error, setError] = useState<string | null>(null);
@@ -452,4 +452,4 @@ const EnhancedClimateMap = ({ onMount = () => true }) => {
 	);
 };
 
-export default EnhancedClimateMap;
+export default ClimateMap;
