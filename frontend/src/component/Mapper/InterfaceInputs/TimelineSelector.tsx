@@ -2,7 +2,7 @@ import { CalendarOutlined } from "@ant-design/icons";
 import { Select, Slider, Tooltip, Typography } from "antd";
 import type React from "react";
 import { isMobile } from "react-device-detect";
-import GeneralCard from "./Multiuse/GeneralCard.tsx";
+import GeneralCard from "../../Multiuse/GeneralCard.tsx";
 
 const { Text } = Typography;
 const { Option } = Select;
@@ -14,7 +14,7 @@ interface AntdTimelineSelectorProps {
 	onMonthChange: (value: number) => void;
 }
 
-const AntdTimelineSelector: React.FC<AntdTimelineSelectorProps> = ({
+const TimelineSelector: React.FC<AntdTimelineSelectorProps> = ({
 	year,
 	month,
 	onYearChange,
@@ -91,6 +91,7 @@ const AntdTimelineSelector: React.FC<AntdTimelineSelectorProps> = ({
 									onChange={onYearChange}
 									style={{ width: "100%" }}
 									placeholder="Select Year"
+									className={isMobile ? "light-box-shadow" : ""}
 									showSearch
 									filterOption={(input, option) =>
 										option?.children
@@ -147,4 +148,4 @@ const AntdTimelineSelector: React.FC<AntdTimelineSelectorProps> = ({
 	);
 };
 
-export default AntdTimelineSelector;
+export default TimelineSelector;

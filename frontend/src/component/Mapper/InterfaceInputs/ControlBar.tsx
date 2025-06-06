@@ -1,5 +1,5 @@
 import type L from "leaflet";
-import { Download, MapPin, Minus, Plus } from "lucide-react";
+import { Camera, MapPin, Minus, Plus } from "lucide-react";
 import { useState } from "react";
 
 interface ControlBarProps {
@@ -134,7 +134,7 @@ const ControlBar = ({ map }: ControlBarProps) => {
 		<div
 			style={{
 				position: "fixed",
-				right: "6vw",
+				right: "7vw",
 				top: "50%",
 				transform: "translateY(-50%)",
 				zIndex: 600, // 600-700 now reserved for control elements on map. 1000 for modals. 300-400 for map layers.
@@ -143,11 +143,19 @@ const ControlBar = ({ map }: ControlBarProps) => {
 				gap: "4px",
 			}}
 		>
-			<button type="button" onClick={handleZoomIn} className="button-icon">
+			<button
+				type="button"
+				onClick={handleZoomIn}
+				className="button-icon light-box-shadow"
+			>
 				<Plus size={circularButtonSize} className="button-icon-text" />
 			</button>
 
-			<button type="button" onClick={handleZoomOut} className="button-icon">
+			<button
+				type="button"
+				onClick={handleZoomOut}
+				className="button-icon light-box-shadow"
+			>
 				<Minus size={circularButtonSize} className="button-icon-text" />
 			</button>
 
@@ -155,7 +163,7 @@ const ControlBar = ({ map }: ControlBarProps) => {
 				type="button"
 				onClick={handleLocationRequest}
 				disabled={isLocating}
-				className="button-icon"
+				className="button-icon light-box-shadow"
 				style={{
 					cursor: isLocating ? "not-allowed" : "pointer",
 					opacity: isLocating ? 0.6 : 1,
@@ -168,13 +176,13 @@ const ControlBar = ({ map }: ControlBarProps) => {
 				type="button"
 				onClick={handleSaveScreenshot}
 				disabled={isSaving}
-				className="button-icon"
+				className="button-icon light-box-shadow"
 				style={{
 					cursor: isSaving ? "not-allowed" : "pointer",
 					opacity: isSaving ? 0.6 : 1,
 				}}
 			>
-				<Download size={circularButtonSize} className="button-icon-text" />
+				<Camera size={circularButtonSize} className="button-icon-text" />
 			</button>
 		</div>
 	);

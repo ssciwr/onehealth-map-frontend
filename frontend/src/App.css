@@ -36,12 +36,15 @@ Z-index is reserved as such:
 	background-color: rgba(255, 255, 255, 0.75);
 	border: none;
 	border-radius: 50%;
-	box-shadow: 0 2px 4px rgba(255, 255, 255, 0.4);
 	cursor: pointer;
 	display: flex;
 	align-items: center;
 	justify-content: center;
 	padding: 0;
+}
+
+.light-box-shadow {
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .button-icon-text {
