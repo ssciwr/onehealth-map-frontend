@@ -130,20 +130,23 @@ const ControlBar = ({ map }: ControlBarProps) => {
 		img.src = `data:image/svg+xml;base64,${btoa(svg)}`;
 	};
 
-	const circularButtonSize = 22;
+	const circularButtonSize = 24;
 
 	return (
 		<>
 			<div
 				style={{
 					position: "fixed",
-					right: "7vw",
+					right: "30px",
 					top: "50%",
 					transform: "translateY(-50%)",
 					zIndex: 600, // 600-700 now reserved for control elements on map. 1000 for modals. 300-400 for map layers.
 					display: "flex",
 					flexDirection: "column",
 					gap: "4px",
+					backgroundColor: "rgba(255,255,255,0.35)",
+					borderRadius: "30px",
+					padding: "4px",
 				}}
 			>
 				<button

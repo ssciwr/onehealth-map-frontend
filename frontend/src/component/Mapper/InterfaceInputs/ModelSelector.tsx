@@ -3,6 +3,7 @@ import type { MenuProps } from "antd";
 import { ChevronDown, Plug } from "lucide-react";
 import type React from "react";
 import { useEffect, useState } from "react";
+import { isMobile } from "react-device-detect";
 import ModelDetailsModal from "./ModelDetailsModal";
 const { Title } = Typography;
 
@@ -247,7 +248,7 @@ const ModelSelector = ({
 
 	return (
 		<span className="model-selector">
-			Display&nbsp;
+			{isMobile === false && "Display&nbsp;"}
 			<Dropdown
 				menu={{ items }}
 				trigger={["click"]}

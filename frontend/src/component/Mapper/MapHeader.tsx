@@ -46,16 +46,26 @@ export default ({
 				}}
 			>
 				<GeneralCard>
-					<img
-						alt="OneHealth Logo - two objects on either side that appear to be holding a circular shape inbetween the them"
-						style={{ height: "50px", width: "50px" }}
-						src="/images/oneHealthLogoOnlySymbols.png"
-					/>
-					&nbsp;
-					<ModelSelector
-						selectedModel={selectedModel}
-						onModelSelect={handleModelSelect}
-					/>
+					<div
+						style={{
+							display: "flex",
+							alignItems: "center",
+						}}
+					>
+						<img
+							alt="OneHealth Logo - two objects on either side that appear to be holding a circular shape inbetween the them"
+							style={{ height: "42px", width: "42px" }}
+							src="/images/oneHealthLogoOnlySymbols.png"
+						/>
+						&nbsp;
+						<ModelSelector
+							selectedModel={selectedModel}
+							onModelSelect={handleModelSelect}
+						/>
+						&nbsp;
+						{/* Todo: Here have a settings cog which opensa modal containing the Model selector,
+						Otpimism selector and a close button at the bottom (fixed bottom: 10px full width). */}
+					</div>
 				</GeneralCard>
 			</div>
 		</div>

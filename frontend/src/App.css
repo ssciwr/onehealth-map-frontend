@@ -42,8 +42,10 @@ Z-index is reserved as such:
 }
 
 .button-icon {
-	width: 50px;
-	height: 50px;
+	width: 57px;
+	width: 57px;
+	height: 57px;
+	height: 57px;
 	background-color: rgba(255, 255, 255, 0.75);
 	border: none;
 	border-radius: 50%;
@@ -52,6 +54,7 @@ Z-index is reserved as such:
 	align-items: center;
 	justify-content: center;
 	padding: 0;
+	margin: 1px;
 }
 
 .light-box-shadow {
