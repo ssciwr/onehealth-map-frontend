@@ -3,16 +3,47 @@ import { Camera, Info, MapPin, Minus, Plus, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { AboutContent } from "../../../static/Footer.tsx";
 
+// Comprehensive type definitions for the screenshoter plugin
+interface ScreenshotOptions {
+	mimeType?: "image/png" | "image/jpeg" | "image/webp";
+	quality?: number; // 0-1 for JPEG/WebP
+	width?: number;
+	height?: number;
+	pixelRatio?: number;
+}
+
+interface SimpleMapScreenshoterOptions {
+	hidden?: boolean;
+	preventDownload?: boolean;
+	cropImageByInnerWH?: boolean;
+	hideElementsWithSelectors?: string[];
+	mimeType?: "image/png" | "image/jpeg" | "image/webp";
+	screenName?: () => string;
+	domtoimageOptions?: {
+		quality?: number;
+		bgcolor?: string;
+		width?: number;
+		height?: number;
+		style?: Record<string, string>;
+		filter?: (node: Node) => boolean;
+		cacheBust?: boolean;
+		imagePlaceholder?: string;
+		pixelRatio?: number;
+	};
+}
+
 // Type declaration for the screenshoter plugin
 declare module "leaflet" {
 	interface SimpleMapScreenshoter extends L.Control {
 		takeScreen(
-			format?: string,
-			options?: any,
+			format?: "blob" | "canvas" | "img",
+			options?: ScreenshotOptions,
 		): Promise<Blob | string | HTMLCanvasElement>;
 	}
 
-	function simpleMapScreenshoter(options?: any): SimpleMapScreenshoter;
+	function simpleMapScreenshoter(
+		options?: SimpleMapScreenshoterOptions,
+	): SimpleMapScreenshoter;
 }
 
 interface ControlBarProps {
