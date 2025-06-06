@@ -2,6 +2,7 @@ import { CalendarOutlined } from "@ant-design/icons";
 import { Select, Slider, Tooltip, Typography } from "antd";
 import type React from "react";
 import { isMobile } from "react-device-detect";
+import { viewingMode } from "../../../stores/ViewingModeStore.ts";
 import GeneralCard from "../../Multiuse/GeneralCard.tsx";
 
 const { Text } = Typography;
@@ -71,86 +72,105 @@ const TimelineSelector: React.FC<AntdTimelineSelectorProps> = ({
 								minWidth: "85vw",
 								backgroundColor: "rgba(255,255,255,0.3)",
 								border: "0",
+								padding: "0px",
 							}
 						: {}
 				}
 			>
-				<div style={{ width: "100%" }}>
-					{isMobile === false && (
-						<Text
-							type="secondary"
-							style={{ fontSize: 12, marginBottom: 8, display: "block" }}
-						>
-							Year: {year}
-						</Text>
-					)}
+				<div
+					style={
+						viewingMode.isExpert
+							? {
+									backgroundColor: "white",
+									padding: "12px 8px",
+									borderRadius: "10px",
+								}
+							: {}
+					}
+				>
+					<div style={{ width: "100%" }}>
+						{isMobile === false && (
+							<Text
+								type="secondary"
+								style={{ fontSize: 12, marginBottom: 8, display: "block" }}
+							>
+								Year: {year}
+							</Text>
+						)}
 
-					<div
-						style={{
-							display: "flex",
-							alignItems: "center",
-							gap: 16,
-							width: "100%",
-						}}
-					>
-						{/* Year input - slider on desktop, dropdown on mobile */}
-						<div style={{ flex: 1, paddingRight: "10px" }}>
-							{isMobile ? (
-								<Select
-									value={year}
-									onChange={onYearChange}
-									style={{ width: "100%" }}
-									placeholder="Select Year"
-									className={isMobile ? "light-box-shadow" : ""}
-									showSearch
-									filterOption={(input, option) =>
-										option?.children
-											?.toString()
-											.toLowerCase()
-											.includes(input.toLowerCase()) ?? false
-									}
-								>
-									{yearOptions.map((yearOption) => (
-										<Option key={yearOption} value={yearOption}>
-											{yearOption}
-										</Option>
-									))}
-								</Select>
-							) : (
-								<Tooltip title={year}>
-									<Slider
+						<div
+							style={{
+								display: "flex",
+								alignItems: "center",
+								gap: 16,
+								width: "100%",
+							}}
+						>
+							{/* Year input - slider on desktop, dropdown on mobile */}
+							<div style={{ flex: 1, paddingRight: "10px" }}>
+								{isMobile ? (
+									<Select
 										value={year}
-										min={1960}
-										max={2100}
-										marks={marks}
-										included={false}
 										onChange={onYearChange}
-										trackStyle={{ background: "transparent" }}
-										railStyle={{ background: "#d9d9d9" }}
-										handleStyle={{
-											borderColor: "#1890ff",
-											backgroundColor: "#1890ff",
-											boxShadow: "0 2px 6px rgba(24, 144, 255, 0.3)",
-										}}
 										style={{ width: "100%" }}
-									/>
-								</Tooltip>
-							)}
-						</div>
+										placeholder="Select Year"
+										className={isMobile ? "light-box-shadow" : ""}
+										showSearch
+										filterOption={(input, option) =>
+											option?.children
+												?.toString()
+												.toLowerCase()
+												.includes(input.toLowerCase()) ?? false
+										}
+									>
+										{yearOptions.map((yearOption) => (
+											<Option key={yearOption} value={yearOption}>
+												{yearOption}
+											</Option>
+										))}
+									</Select>
+								) : (
+									<Tooltip title={year}>
+										<Slider
+											value={year}
+											min={1960}
+											max={2100}
+											marks={marks}
+											included={false}
+											onChange={onYearChange}
+											trackStyle={{ background: "transparent" }}
+											railStyle={{ background: "#d9d9d9" }}
+											handleStyle={{
+												borderColor: "#1890ff",
+												backgroundColor: "#1890ff",
+												boxShadow: "0 2px 6px rgba(24, 144, 255, 0.3)",
+											}}
+											style={{ width: "100%" }}
+										/>
+									</Tooltip>
+								)}
+							</div>
 
-						{/* Month selector */}
-						<Select
-							value={month}
-							onChange={onMonthChange}
-							style={{ minWidth: 140, flexShrink: 0 }}
-							suffixIcon={<CalendarOutlined />}
-						>
-							{months.map((monthName, index) => (
-								<Option key={index.toString() + monthName} value={index + 1}>
-									{monthName}
-								</Option>
-							))}
-						</Select>
+							{/* Month selector */}
+							<Select
+								value={month}
+								onChange={onMonthChange}
+								style={{ minWidth: 140, flexShrink: 0 }}
+								suffixIcon={<CalendarOutlined />}
+							>
+								{months.map((monthName, index) => (
+									<Option key={index.toString() + monthName} value={index + 1}>
+										{monthName}
+									</Option>
+								))}
+							</Select>
+						</div>
+					</div>
+					<div
+						hidden={viewingMode.isExpert === false}
+						style={{ width: "100%", textAlign: "center" }}
+					>
+						Expert Mode
 					</div>
 				</div>
 			</GeneralCard>

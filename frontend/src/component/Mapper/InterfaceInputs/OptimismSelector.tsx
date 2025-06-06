@@ -1,8 +1,8 @@
 import { Space } from "antd";
-import { BarChart3, ChevronDown, Info, Plug, TrendingUp } from "lucide-react";
+import { BarChart3, ChevronDown, Info, TrendingUp } from "lucide-react";
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
-import React, { useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { viewingMode } from "../../../stores/ViewingModeStore.ts";
 
 const OptimismLevelSelector = observer(

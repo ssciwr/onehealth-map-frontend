@@ -1,12 +1,12 @@
-import type L from "leaflet";
-import { Camera, Info, MapPin, Minus, Plus, X } from "lucide-react";
+import { Modal, Spin } from "antd";
+import L from "leaflet";
+import { Camera, Info, MapPin, Minus, Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 import { AboutContent } from "../../../static/Footer.tsx";
 
-// Comprehensive type definitions for the screenshoter plugin
 interface ScreenshotOptions {
 	mimeType?: "image/png" | "image/jpeg" | "image/webp";
-	quality?: number; // 0-1 for JPEG/WebP
+	quality?: number;
 	width?: number;
 	height?: number;
 	pixelRatio?: number;
@@ -54,6 +54,9 @@ const ControlBar = ({ map }: ControlBarProps) => {
 	const [isLocating, setIsLocating] = useState<boolean>(false);
 	const [isSaving, setIsSaving] = useState<boolean>(false);
 	const [showInfo, setShowInfo] = useState<boolean>(false);
+	const [showScreenshotErrorModal, setShowScreenshotErrorModal] =
+		useState<boolean>(false);
+	const [showLocationModal, setShowLocationModal] = useState<boolean>(false);
 	const [screenshoter, setScreenshoter] =
 		useState<L.SimpleMapScreenshoter | null>(null);
 
@@ -80,7 +83,6 @@ const ControlBar = ({ map }: ControlBarProps) => {
 					}
 				};
 
-				// Check if map is ready, otherwise wait for the load event
 				if (map.getContainer() && map.getSize().x > 0 && map.getSize().y > 0) {
 					initializeScreenshoter();
 				} else {
@@ -116,10 +118,12 @@ const ControlBar = ({ map }: ControlBarProps) => {
 
 	const handleLocationRequest = () => {
 		setIsLocating(true);
+		setShowLocationModal(true);
 
 		if (!navigator.geolocation) {
 			console.error("Geolocation is not supported by this browser");
 			setIsLocating(false);
+			setShowLocationModal(false);
 			return;
 		}
 
@@ -134,6 +138,7 @@ const ControlBar = ({ map }: ControlBarProps) => {
 					});
 				}
 				setIsLocating(false);
+				setShowLocationModal(false);
 			},
 			(error) => {
 				let errorMessage = "Unable to get your location";
@@ -150,6 +155,7 @@ const ControlBar = ({ map }: ControlBarProps) => {
 				}
 				console.error(errorMessage);
 				setIsLocating(false);
+				setShowLocationModal(false);
 			},
 			{
 				enableHighAccuracy: true,
@@ -171,25 +177,20 @@ const ControlBar = ({ map }: ControlBarProps) => {
 			// Ensure the map has rendered before taking screenshot
 			await new Promise((resolve) => setTimeout(resolve, 100));
 
-			// Take screenshot as blob
 			const blob = (await screenshoter.takeScreen("blob", {
 				mimeType: "image/png",
 			})) as Blob;
-
-			// Create download link
 			const url = URL.createObjectURL(blob);
 			const link = document.createElement("a");
 			link.href = url;
 			link.download = `map-screenshot-${Date.now()}.png`;
 			link.click();
 
-			// Cleanup
 			URL.revokeObjectURL(url);
 
 			console.log("Screenshot saved successfully");
-		} catch (error) {
-			console.error("Error taking screenshot:", error);
-			// You might want to show an error message to the user here
+		} catch {
+			setShowScreenshotErrorModal(true);
 		} finally {
 			setIsSaving(false);
 		}
@@ -268,55 +269,40 @@ const ControlBar = ({ map }: ControlBarProps) => {
 				</button>
 			</div>
 
-			{/* Info Modal */}
-			{showInfo && (
-				<div
-					style={{
-						position: "fixed",
-						top: 0,
-						left: 0,
-						right: 0,
-						bottom: 0,
-						backgroundColor: "rgba(0, 0, 0, 0.5)",
-						zIndex: 1000,
-						display: "flex",
-						alignItems: "center",
-						justifyContent: "center",
-						padding: "20px",
-					}}
-				>
-					<div
-						style={{
-							backgroundColor: "white",
-							borderRadius: "8px",
-							padding: "24px",
-							maxWidth: "400px",
-							width: "100%",
-							position: "relative",
-							boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
-						}}
-					>
-						<button
-							type="button"
-							onClick={() => setShowInfo(false)}
-							style={{
-								position: "absolute",
-								top: "12px",
-								right: "12px",
-								background: "none",
-								border: "none",
-								cursor: "pointer",
-								padding: "4px",
-								color: "#666",
-							}}
-						>
-							<X size={20} />
-						</button>
+			<Modal
+				title=""
+				open={showInfo}
+				onCancel={() => setShowInfo(false)}
+				footer={null}
+				width={400}
+			>
+				<AboutContent />
+			</Modal>
 
-						<AboutContent />
-					</div>
+			<Modal
+				title="Screenshot Error"
+				open={showScreenshotErrorModal}
+				onOk={() => setShowScreenshotErrorModal(false)}
+				onCancel={() => setShowScreenshotErrorModal(false)}
+				okText="OK"
+				cancelButtonProps={{ style: { display: "none" } }}
+			>
+				<p>Error saving screenshot. Please reload the map and try again.</p>
+			</Modal>
+
+			<Modal
+				title="Finding Your Location"
+				open={showLocationModal}
+				footer={null}
+				closable={false}
+				centered
+				width={300}
+			>
+				<div style={{ textAlign: "center", padding: "20px 0" }}>
+					<Spin size="large" />
+					<p style={{ marginTop: "16px", marginBottom: 0 }}>Zooming to you!</p>
 				</div>
-			)}
+			</Modal>
 		</>
 	);
 };
