@@ -9,87 +9,30 @@ import {
 } from "react-leaflet";
 import NutsMapperV5 from "../NUTSMapper/nuts_mapper_v5";
 import "leaflet/dist/leaflet.css";
-import * as turf from "@turf/turf";
 import L from "leaflet";
 import ViewportMonitor from "./ViewportMonitor.tsx";
 import "./Map.css";
 import { Layers } from "lucide-react";
-import { isMobile } from "react-device-detect";
-import { viewingMode } from "../../stores/ViewingModeStore.ts";
 import AdaptiveGridLayer from "./AdaptiveGridLayer.tsx";
-import AntdTimelineSelector from "./AntdTimelineSelector.tsx";
 import DebugStatsPanel from "./DebugStatsPanel.tsx";
 import ControlBar from "./InterfaceInputs/ControlBar.tsx";
-import ModelSelector from "./InterfaceInputs/ModelSelector.tsx";
-import OptimismLevelSelector from "./InterfaceInputs/OptimismSelector.tsx";
-import GeneralCard from "./Multiuse/GeneralCard.tsx";
+import MapHeader from "./MapHeader.tsx";
 import { getColorFromGradient } from "./gradientUtilities.ts";
 import {
-	COLOR_SCHEMES,
-	type DataExtremes,
-	type NutsGeoJSON,
-	type OutbreakData,
-	type ProcessingStats,
-	type TemperatureDataPoint,
-	type ViewportBounds,
+	BottomLegend,
+	MAX_ZOOM,
+	MIN_ZOOM,
+	loadTemperatureData,
+	parseCSVToOutbreaks,
+} from "./mapDataUtils";
+import type {
+	DataExtremes,
+	NutsGeoJSON,
+	OutbreakData,
+	ProcessingStats,
+	TemperatureDataPoint,
+	ViewportBounds,
 } from "./types.ts";
-
-const MIN_ZOOM = 3.4;
-const MAX_ZOOM = 7;
-
-const BottomLegend = ({
-	extremes,
-	unit = "°C",
-}: { extremes: DataExtremes; unit?: string }) => {
-	if (!extremes) return null;
-
-	const scheme = COLOR_SCHEMES.default;
-
-	return (
-		<div
-			style={{
-				position: "fixed",
-				bottom: 0,
-				left: 0,
-				right: 0,
-				minHeight: "25px",
-				background: `linear-gradient(to right, ${scheme.low}, ${scheme.high})`,
-				zIndex: 400,
-				display: "flex",
-				alignItems: "center",
-				justifyContent: "space-between",
-				backgroundColor: "white",
-			}}
-		>
-			<span
-				style={{
-					fontSize: "12px",
-					minHeight: "100%",
-					fontWeight: "bold",
-					backgroundColor: "rgba(255,255,255,0.3)",
-					color: "white",
-					padding: "4px 2px",
-				}}
-			>
-				{extremes.min.toFixed(1)}
-				<small style={{ color: "rgba(255,255,255,0.5)" }}>{unit}</small>
-			</span>
-			<span
-				style={{
-					fontSize: "12px",
-					minHeight: "100%",
-					fontWeight: "bold",
-					backgroundColor: "rgba(255,255,255,0.3)",
-					color: "white",
-					padding: "4px 2px",
-				}}
-			>
-				{extremes.max.toFixed(1)}
-				<small style={{ color: "rgba(255,255,255,0.5)" }}>{unit}</small>
-			</span>
-		</div>
-	);
-};
 
 interface ViewportChangeData {
 	bounds: L.LatLngBounds;
@@ -127,88 +70,12 @@ const EnhancedClimateMap = ({ onMount = () => true }) => {
 
 	const getOptimismLevels = () => ["optimistic", "realistic", "pessimistic"];
 
-	const loadTemperatureData = useCallback(async (year: number) => {
-		const calculateExtremes = (
-			data: TemperatureDataPoint[],
-			calculatePercentiles = true,
-		): DataExtremes => {
-			if (!data || data.length === 0) return { min: 0, max: 0 };
-
-			const temperatures = data
-				.map((point) => point.temperature)
-				.filter((temp) => !Number.isNaN(temp));
-
-			if (temperatures.length === 0) return { min: 0, max: 0 };
-
-			if (calculatePercentiles) {
-				const sortedTemps = [...temperatures].sort((a, b) => a - b);
-
-				const p5Index = Math.floor((25 / 100) * (sortedTemps.length - 1));
-				const p95Index = Math.floor((75 / 100) * (sortedTemps.length - 1));
-
-				return {
-					min: sortedTemps[p5Index],
-					max: sortedTemps[p95Index],
-				};
-			}
-			return {
-				min: Math.min(...temperatures),
-				max: Math.max(...temperatures),
-			};
-		};
-
+	const handleLoadTemperatureData = useCallback(async (year: number) => {
 		try {
-			const dataPath = `${year.toString()}_data_january_05res.csv`;
-			console.log("DataPath:", dataPath);
-			const response = await fetch(dataPath);
-			const text = await response.text();
-			const rows = text
-				.split("\n")
-				.slice(1)
-				.filter((row) => row.trim() !== "");
-
-			const sampleRate = 1;
-			const dataPoints: TemperatureDataPoint[] = [];
-
-			for (let i = 0; i < rows.length; i++) {
-				if (i % Math.floor(1 / sampleRate) === 0) {
-					const row = rows[i];
-					const values = row.split(",");
-					if (values.length >= 4) {
-						const temperature = Number.parseFloat(values[3]) || 0;
-						const lat = Number.parseFloat(values[1]) || 0;
-						const lng = Number.parseFloat(values[2]) || 0;
-						if (i % 100000 === 0) {
-							console.log("Lat:", lat, "Long: ", lng, "Temp:", temperature);
-						}
-
-						if (
-							!Number.isNaN(lat) &&
-							!Number.isNaN(lng) &&
-							!Number.isNaN(temperature)
-						) {
-							dataPoints.push({
-								point: turf.point([lng, lat]),
-								temperature: temperature,
-								lat: lat,
-								lng: lng,
-							});
-						}
-					}
-				}
-			}
-
-			setTemperatureData([...dataPoints]);
-			const extremes = calculateExtremes(dataPoints);
+			const { dataPoints, extremes, bounds } = await loadTemperatureData(year);
+			setTemperatureData(dataPoints);
 			setDataExtremes(extremes);
-
-			if (dataPoints.length > 0) {
-				const lats = dataPoints.map((p) => p.lat);
-				const lngs = dataPoints.map((p) => p.lng);
-				const bounds = L.latLngBounds([
-					[Math.min(...lats), Math.min(...lngs)],
-					[Math.max(...lats), Math.max(...lngs)],
-				]);
+			if (bounds) {
 				setDataBounds(bounds);
 			}
 		} catch (err: unknown) {
@@ -218,8 +85,8 @@ const EnhancedClimateMap = ({ onMount = () => true }) => {
 	}, []);
 
 	useEffect(() => {
-		loadTemperatureData(currentYear);
-	}, [currentYear, loadTemperatureData]);
+		handleLoadTemperatureData(currentYear);
+	}, [currentYear, handleLoadTemperatureData]);
 
 	useEffect(() => {
 		if (map && dataBounds) {
@@ -239,41 +106,6 @@ const EnhancedClimateMap = ({ onMount = () => true }) => {
 				setError(err.message);
 			});
 	}, []);
-
-	const parseCSVToOutbreaks = (csvData: string): OutbreakData[] => {
-		const lines = csvData.trim().split("\n");
-		const headers = lines[0].split(",");
-
-		return lines.slice(1).map((line, index) => {
-			const values = line.split(",");
-			const outbreak: Record<string, string | number> = {};
-
-			headers.forEach((header, i) => {
-				const value = values[i];
-				if (
-					header === "latitude" ||
-					header === "longitude" ||
-					header === "cases"
-				) {
-					outbreak[header] = Number.parseFloat(value) || 0;
-				} else {
-					outbreak[header] = value || "";
-				}
-			});
-
-			// Ensure required properties exist
-			return {
-				id: (outbreak.id as string) || `outbreak-${index}`,
-				category: (outbreak.category as string) || "Unknown",
-				location: (outbreak.location as string) || "Unknown",
-				latitude: (outbreak.latitude as number) || 0,
-				longitude: (outbreak.longitude as number) || 0,
-				date: (outbreak.date as string) || "",
-				cases: (outbreak.cases as number) || 0,
-				notes: (outbreak.notes as string) || undefined,
-			} as OutbreakData;
-		});
-	};
 
 	const loadNutsData = () => {
 		setLoading(true);
@@ -472,51 +304,17 @@ const EnhancedClimateMap = ({ onMount = () => true }) => {
 
 	return (
 		<div className="climate-map-container">
-			{isMobile ? (
-				<div>
-					<AntdTimelineSelector
-						year={currentYear}
-						month={currentMonth}
-						onYearChange={setCurrentYear}
-						onMonthChange={setCurrentMonth}
-					/>
-					<div style={{ position: "fixed", top: "10px", opacity: 0 }}>
-						<GeneralCard>Hidden Mobile Header</GeneralCard>
-					</div>
-				</div>
-			) : (
-				<div className="header-section center">
-					<GeneralCard style={{ width: "fit-content" }}>
-						<div className="logo-section">
-							<h1 className="map-title">
-								<span className="title-one">One</span>
-								<span className="title-health">Health</span>
-								<span className="title-platform">Platform</span>
-								<small className="tertiary">
-									<i>&nbsp;{viewingMode.isExpert && "Expert Mode"}</i>
-								</small>
-							</h1>
-						</div>
-						<ModelSelector
-							selectedModel={selectedModel}
-							onModelSelect={handleModelSelect}
-						/>
-						&nbsp; with&nbsp;
-						<OptimismLevelSelector
-							availableOptimismLevels={getOptimismLevels()}
-							selectedOptimism={selectedOptimism}
-							setOptimism={setSelectedOptimism}
-						/>
-					</GeneralCard>
-
-					<AntdTimelineSelector
-						year={currentYear}
-						month={currentMonth}
-						onYearChange={setCurrentYear}
-						onMonthChange={setCurrentMonth}
-					/>
-				</div>
-			)}
+			<MapHeader
+				currentYear={currentYear}
+				currentMonth={currentMonth}
+				setCurrentYear={setCurrentYear}
+				setCurrentMonth={setCurrentMonth}
+				selectedModel={selectedModel}
+				handleModelSelect={handleModelSelect}
+				selectedOptimism={selectedOptimism}
+				setSelectedOptimism={setSelectedOptimism}
+				getOptimismLevels={getOptimismLevels}
+			/>
 
 			<div className="map-content-wrapper">
 				<div className="map-content">
