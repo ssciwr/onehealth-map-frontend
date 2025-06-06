@@ -1,3 +1,5 @@
-export default () => <div>
-    <h1>One Health</h1>
-</div>
+export default () => (
+	<div>
+		<h1>One Health</h1>
+	</div>
+);

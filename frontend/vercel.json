@@ -1,6 +1,6 @@
 {
-  "buildCommand": "pnpm run build",
-  "installCommand": "pnpm config set registry https://registry.npmjs.org/ && pnpm install",
-  "outputDirectory": "dist",
-  "devCommand": "pnpm run dev"
+	"buildCommand": "pnpm run build",
+	"installCommand": "pnpm config set registry https://registry.npmjs.org/ && pnpm install",
+	"outputDirectory": "dist",
+	"devCommand": "pnpm run dev"
 }

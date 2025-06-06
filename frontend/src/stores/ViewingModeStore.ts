@@ -1,33 +1,33 @@
-import { makeObservable, observable, action } from 'mobx';
+import { action, makeObservable, observable } from "mobx";
 
 class ViewingModeStore {
-    @observable isExpert = false;
-    @observable isCitizen = false;
+	@observable isExpert = false;
+	@observable isCitizen = false;
 
-    constructor() {
-        makeObservable(this);
-    }
+	constructor() {
+		makeObservable(this);
+	}
 
-    @action setExpert = (value: boolean) => {
-        this.isExpert = value;
-    };
+	@action setExpert = (value: boolean) => {
+		this.isExpert = value;
+	};
 
-    @action setCitizen = (value: boolean) => {
-        this.isCitizen = value;
-    };
+	@action setCitizen = (value: boolean) => {
+		this.isCitizen = value;
+	};
 
-    @action toggleExpert = () => {
-        this.isExpert = !this.isExpert;
-    };
+	@action toggleExpert = () => {
+		this.isExpert = !this.isExpert;
+	};
 
-    @action toggleCitizen = () => {
-        this.isCitizen = !this.isCitizen;
-    };
+	@action toggleCitizen = () => {
+		this.isCitizen = !this.isCitizen;
+	};
 
-    @action toggleMode = () => {
-        this.isExpert = this.isCitizen;
-        this.isCitizen = !this.isCitizen;
-    }
+	@action toggleMode = () => {
+		this.isExpert = this.isCitizen;
+		this.isCitizen = !this.isCitizen;
+	};
 }
 
 export const viewingMode = new ViewingModeStore();

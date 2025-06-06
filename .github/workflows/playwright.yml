@@ -1,24 +1,37 @@
 name: Playwright Tests
 on:
   push:
-    branches: [ main, master ]
+    branches: [ main ]
   pull_request:
-    branches: [ main, master ]
+    branches: [ main ]
+  workflow_dispatch:
+
 jobs:
   test:
     timeout-minutes: 60
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./frontend
     steps:
     - uses: actions/checkout@v4
-    - uses: actions/setup-node@v4
+    - uses: pnpm/action-setup@v4
+      name: Install pnpm
       with:
-        node-version: lts/*
+        version: 10
+        run_install: false
+    - name: Install Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 22
+        cache: 'pnpm'
+        cache-dependency-path: 'frontend/pnpm-lock.yaml'
     - name: Install dependencies
-      run: npm install -g pnpm && pnpm install
+      run: pnpm i
     - name: Install Playwright Browsers
       run: pnpm exec playwright install --with-deps
     - name: Run Playwright tests
-      run: pnpm exec playwright test
+      run: pnpm test
     - uses: actions/upload-artifact@v4
       if: ${{ !cancelled() }}
       with:
