@@ -1,7 +1,8 @@
-import { BarChart3, ChevronDown, Info, TrendingUp } from "lucide-react";
+import { Space } from "antd";
+import { BarChart3, ChevronDown, Info, Plug, TrendingUp } from "lucide-react";
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
-import { useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { viewingMode } from "../../../stores/ViewingModeStore.ts";
 
 const OptimismLevelSelector = observer(
@@ -68,9 +69,11 @@ const OptimismLevelSelector = observer(
 					className="model-selector-button"
 					onClick={() => setIsOpen(!isOpen)}
 				>
-					<BarChart3 className="icon" />
-					<span>{selectedLevel?.title || "Select Level"}</span>
-					<ChevronDown className={`chevron ${isOpen ? "open" : ""}`} />
+					<Space>
+						<BarChart3 className="icon" />
+						<span>{selectedLevel?.title || "Select Level"}</span>
+						<ChevronDown className={`chevron ${isOpen ? "open" : ""}`} />
+					</Space>
 				</button>
 				&nbsp;predictions
 				{isOpen && (

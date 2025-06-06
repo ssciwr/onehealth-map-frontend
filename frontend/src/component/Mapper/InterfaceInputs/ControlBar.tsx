@@ -184,6 +184,7 @@ const ControlBar = ({ map }: ControlBarProps) => {
 					disabled={isSaving}
 					className="button-icon light-box-shadow"
 					style={{
+						backgroundColor: "black", // disabled until it works.
 						cursor: isSaving ? "not-allowed" : "pointer",
 						opacity: isSaving ? 0.6 : 1,
 					}}

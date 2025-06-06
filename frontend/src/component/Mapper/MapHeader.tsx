@@ -1,3 +1,6 @@
+import { SettingOutlined } from "@ant-design/icons";
+import { Button, Modal } from "antd";
+import { useState } from "react";
 import { isMobile } from "react-device-detect";
 import { viewingMode } from "../../stores/ViewingModeStore.ts";
 import GeneralCard from "../Multiuse/GeneralCard.tsx";
@@ -28,6 +31,8 @@ export default ({
 	setSelectedOptimism,
 	getOptimismLevels,
 }: MapHeaderProps) => {
+	const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+
 	return isMobile ? (
 		<div>
 			<TimelineSelector
@@ -40,6 +45,8 @@ export default ({
 				style={{
 					position: "fixed",
 					top: "10px",
+					left: "50%",
+					transform: "translateX(-50%)",
 					width: "95vw",
 					opacity: 1,
 					zIndex: 500,
@@ -50,6 +57,7 @@ export default ({
 						style={{
 							display: "flex",
 							alignItems: "center",
+							justifyContent: "space-between",
 						}}
 					>
 						<img
@@ -57,17 +65,69 @@ export default ({
 							style={{ height: "42px", width: "42px" }}
 							src="/images/oneHealthLogoOnlySymbols.png"
 						/>
-						&nbsp;
+
+						<div style={{ flex: 1, display: "flex", justifyContent: "center" }}>
+							<ModelSelector
+								selectedModel={selectedModel}
+								onModelSelect={handleModelSelect}
+							/>
+						</div>
+
+						<Button
+							type="text"
+							icon={<SettingOutlined />}
+							onClick={() => setIsSettingsOpen(true)}
+							style={{
+								display: "flex",
+								alignItems: "center",
+								justifyContent: "center",
+								width: "42px",
+								height: "42px",
+							}}
+						/>
+					</div>
+				</GeneralCard>
+			</div>
+
+			<Modal
+				title="Settings"
+				open={isSettingsOpen}
+				onCancel={() => setIsSettingsOpen(false)}
+				footer={
+					<Button
+						type="primary"
+						block
+						onClick={() => setIsSettingsOpen(false)}
+						style={{
+							backgroundColor: "#0052CC",
+							borderColor: "#0052CC",
+						}}
+					>
+						Close
+					</Button>
+				}
+				width="90vw"
+				style={{ top: 20 }}
+			>
+				<div style={{ padding: "20px 0" }}>
+					<div style={{ marginBottom: "24px" }}>
+						<h4>Disease Model</h4>
 						<ModelSelector
 							selectedModel={selectedModel}
 							onModelSelect={handleModelSelect}
 						/>
-						&nbsp;
-						{/* Todo: Here have a settings cog which opensa modal containing the Model selector,
-						Otpimism selector and a close button at the bottom (fixed bottom: 10px full width). */}
 					</div>
-				</GeneralCard>
-			</div>
+
+					<div style={{ marginBottom: "24px" }}>
+						<h4>Optimism Level</h4>
+						<OptimismLevelSelector
+							availableOptimismLevels={getOptimismLevels()}
+							selectedOptimism={selectedOptimism}
+							setOptimism={setSelectedOptimism}
+						/>
+					</div>
+				</div>
+			</Modal>
 		</div>
 	) : (
 		<div className="header-section center">
