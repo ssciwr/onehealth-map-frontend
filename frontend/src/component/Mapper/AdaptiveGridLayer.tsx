@@ -24,7 +24,6 @@ const calculateDerivedIntervalSize = (dataPoints: DataPoint[]): number => {
 
 	const first = dataPoints[0];
 	const second = dataPoints[1];
-	console.log("Calculated interval size...", first, " vs ", second);
 
 	// Check lat difference first
 	const latDiff = Math.abs(second.lat - first.lat);
@@ -151,12 +150,7 @@ const AdaptiveGridLayer = ({
 					bounds={cell.bounds}
 					pathOptions={{
 						color: "transparent",
-						fillColor: getColorFromGradient(
-							cell.temperature,
-							extremes,
-							"#000080",
-							"#FFDE21",
-						),
+						fillColor: getColorFromGradient(cell.temperature, extremes),
 						fillOpacity: 0.7,
 						weight: 0,
 					}}

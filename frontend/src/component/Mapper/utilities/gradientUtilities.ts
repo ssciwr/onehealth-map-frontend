@@ -1,9 +1,3 @@
-/**
- * Utilities for calculating the different gradients on the map. Like similar projects, we may want to use
- * Blue-Yellow-Red rather than a simple Blue-Red, to increase contrast, particularly in parts of the map where
- * changes have high implications, but can be hard to see on a simple two color gradient.
- */
-
 interface ExtremePoints {
 	min: number;
 	max: number;
@@ -15,16 +9,9 @@ interface RGBColor {
 	b: number;
 }
 
-/**
- * Converts a hex color string to RGB values
- * @param hex - Hex color string (e.g., "#FF0000" or "FF0000")
- * @returns RGB color object
- */
 function hexToRgb(hex: string): RGBColor {
-	// Remove # if present and ensure uppercase
 	const cleanHex = hex.replace("#", "").toUpperCase();
 
-	// Validate hex format
 	if (!/^[0-9A-F]{6}$/.test(cleanHex)) {
 		throw new Error(`Invalid hex color format: ${hex}`);
 	}
@@ -36,11 +23,6 @@ function hexToRgb(hex: string): RGBColor {
 	};
 }
 
-/**
- * Converts RGB values to hex color string
- * @param rgb - RGB color object
- * @returns Hex color string with # prefix
- */
 function rgbToHex(rgb: RGBColor): string {
 	const toHex = (value: number): string => {
 		const hex = Math.round(Math.max(0, Math.min(255, value))).toString(16);
@@ -50,19 +32,11 @@ function rgbToHex(rgb: RGBColor): string {
 	return `#${toHex(rgb.r)}${toHex(rgb.g)}${toHex(rgb.b)}`.toUpperCase();
 }
 
-/**
- * Interpolates between two colors based on a value's position within a range
- * @param value - The value to map to a color
- * @param extremePoints - Object containing min and max values for the range
- * @param minColor - Hex color for the minimum value
- * @param maxColor - Hex color for the maximum value
- * @returns Interpolated hex color string
- */
 export const getColorFromGradient = (
 	value: number,
 	extremePoints: ExtremePoints,
-	minColor: string,
-	maxColor: string,
+	minColor?: string,
+	maxColor?: string,
 ): string => {
 	if (typeof value !== "number" || !Number.isFinite(value)) {
 		throw new Error("Value must be a finite number");
@@ -76,19 +50,37 @@ export const getColorFromGradient = (
 		throw new Error("ExtremePoints must contain valid min and max numbers");
 	}
 
-	if (!minColor || !maxColor) {
-		throw new Error("Both minColor and maxColor must be provided");
-	}
-
 	const { min, max } = extremePoints;
 
 	if (min === max) {
-		return minColor;
+		return minColor || "#537bcc";
 	}
 
 	const clampedValue = Math.max(min, Math.min(max, value));
-
 	const factor = (clampedValue - min) / (max - min);
+
+	if (!minColor || !maxColor) {
+		const blueRgb = hexToRgb("#537bcc");
+		const yellowRgb = hexToRgb("#FFFB00");
+		const redRgb = hexToRgb("#f63f1f");
+
+		if (factor <= 0.5) {
+			const localFactor = factor * 2;
+			const interpolatedRgb: RGBColor = {
+				r: blueRgb.r + (yellowRgb.r - blueRgb.r) * localFactor,
+				g: blueRgb.g + (yellowRgb.g - blueRgb.g) * localFactor,
+				b: blueRgb.b + (yellowRgb.b - blueRgb.b) * localFactor,
+			};
+			return rgbToHex(interpolatedRgb);
+		}
+		const localFactor = (factor - 0.5) * 2;
+		const interpolatedRgb: RGBColor = {
+			r: yellowRgb.r + (redRgb.r - yellowRgb.r) * localFactor,
+			g: yellowRgb.g + (redRgb.g - yellowRgb.g) * localFactor,
+			b: yellowRgb.b + (redRgb.b - yellowRgb.b) * localFactor,
+		};
+		return rgbToHex(interpolatedRgb);
+	}
 
 	const minRgb = hexToRgb(minColor);
 	const maxRgb = hexToRgb(maxColor);
@@ -99,6 +91,5 @@ export const getColorFromGradient = (
 		b: minRgb.b + (maxRgb.b - minRgb.b) * factor,
 	};
 
-	// Convert back to hex and return
 	return rgbToHex(interpolatedRgb);
 };
