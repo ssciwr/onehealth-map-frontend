@@ -1,7 +1,19 @@
 import type L from "leaflet";
 import { Camera, Info, MapPin, Minus, Plus, X } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AboutContent } from "../../../static/Footer.tsx";
+
+// Type declaration for the screenshoter plugin
+declare module "leaflet" {
+	interface SimpleMapScreenshoter extends L.Control {
+		takeScreen(
+			format?: string,
+			options?: any,
+		): Promise<Blob | string | HTMLCanvasElement>;
+	}
+
+	function simpleMapScreenshoter(options?: any): SimpleMapScreenshoter;
+}
 
 interface ControlBarProps {
 	map: L.Map | null;
@@ -11,6 +23,53 @@ const ControlBar = ({ map }: ControlBarProps) => {
 	const [isLocating, setIsLocating] = useState<boolean>(false);
 	const [isSaving, setIsSaving] = useState<boolean>(false);
 	const [showInfo, setShowInfo] = useState<boolean>(false);
+	const [screenshoter, setScreenshoter] =
+		useState<L.SimpleMapScreenshoter | null>(null);
+
+	// todo: Make this call a callback to set resolution to high detail right before screenshot (Artificially increase
+	// zoom to cause this perhaps (a bit hacky but logical).
+	useEffect(() => {
+		if (map && !screenshoter) {
+			if (typeof L.simpleMapScreenshoter === "function") {
+				const initializeScreenshoter = () => {
+					try {
+						const screenshotPlugin = L.simpleMapScreenshoter({
+							hidden: true,
+							preventDownload: true,
+							cropImageByInnerWH: true,
+							hideElementsWithSelectors: [], // css classes, not needed fro now.
+							mimeType: "image/png",
+							screenName: () => `map-screenshot-${Date.now()}`,
+						});
+
+						screenshotPlugin.addTo(map);
+						setScreenshoter(screenshotPlugin);
+					} catch (error) {
+						console.error("Error initializing screenshoter:", error);
+					}
+				};
+
+				// Check if map is ready, otherwise wait for the load event
+				if (map.getContainer() && map.getSize().x > 0 && map.getSize().y > 0) {
+					initializeScreenshoter();
+				} else {
+					// sensible pre-screenshot set up..
+					map.once("load", initializeScreenshoter);
+					map.once("resize", initializeScreenshoter);
+				}
+
+				return () => {
+					if (screenshoter) {
+						try {
+							map.removeControl(screenshoter);
+						} catch (error) {
+							console.error("Error removing screenshoter:", error);
+						}
+					}
+				};
+			}
+		}
+	}, [map, screenshoter]);
 
 	const handleZoomIn = () => {
 		if (map) {
@@ -69,65 +128,40 @@ const ControlBar = ({ map }: ControlBarProps) => {
 		);
 	};
 
-	const handleSaveScreenshot = () => {
-		if (!map) return;
+	const handleSaveScreenshot = async () => {
+		if (!map || !screenshoter) {
+			console.error("Map or screenshoter not initialized");
+			return;
+		}
 
 		setIsSaving(true);
 
-		// Use leaflet-image plugin or simple DOM to canvas
-		const mapContainer = map.getContainer();
-		const mapPane = mapContainer.querySelector(
-			".leaflet-map-pane",
-		) as HTMLElement;
+		try {
+			// Ensure the map has rendered before taking screenshot
+			await new Promise((resolve) => setTimeout(resolve, 100));
 
-		if (!mapPane) {
+			// Take screenshot as blob
+			const blob = (await screenshoter.takeScreen("blob", {
+				mimeType: "image/png",
+			})) as Blob;
+
+			// Create download link
+			const url = URL.createObjectURL(blob);
+			const link = document.createElement("a");
+			link.href = url;
+			link.download = `map-screenshot-${Date.now()}.png`;
+			link.click();
+
+			// Cleanup
+			URL.revokeObjectURL(url);
+
+			console.log("Screenshot saved successfully");
+		} catch (error) {
+			console.error("Error taking screenshot:", error);
+			// You might want to show an error message to the user here
+		} finally {
 			setIsSaving(false);
-			return;
 		}
-
-		// Get map dimensions
-		const bounds = mapPane.getBoundingClientRect();
-
-		// Create canvas
-		const canvas = document.createElement("canvas");
-		canvas.width = bounds.width;
-		canvas.height = bounds.height;
-		const ctx = canvas.getContext("2d");
-
-		if (!ctx) {
-			setIsSaving(false);
-			return;
-		}
-
-		// Simple approach: convert map pane to canvas using domtoimage-like method
-		const svg = `
-            <svg xmlns="http://www.w3.org/2000/svg" width="${bounds.width}" height="${bounds.height}">
-                <foreignObject width="100%" height="100%">
-                    <div xmlns="http://www.w3.org/1999/xhtml" style="width:${bounds.width}px;height:${bounds.height}px;">
-                        ${mapPane.outerHTML}
-                    </div>
-                </foreignObject>
-            </svg>`;
-
-		const img = new Image();
-		img.onload = () => {
-			ctx.drawImage(img, 0, 0);
-
-			canvas.toBlob((blob) => {
-				if (blob) {
-					const url = URL.createObjectURL(blob);
-					const link = document.createElement("a");
-					link.href = url;
-					link.download = `map-${Date.now()}.png`;
-					link.click();
-					URL.revokeObjectURL(url);
-				}
-				setIsSaving(false);
-			});
-		};
-
-		img.onerror = () => setIsSaving(false);
-		img.src = `data:image/svg+xml;base64,${btoa(svg)}`;
 	};
 
 	const circularButtonSize = 24;
@@ -181,13 +215,15 @@ const ControlBar = ({ map }: ControlBarProps) => {
 				<button
 					type="button"
 					onClick={handleSaveScreenshot}
-					disabled={isSaving}
+					disabled={isSaving || !screenshoter}
 					className="button-icon light-box-shadow"
 					style={{
-						backgroundColor: "black", // disabled until it works.
-						cursor: isSaving ? "not-allowed" : "pointer",
-						opacity: isSaving ? 0.6 : 1,
+						cursor: isSaving || !screenshoter ? "not-allowed" : "pointer",
+						opacity: isSaving || !screenshoter ? 0.6 : 1,
 					}}
+					title={
+						!screenshoter ? "Screenshot plugin not loaded" : "Take screenshot"
+					}
 				>
 					<Camera size={circularButtonSize} className="button-icon-text" />
 				</button>

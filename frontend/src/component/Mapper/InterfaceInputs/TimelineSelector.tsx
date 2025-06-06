@@ -64,7 +64,17 @@ const TimelineSelector: React.FC<AntdTimelineSelectorProps> = ({
 
 	return (
 		<div style={containerStyle}>
-			<GeneralCard>
+			<GeneralCard
+				style={
+					isMobile
+						? {
+								minWidth: "85vw",
+								backgroundColor: "rgba(255,255,255,0.3)",
+								border: "0",
+							}
+						: {}
+				}
+			>
 				<div style={{ width: "100%" }}>
 					{isMobile === false && (
 						<Text

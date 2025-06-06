@@ -18,6 +18,7 @@ import AdaptiveGridLayer from "./AdaptiveGridLayer.tsx";
 import DebugStatsPanel from "./DebugStatsPanel.tsx";
 import ControlBar from "./InterfaceInputs/ControlBar.tsx";
 import MapHeader from "./MapHeader.tsx";
+import "leaflet-simple-map-screenshoter";
 import type {
 	DataExtremes,
 	NutsGeoJSON,

@@ -199,7 +199,9 @@ export const AboutContent = () => (
 	<div>
 		<h3 className="emphasize">About This Map</h3>
 
-		<p className="deemphasize">Created and modelled by the OneHealth team.</p>
+		<p className="deemphasize">
+			Created with disease modelling by the OneHealth team.
+		</p>
 
 		<p className="deemphasize">
 			Map developed by the{" "}
