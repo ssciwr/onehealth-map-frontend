@@ -201,6 +201,7 @@ const ControlBar = ({ map }: ControlBarProps) => {
 	return (
 		<>
 			<div
+				data-testid="control-bar"
 				style={{
 					position: "fixed",
 					right: "30px",
