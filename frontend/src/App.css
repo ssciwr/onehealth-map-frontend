@@ -29,6 +29,10 @@ Z-index is reserved as such:
 	margin: 0 0 12px 0;
 }
 
+.min-w-100 {
+	min-width: 100%;
+}
+
 .center {
 	text-align: center;
 }

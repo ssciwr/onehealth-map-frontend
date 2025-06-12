@@ -19,6 +19,7 @@ import DebugStatsPanel from "./DebugStatsPanel.tsx";
 import ControlBar from "./InterfaceInputs/ControlBar.tsx";
 import MapHeader from "./MapHeader.tsx";
 import "leaflet-simple-map-screenshoter";
+import TimelineSelector from "./InterfaceInputs/TimelineSelector.tsx";
 import type {
 	DataExtremes,
 	NutsGeoJSON,
@@ -308,10 +309,6 @@ const ClimateMap = ({ onMount = () => true }) => {
 		<div>
 			<div className="climate-map-container">
 				<MapHeader
-					currentYear={currentYear}
-					currentMonth={currentMonth}
-					setCurrentYear={setCurrentYear}
-					setCurrentMonth={setCurrentMonth}
 					selectedModel={selectedModel}
 					handleModelSelect={handleModelSelect}
 					selectedOptimism={selectedOptimism}
@@ -319,8 +316,22 @@ const ClimateMap = ({ onMount = () => true }) => {
 					getOptimismLevels={getOptimismLevels}
 				/>
 
+				<TimelineSelector
+					year={currentYear}
+					month={currentMonth}
+					onYearChange={setCurrentYear}
+					onMonthChange={setCurrentMonth}
+					legend={
+						dataExtremes ? (
+							<BottomLegend extremes={dataExtremes} unit="°C" />
+						) : (
+							<div />
+						)
+					}
+				/>
+
 				<div className="map-content-wrapper">
-					<div className="map-content">
+					<div className="map-content" style={{ position: "relative" }}>
 						<MapContainer
 							className="full-height-map"
 							center={[10, 12]}
@@ -400,6 +411,25 @@ const ClimateMap = ({ onMount = () => true }) => {
 							<ViewportMonitor onViewportChange={handleViewportChange} />
 						</MapContainer>
 
+						{/* TimelineSelector positioned absolutely over the map */}
+						<div
+							style={{
+								position: "absolute",
+								top: "10px",
+								left: "50%",
+								transform: "translateX(-50%)",
+								zIndex: 1000,
+								pointerEvents: "auto",
+							}}
+						>
+							<TimelineSelector
+								year={currentYear}
+								month={currentMonth}
+								onYearChange={setCurrentYear}
+								onMonthChange={setCurrentMonth}
+							/>
+						</div>
+
 						<ControlBar map={map} />
 					</div>
 				</div>
@@ -449,8 +479,6 @@ const ClimateMap = ({ onMount = () => true }) => {
 						/>
 					)}
 				</div>
-
-				{dataExtremes && <BottomLegend extremes={dataExtremes} unit="°C" />}
 			</div>
 			<Footer />
 		</div>

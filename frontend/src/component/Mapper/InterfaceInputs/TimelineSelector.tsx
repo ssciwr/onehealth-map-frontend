@@ -1,6 +1,6 @@
 import { CalendarOutlined } from "@ant-design/icons";
 import { Select, Slider, Tooltip, Typography } from "antd";
-import type React from "react";
+import type { ReactNode } from "react";
 import { isMobile } from "react-device-detect";
 import { viewingMode } from "../../../stores/ViewingModeStore.ts";
 import GeneralCard from "../../Multiuse/GeneralCard.tsx";
@@ -13,6 +13,7 @@ interface AntdTimelineSelectorProps {
 	month: number;
 	onYearChange: (value: number) => void;
 	onMonthChange: (value: number) => void;
+	legend?: ReactNode;
 }
 
 const TimelineSelector: React.FC<AntdTimelineSelectorProps> = ({
@@ -20,6 +21,7 @@ const TimelineSelector: React.FC<AntdTimelineSelectorProps> = ({
 	month,
 	onYearChange,
 	onMonthChange,
+	legend,
 }) => {
 	const months = [
 		"January",
@@ -47,7 +49,6 @@ const TimelineSelector: React.FC<AntdTimelineSelectorProps> = ({
 		2100: "2100",
 	};
 
-	// Generate year options for mobile dropdown
 	const yearOptions = [];
 	for (let y = 1960; y <= 2100; y++) {
 		yearOptions.push(y);
@@ -55,27 +56,27 @@ const TimelineSelector: React.FC<AntdTimelineSelectorProps> = ({
 
 	const mobileContainerStyle: React.CSSProperties = {
 		position: "fixed",
-		bottom: "40px",
+		bottom: "1.5em",
 		left: "50%",
 		transform: "translateX(-50%)",
 		zIndex: 500,
 	};
 
-	const containerStyle = isMobile ? mobileContainerStyle : {};
+	const containerStyle = isMobile ? mobileContainerStyle : { zIndex: 500 };
 
 	return (
-		<div style={containerStyle}>
+		<div style={containerStyle} data-testid="timeline-selector">
 			<GeneralCard
 				style={
 					isMobile
 						? {
 								minWidth: "85vw",
-								backgroundColor: "rgba(255,255,255,0.3)",
+								backgroundColor: "rgba(255,255,255,0.8)",
 								border: "0",
-								padding: "0px",
 							}
-						: {}
+						: { minWidth: "91vw" }
 				}
+				bodyStyle={isMobile ? { padding: "10px 24px" } : {}}
 			>
 				<div
 					style={
@@ -90,12 +91,7 @@ const TimelineSelector: React.FC<AntdTimelineSelectorProps> = ({
 				>
 					<div style={{ width: "100%" }}>
 						{isMobile === false && (
-							<Text
-								type="secondary"
-								style={{ fontSize: 12, marginBottom: 8, display: "block" }}
-							>
-								Year: {year}
-							</Text>
+							<Text style={{ fontSize: 24, display: "block" }}>{year}</Text>
 						)}
 
 						<div
@@ -166,11 +162,22 @@ const TimelineSelector: React.FC<AntdTimelineSelectorProps> = ({
 							</Select>
 						</div>
 					</div>
+
 					<div
 						hidden={viewingMode.isExpert === false}
 						style={{ width: "100%", textAlign: "center" }}
 					>
 						Expert Mode
+					</div>
+					<div
+						style={{
+							display: "flex",
+							alignItems: "center",
+							gap: 16,
+							width: "100%",
+						}}
+					>
+						{legend}
 					</div>
 				</div>
 			</GeneralCard>

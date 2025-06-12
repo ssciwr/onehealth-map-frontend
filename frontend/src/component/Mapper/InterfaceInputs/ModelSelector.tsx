@@ -234,6 +234,7 @@ const ModelSelector = ({
 			{originNode}
 			<div style={{ padding: "12px 20px", borderTop: "1px solid #EBECF0" }}>
 				<Button
+					data-testid="view-all-models"
 					type="link"
 					size="small"
 					onClick={handleViewDetailsClick}
@@ -248,15 +249,16 @@ const ModelSelector = ({
 
 	return (
 		<span className="model-selector">
-			{isMobile === false && "Display&nbsp;"}
+			{isMobile === false && "Display"}&nbsp;
 			<Dropdown
+				data-testid="model-dropdown"
 				menu={{ items }}
 				trigger={["click"]}
 				dropdownRender={dropdownRender}
 				overlayStyle={{ minWidth: "350px" }}
 				disabled={loading}
 				open={dropdownOpen}
-				onOpenChange={setDropdownOpen}
+				onOpenChange={isMobile ? setIsDetailsModalOpen : setDropdownOpen}
 			>
 				<Button
 					style={{
@@ -291,7 +293,10 @@ const ModelSelector = ({
 			</Dropdown>
 			<ModelDetailsModal
 				isOpen={isDetailsModalOpen}
-				onClose={() => setIsDetailsModalOpen(false)}
+				onClose={() => {
+					setIsDetailsModalOpen(false);
+					setDropdownOpen(false);
+				}}
 				models={models}
 				selectedModelId={selectedModel}
 				onModelSelect={onModelSelect}

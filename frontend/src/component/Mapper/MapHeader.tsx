@@ -9,10 +9,6 @@ import OptimismLevelSelector from "./InterfaceInputs/OptimismSelector.tsx";
 import TimelineSelector from "./InterfaceInputs/TimelineSelector.tsx";
 
 interface MapHeaderProps {
-	currentYear: number;
-	currentMonth: number;
-	setCurrentYear: (year: number) => void;
-	setCurrentMonth: (month: number) => void;
 	selectedModel: string;
 	handleModelSelect: (modelId: string) => void;
 	selectedOptimism: string;
@@ -21,10 +17,6 @@ interface MapHeaderProps {
 }
 
 export default ({
-	currentYear,
-	currentMonth,
-	setCurrentYear,
-	setCurrentMonth,
 	selectedModel,
 	handleModelSelect,
 	selectedOptimism,
@@ -35,24 +27,19 @@ export default ({
 
 	return isMobile ? (
 		<div>
-			<TimelineSelector
-				year={currentYear}
-				month={currentMonth}
-				onYearChange={setCurrentYear}
-				onMonthChange={setCurrentMonth}
-			/>
 			<div
 				style={{
 					position: "fixed",
-					top: "10px",
+					top: "1em",
 					left: "50%",
 					transform: "translateX(-50%)",
 					width: "95vw",
 					opacity: 1,
 					zIndex: 500,
+					padding: "1px",
 				}}
 			>
-				<GeneralCard>
+				<GeneralCard style={{ border: "0px solid" }}>
 					<div
 						style={{
 							display: "flex",
@@ -130,8 +117,8 @@ export default ({
 			</Modal>
 		</div>
 	) : (
-		<div className="header-section center">
-			<GeneralCard style={{ width: "fit-content" }}>
+		<div className="header-section center min-w-100">
+			<GeneralCard style={{ border: "0px solid" }}>
 				<div className="logo-section">
 					<h1 className="map-title">
 						<span className="title-one">One</span>
@@ -153,13 +140,6 @@ export default ({
 					setOptimism={setSelectedOptimism}
 				/>
 			</GeneralCard>
-
-			<TimelineSelector
-				year={currentYear}
-				month={currentMonth}
-				onYearChange={setCurrentYear}
-				onMonthChange={setCurrentMonth}
-			/>
 		</div>
 	);
 };

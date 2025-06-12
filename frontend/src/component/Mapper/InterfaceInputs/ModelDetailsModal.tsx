@@ -5,7 +5,9 @@ import {
 } from "@ant-design/icons";
 import { Badge, Button, Image, List, Modal, Space, Typography } from "antd";
 import type React from "react";
+import { useEffect } from "react";
 import { useState } from "react";
+import { isMobile } from "react-device-detect";
 
 const { Title, Text, Paragraph, Link } = Typography;
 
@@ -46,6 +48,10 @@ const ModelDetailsModal: React.FC<ModelDetailsModalProps> = ({
 	const [selectedDetailModelId, setSelectedDetailModelId] =
 		useState(selectedModelId);
 
+	const [sidebarHidden, setSidebarHidden] = useState(false);
+	const [singleModelDetailsHidden, setSingleModelDetailsHidden] =
+		useState(false);
+
 	const selectedDetailModel =
 		models.find((m) => m.id === selectedDetailModelId) || models[0];
 
@@ -53,7 +59,6 @@ const ModelDetailsModal: React.FC<ModelDetailsModalProps> = ({
 		onModelSelect(modelId);
 		onClose();
 	};
-
 	return (
 		<Modal
 			title={
@@ -80,9 +85,13 @@ const ModelDetailsModal: React.FC<ModelDetailsModalProps> = ({
 				body: { padding: "24px 0 0 0" },
 			}}
 		>
-			<div style={{ display: "flex", height: "700px" }}>
+			<div
+				data-testid="model-details-modal"
+				style={{ display: "flex", height: "700px" }}
+			>
 				{/* Left Sidebar - Model List */}
 				<div
+					hidden={sidebarHidden}
 					style={{
 						width: "280px",
 						borderRight: "1px solid #f0f0f0",
@@ -115,7 +124,13 @@ const ModelDetailsModal: React.FC<ModelDetailsModalProps> = ({
 											: "3px solid transparent",
 									borderBottom: "1px solid #f5f5f5",
 								}}
-								onClick={() => setSelectedDetailModelId(model.id)}
+								onClick={() => {
+									setSelectedDetailModelId(model.id);
+									if (isMobile) {
+										setSidebarHidden(true);
+										setSingleModelDetailsHidden(false);
+									}
+								}}
 							>
 								<List.Item.Meta
 									avatar={
@@ -190,7 +205,10 @@ const ModelDetailsModal: React.FC<ModelDetailsModalProps> = ({
 				</div>
 
 				{/* Right Panel - Model Details */}
-				<div style={{ flex: 1, padding: "0 24px", overflowY: "auto" }}>
+				<div
+					hidden={singleModelDetailsHidden}
+					style={{ flex: 1, padding: "0 24px", overflowY: "auto" }}
+				>
 					{selectedDetailModel && (
 						<div style={{ paddingBottom: "80px" }}>
 							{/* Header Section */}
@@ -385,7 +403,18 @@ const ModelDetailsModal: React.FC<ModelDetailsModalProps> = ({
 									gap: "12px",
 								}}
 							>
-								<Button onClick={onClose}>Cancel</Button>
+								<Button
+									onClick={
+										isMobile
+											? () => {
+													setSidebarHidden(false);
+													setSingleModelDetailsHidden(true);
+												}
+											: onClose
+									}
+								>
+									{isMobile ? "View other models" : "Cancel"}
+								</Button>
 								<Button
 									type="primary"
 									onClick={() => handleModelSelect(selectedDetailModel.id)}
