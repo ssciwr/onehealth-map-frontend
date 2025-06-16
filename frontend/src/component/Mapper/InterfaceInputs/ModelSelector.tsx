@@ -108,6 +108,12 @@ const loadModels = async (): Promise<Model[]> => {
 	return models;
 };
 
+// Helper function to truncate text
+const truncateText = (text: string, maxLength: number): string => {
+	if (text.length <= maxLength) return text;
+	return `${text.slice(0, maxLength)}...`;
+};
+
 const ModelSelector = ({
 	selectedModel,
 	onModelSelect,
@@ -247,6 +253,12 @@ const ModelSelector = ({
 		</div>
 	);
 
+	// Create display text with proper truncation
+	const getDisplayText = (modelData: Model) => {
+		const fullText = `${modelData.title} - ${modelData.modelName}`;
+		return truncateText(fullText, isMobile ? 20 : 30);
+	};
+
 	return (
 		<span className="model-selector">
 			{isMobile === false && "Display"}&nbsp;
@@ -261,6 +273,7 @@ const ModelSelector = ({
 				onOpenChange={isMobile ? setIsDetailsModalOpen : setDropdownOpen}
 			>
 				<Button
+					className="header-font-size"
 					style={{
 						display: "inline-flex",
 						alignItems: "center",
@@ -269,17 +282,24 @@ const ModelSelector = ({
 						background: "white",
 						border: "1px solid #DFE1E6",
 						borderRadius: "8px",
-						fontSize: "14px",
 						color: "#172B4D",
 						height: "auto",
+						maxWidth: isMobile ? "200px" : "300px", // Limit button width
 					}}
 					loading={loading}
 				>
 					{selectedModelData ? (
 						<Space>
 							<span>{selectedModelData.emoji}</span>
-							<span>
-								{selectedModelData.title} - {selectedModelData.modelName}
+							<span
+								style={{
+									overflow: "hidden",
+									textOverflow: "ellipsis",
+									whiteSpace: "nowrap",
+								}}
+								title={`${selectedModelData.title} - ${selectedModelData.modelName}`} // Show full text on hover
+							>
+								{getDisplayText(selectedModelData)}
 							</span>
 						</Space>
 					) : (
