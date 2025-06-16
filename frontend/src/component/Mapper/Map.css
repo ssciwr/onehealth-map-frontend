@@ -16,6 +16,8 @@
 	display: flex;
 	gap: 20px;
 	padding: 20px;
+	/*margin-top: -40px;*/
+	margin-top: 0px;
 }
 
 .map-content {
@@ -32,6 +34,8 @@
 	min-height: 100vh;
 	width: 100%;
 	border-radius: 16px;
+	/*border-top-left-radius: 0px;
+	border-top-right-radius: 0px;*/
 }
 
 .map-header {
@@ -215,6 +219,11 @@
 	font-weight: 500;
 }
 
+.header-font-size {
+	font-size: 16px;
+	font-weight: 400;
+}
+
 .model-selector {
 	position: relative;
 }
@@ -225,7 +234,6 @@
 	background: white;
 	border: 1px solid #dfe1e6;
 	border-radius: 0.5rem;
-	font-size: 0.875rem;
 	color: #172b4d;
 	cursor: pointer;
 	transition: all 0.2s;

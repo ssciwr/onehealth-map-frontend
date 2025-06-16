@@ -10,32 +10,30 @@ import {
 export const MIN_ZOOM = 3.4;
 export const MAX_ZOOM = 7;
 
+const TEMP_COLORS = [
+	"#2c7bd4",
+	"#5a9ee8",
+	"#87c1f2",
+	"#b8d8f5",
+	"#f0c45a",
+	"#e89c35",
+	"#d67220",
+	"#c44020",
+	"#dc143c",
+];
+
 // Generate color for temperature value based on gradient
 const getColorForTemperature = (
 	temp: number,
 	min: number,
 	max: number,
 ): string => {
-	const colors = [
-		"#2c7bd4",
-		"#5a9ee8",
-		"#87c1f2",
-		"#b8d8f5",
-		"#e8f2a8",
-		"#f2e485",
-		"#f0c45a",
-		"#e89c35",
-		"#d67220",
-		"#c44020",
-		"#dc143c",
-	];
-
 	const normalizedTemp = (temp - min) / (max - min);
 	const colorIndex = Math.min(
-		Math.floor(normalizedTemp * (colors.length - 1)),
-		colors.length - 1,
+		Math.floor(normalizedTemp * (TEMP_COLORS.length - 1)),
+		TEMP_COLORS.length - 1,
 	);
-	return colors[colorIndex];
+	return TEMP_COLORS[colorIndex];
 };
 
 // Generate whole number intervals every 10 degrees
@@ -45,11 +43,8 @@ const generateIntervals = (
 	maxIntervals: number,
 ): number[] => {
 	const intervals: number[] = [];
-
-	// Find the first multiple of 10 that's >= min
 	const startTemp = Math.ceil(min / 10) * 10;
 
-	// Generate intervals every 10 degrees
 	for (
 		let temp = startTemp;
 		temp < max && intervals.length < maxIntervals;
@@ -62,10 +57,10 @@ const generateIntervals = (
 };
 
 export const BottomLegend = ({
-	extremes,
-	unit = "°C",
-	isMobile = false,
-}: { extremes: DataExtremes; unit?: string; isMobile?: boolean }) => {
+								 extremes,
+								 unit = "°C",
+								 isMobile = false,
+							 }: { extremes: DataExtremes; unit?: string; isMobile?: boolean }) => {
 	if (!extremes) return null;
 
 	const intervals = generateIntervals(
@@ -74,256 +69,156 @@ export const BottomLegend = ({
 		isMobile ? 2.5 : 10,
 	);
 	const totalRange = extremes.max - extremes.min;
+	const isVertical = !isMobile;
 
-	const colors = [
-		"#2c7bd4",
-		"#5a9ee8",
-		"#87c1f2",
-		"#b8d8f5",
-		// '#e8f2a8',
-		//'#f2e485', // this light/white yellows look ugly and make it hard to differentiate on the map.
-		"#f0c45a",
-
-		"#e89c35",
-		"#d67220",
-		"#c44020",
-		"#dc143c",
-	];
-
-	if (isMobile) {
-		const mobileWrapperStyle: React.CSSProperties = {
-			minWidth: "100%",
-			marginTop: "12px",
-		};
-
-		const mobileContainerStyle: React.CSSProperties = {
-			backgroundColor: "white",
-			borderRadius: "12px",
-			padding: "12px",
-			boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
-			zIndex: 700,
-		};
-
-		const mobileBarStyle: React.CSSProperties = {
-			height: "30px",
-			borderRadius: "6px",
-			position: "relative",
-			marginBottom: "20px",
-			display: "flex",
-		};
-
-		const mobileLabelsStyle: React.CSSProperties = {
-			display: "flex",
-			justifyContent: "space-between",
-			alignItems: "center",
-			position: "relative",
-		};
-
-		const numBlocks = colors.length; // Use exactly 11 blocks
-		const blockWidth = 100 / numBlocks;
-
-		return (
-			<div style={mobileWrapperStyle}>
-				<div style={mobileContainerStyle}>
-					<div style={mobileBarStyle}>
-						{colors.map((color, i) => {
-							const borderRadius =
-								i === 0
-									? "6px 0 0 6px"
-									: i === numBlocks - 1
-										? "0 6px 6px 0"
-										: "0";
-
-							return (
-								<div
-									key={color}
-									style={{
-										width: `${blockWidth}%`,
-										height: "100%",
-										backgroundColor: color,
-										borderRadius: borderRadius,
-									}}
-								/>
-							);
-						})}
-
-						{/* Interval markers */}
-						{intervals.map((temp) => {
-							const position = ((temp - extremes.min) / totalRange) * 100;
-							return (
-								<div
-									key={temp}
-									style={{
-										position: "absolute",
-										left: `${position}%`,
-										top: "100%",
-										width: "1px",
-										height: "8px",
-										backgroundColor: "#666",
-										transform: "translateX(-50%)",
-									}}
-								/>
-							);
-						})}
-					</div>
-
-					<div style={mobileLabelsStyle}>
-						{/* Min extreme */}
-						<span
-							hidden
-							style={{ fontSize: "11px", fontWeight: "bold", color: "#333" }}
-						>
-							{extremes.min.toFixed(1)}
-							{unit}
-						</span>
-
-						{/* Interval labels */}
-						{intervals.map((temp) => {
-							const position = ((temp - extremes.min) / totalRange) * 100;
-							return (
-								<span
-									key={temp}
-									style={{
-										position: "absolute",
-										left: `${position}%`,
-										transform: "translateX(-50%)",
-										fontSize: "10px",
-										fontWeight: "500",
-										color: "#666",
-									}}
-								>
-									{temp}
-									{unit}
-								</span>
-							);
-						})}
-
-						{/* Max extreme */}
-						<span
-							hidden
-							style={{ fontSize: "11px", fontWeight: "bold", color: "#333" }}
-						>
-							{extremes.max.toFixed(1)}
-							{unit}
-						</span>
-					</div>
-				</div>
-			</div>
-		);
-	}
-
-	// Desktop version
-	const desktopWrapperStyle: React.CSSProperties = {
+	// Wrapper styles for positioning
+	const wrapperStyle: React.CSSProperties = isMobile ? {
+		minWidth: "100%",
+		marginTop: "12px",
+	} : {
 		position: "fixed",
-		bottom: "105px",
-		left: "50%",
-		transform: "translateX(-50%)",
-		backgroundColor: "white",
-		borderRadius: "12px",
-		padding: "16px",
-		boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
+		top: "130px",
+		left: "40px",
 		zIndex: 700,
 	};
 
-	const desktopBarStyle: React.CSSProperties = {
-		height: "40px",
+	// Container styles
+	const containerStyle: React.CSSProperties = {
+		backgroundColor: "white",
+		borderRadius: "12px",
+		padding: isMobile ? "12px" : "16px",
+		boxShadow: `0 ${isMobile ? 2 : 4}px ${isMobile ? 8 : 12}px rgba(0, 0, 0, ${isMobile ? 0.1 : 0.15})`,
+		display: "flex",
+		flexDirection: isVertical ? "row" : "column",
+		alignItems: "center",
+		gap: isVertical ? "15px" : "12px",
+	};
+
+	const barStyle: React.CSSProperties = {
 		borderRadius: "8px",
 		position: "relative",
-		marginBottom: "25px",
-		minWidth: "500px", // Wider for desktop
 		display: "flex",
+		flexDirection: isVertical ? "column" : "row",
+		...(isVertical
+				? { width: "40px", height: "300px" }
+				: { width: "100%", height: "30px" }
+		),
 	};
 
-	const desktopLabelsStyle: React.CSSProperties = {
+	const labelsStyle: React.CSSProperties = {
 		display: "flex",
+		flexDirection: isVertical ? "column" : "row",
 		justifyContent: "space-between",
-		alignItems: "center",
+		alignItems: isVertical ? "flex-start" : "center",
 		position: "relative",
+		...(isVertical
+				? { height: "300px" }
+				: { width: "100%", marginTop: "20px" }
+		),
 	};
 
-	const numBlocks = colors.length; // Use exactly 11 blocks
-	const blockWidth = 100 / numBlocks;
+	// Color blocks with proper orientation
+	const colors = isVertical ? [...TEMP_COLORS].reverse() : TEMP_COLORS;
+	const numBlocks = colors.length;
 
-	return (
-		<div style={desktopWrapperStyle}>
-			<div style={desktopBarStyle}>
-				{/* Color blocks */}
-				{colors.map((color, i) => {
-					const borderRadius =
-						i === 0 ? "8px 0 0 8px" : i === numBlocks - 1 ? "0 8px 8px 0" : "0";
+	const renderColorBlocks = () =>
+		colors.map((color, i) => {
+			const isFirst = i === 0;
+			const isLast = i === numBlocks - 1;
+			const borderRadius = isVertical
+				? isFirst ? "8px 8px 0 0" : isLast ? "0 0 8px 8px" : "0"
+				: isFirst ? "8px 0 0 8px" : isLast ? "0 8px 8px 0" : "0";
 
-					return (
-						<div
-							key={color}
-							style={{
-								width: `${blockWidth}%`,
-								height: "100%",
-								backgroundColor: color,
-								borderRadius: borderRadius,
-							}}
-						/>
-					);
-				})}
+			return (
+				<div
+					key={`${color}-${i}`}
+					style={{
+						[isVertical ? "height" : "width"]: `${100 / numBlocks}%`,
+						[isVertical ? "width" : "height"]: "100%",
+						backgroundColor: color,
+						borderRadius,
+					}}
+				/>
+			);
+		});
 
-				{/* Interval markers */}
-				{intervals.map((temp) => {
-					const position = ((temp - extremes.min) / totalRange) * 100;
-					return (
-						<div
-							key={temp}
-							style={{
-								position: "absolute",
-								left: `${position}%`,
-								top: "100%",
-								width: "2px",
-								height: "12px",
-								backgroundColor: "#666",
-								transform: "translateX(-50%)",
-							}}
-						/>
-					);
-				})}
-			</div>
+	const renderIntervalMarkers = () =>
+		intervals.map((temp) => {
+			const position = ((temp - extremes.min) / totalRange) * 100;
+			return (
+				<div
+					key={temp}
+					style={{
+						position: "absolute",
+						[isVertical ? "bottom" : "left"]: `${position}%`,
+						[isVertical ? "right" : "top"]: "100%",
+						[isVertical ? "width" : "height"]: isVertical ? "12px" : "8px",
+						[isVertical ? "height" : "width"]: "2px",
+						backgroundColor: "#666",
+						transform: isVertical ? "translateY(50%)" : "translateX(-50%)",
+					}}
+				/>
+			);
+		});
 
-			<div style={desktopLabelsStyle}>
-				{/* Min extreme */}
-				<span
-					hidden
-					style={{ fontSize: "13px", fontWeight: "bold", color: "#333" }}
-				>
-					{extremes.min.toFixed(1)}
-					{unit}
+	const renderLabels = () => {
+		const labelStyle = (size: "small" | "large") => ({
+			fontSize: size === "small" ? "11px" : "13px",
+			fontWeight: size === "small" ? "500" : "bold",
+			color: size === "small" ? "#666" : "#333",
+		});
+
+		const sortedIntervals = isVertical ? [...intervals].reverse() : intervals;
+
+		return (
+			<>
+				{/* Min/Max extremes */}
+				<span style={labelStyle("large")}>
+					{isVertical ? Math.round(extremes.max) : Math.round(extremes.min)}{unit}
 				</span>
 
 				{/* Interval labels */}
-				{intervals.map((temp) => {
+				{sortedIntervals.map((temp) => {
 					const position = ((temp - extremes.min) / totalRange) * 100;
 					return (
 						<span
 							key={temp}
 							style={{
 								position: "absolute",
-								left: `${position}%`,
-								transform: "translateX(-50%)",
-								fontSize: "12px",
-								fontWeight: "500",
-								color: "#666",
+								[isVertical ? "bottom" : "left"]: `${position}%`,
+								transform: isVertical ? "translateY(50%)" : "translateX(-50%)",
+								...labelStyle("small"),
 							}}
 						>
-							{temp}
-							{unit}
+							{temp}{unit}
 						</span>
 					);
 				})}
 
-				{/* Max extreme */}
+				{/* Opposite extreme */}
 				<span
-					hidden
-					style={{ fontSize: "13px", fontWeight: "bold", color: "#333" }}
+					style={{
+						...labelStyle("large"),
+						position: "absolute",
+						[isVertical ? "bottom" : "right"]: 0,
+					}}
 				>
-					{extremes.max.toFixed(1)}
-					{unit}
+					{isVertical ? Math.round(extremes.min) : Math.round(extremes.max)}{unit}
 				</span>
+			</>
+		);
+	};
+
+	return (
+		<div style={wrapperStyle}>
+			<div style={containerStyle}>
+				<div style={barStyle}>
+					{renderColorBlocks()}
+					{renderIntervalMarkers()}
+				</div>
+				<div style={labelsStyle}>
+					{renderLabels()}
+				</div>
 			</div>
 		</div>
 	);
@@ -343,7 +238,6 @@ export const calculateExtremes = (
 
 	if (calculatePercentiles) {
 		const sortedTemps = [...temperatures].sort((a, b) => a - b);
-
 		const p5Index = Math.floor((25 / 100) * (sortedTemps.length - 1));
 		const p95Index = Math.floor((75 / 100) * (sortedTemps.length - 1));
 
@@ -352,6 +246,7 @@ export const calculateExtremes = (
 			max: sortedTemps[p95Index],
 		};
 	}
+
 	return {
 		min: Math.min(...temperatures),
 		max: Math.max(...temperatures),
@@ -367,7 +262,7 @@ export const loadTemperatureData = async (
 }> => {
 	const dataPath = `${year.toString()}_data_january_05res.csv`;
 	console.log("DataPath:", dataPath);
-	const response = await fetch(dataPath);
+	const response = await fetch(`/${dataPath}`);
 	const text = await response.text();
 	const rows = text
 		.split("\n")

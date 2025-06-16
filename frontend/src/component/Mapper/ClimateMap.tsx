@@ -20,6 +20,7 @@ import ControlBar from "./InterfaceInputs/ControlBar.tsx";
 import MapHeader from "./MapHeader.tsx";
 import "leaflet-simple-map-screenshoter";
 import TimelineSelector from "./InterfaceInputs/TimelineSelector.tsx";
+import { isMobile } from "react-device-detect";
 import type {
 	DataExtremes,
 	NutsGeoJSON,
@@ -246,11 +247,11 @@ const ClimateMap = ({ onMount = () => true }) => {
 		return {
 			fillColor: dataExtremes
 				? getColorFromGradient(
-						properties.intensity || 0,
-						dataExtremes,
-						"#8b5cf6",
-						"#cccccc",
-					)
+					properties.intensity || 0,
+					dataExtremes,
+					"#8b5cf6",
+					"#cccccc",
+				)
 				: "blue",
 			weight: 1,
 			opacity: 1,
@@ -316,19 +317,6 @@ const ClimateMap = ({ onMount = () => true }) => {
 					getOptimismLevels={getOptimismLevels}
 				/>
 
-				<TimelineSelector
-					year={currentYear}
-					month={currentMonth}
-					onYearChange={setCurrentYear}
-					onMonthChange={setCurrentMonth}
-					legend={
-						dataExtremes ? (
-							<BottomLegend extremes={dataExtremes} unit="°C" />
-						) : (
-							<div />
-						)
-					}
-				/>
 
 				<div className="map-content-wrapper">
 					<div className="map-content" style={{ position: "relative" }}>
@@ -344,7 +332,6 @@ const ClimateMap = ({ onMount = () => true }) => {
 						>
 							<TileLayer
 								url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-								attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
 								noWrap={true}
 							/>
 
@@ -413,9 +400,9 @@ const ClimateMap = ({ onMount = () => true }) => {
 
 						{/* TimelineSelector positioned absolutely over the map */}
 						<div
-							style={{
-								position: "absolute",
-								top: "10px",
+							style={ isMobile ? {} : {
+								position: "fixed",
+								bottom: "10px",
 								left: "50%",
 								transform: "translateX(-50%)",
 								zIndex: 1000,
@@ -427,12 +414,24 @@ const ClimateMap = ({ onMount = () => true }) => {
 								month={currentMonth}
 								onYearChange={setCurrentYear}
 								onMonthChange={setCurrentMonth}
+								legend={
+									dataExtremes ? (
+										<BottomLegend extremes={dataExtremes} unit="°C" isMobile={isMobile} />
+									) : (
+										<div />
+									)
+								}
 							/>
 						</div>
 
 						<ControlBar map={map} />
 					</div>
 				</div>
+
+				{/* Desktop-only legend positioned over the map */}
+				{!isMobile && dataExtremes && (
+					<BottomLegend extremes={dataExtremes} unit="°C" isMobile={false} />
+				)}
 
 				<div className="map-bottom-bar">
 					<div className="control-section">
