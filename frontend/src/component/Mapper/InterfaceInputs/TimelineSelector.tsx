@@ -56,7 +56,7 @@ const TimelineSelector: React.FC<AntdTimelineSelectorProps> = ({
 
 	const mobileContainerStyle: React.CSSProperties = {
 		position: "fixed",
-		bottom: "1.5em",
+		bottom: "0em",
 		left: "50%",
 		transform: "translateX(-50%)",
 		zIndex: 500,
@@ -76,7 +76,7 @@ const TimelineSelector: React.FC<AntdTimelineSelectorProps> = ({
 							}
 						: { minWidth: "91vw" }
 				}
-				bodyStyle={isMobile ? { padding: "10px 24px" } : {}}
+				bodyStyle={{ padding: "10px 24px" }}
 			>
 				<div
 					style={
@@ -90,8 +90,10 @@ const TimelineSelector: React.FC<AntdTimelineSelectorProps> = ({
 					}
 				>
 					<div style={{ width: "100%" }}>
-						{isMobile === false && (
-							<Text style={{ fontSize: 24, display: "block" }}>{year}</Text>
+						{1 === 2 && (
+							<Text hidden style={{ fontSize: 24, display: "block" }}>
+								{year}
+							</Text>
 						)}
 
 						<div
@@ -108,10 +110,16 @@ const TimelineSelector: React.FC<AntdTimelineSelectorProps> = ({
 									<Select
 										value={year}
 										onChange={onYearChange}
-										style={{ width: "100%" }}
+										style={{
+											width: "100%",
+											height: "50px",
+											fontWeight: "600",
+											textAlign: "center",
+										}}
 										placeholder="Select Year"
 										className={isMobile ? "light-box-shadow" : ""}
 										showSearch
+										size="large"
 										filterOption={(input, option) =>
 											option?.children
 												?.toString()
@@ -120,7 +128,11 @@ const TimelineSelector: React.FC<AntdTimelineSelectorProps> = ({
 										}
 									>
 										{yearOptions.map((yearOption) => (
-											<Option key={yearOption} value={yearOption}>
+											<Option
+												style={{ background: "translucent" }}
+												key={yearOption}
+												value={yearOption}
+											>
 												{yearOption}
 											</Option>
 										))}
@@ -147,7 +159,7 @@ const TimelineSelector: React.FC<AntdTimelineSelectorProps> = ({
 								)}
 							</div>
 
-							{/* Month selector */}
+							{/* Month selector
 							<Select
 								value={month}
 								onChange={onMonthChange}
@@ -159,26 +171,23 @@ const TimelineSelector: React.FC<AntdTimelineSelectorProps> = ({
 										{monthName}
 									</Option>
 								))}
-							</Select>
+							</Select>*/}
 						</div>
 					</div>
 
-					<div
-						hidden={viewingMode.isExpert === false}
-						style={{ width: "100%", textAlign: "center" }}
-					>
-						Expert Mode
-					</div>
-					<div
-						style={{
-							display: "flex",
-							alignItems: "center",
-							gap: 16,
-							width: "100%",
-						}}
-					>
-						{legend}
-					</div>
+					{/* Legend appears below on mobile only */}
+					{isMobile && (
+						<div
+							style={{
+								display: "flex",
+								alignItems: "center",
+								gap: 16,
+								width: "100%",
+							}}
+						>
+							{legend}
+						</div>
+					)}
 				</div>
 			</GeneralCard>
 		</div>

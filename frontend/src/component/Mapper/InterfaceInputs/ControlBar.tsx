@@ -2,6 +2,7 @@ import { Modal, Spin } from "antd";
 import L from "leaflet";
 import { Camera, Info, MapPin, Minus, Plus } from "lucide-react";
 import { useEffect, useState } from "react";
+import { isMobile } from "react-device-detect";
 import { AboutContent } from "../../../static/Footer.tsx";
 
 interface ScreenshotOptions {
@@ -46,11 +47,23 @@ declare module "leaflet" {
 	): SimpleMapScreenshoter;
 }
 
+export const CONTROL_BAR_LOCATIONS = {
+	BOTTOM_RIGHT: "bottom-right",
+	TOP_LEFT: "top-left",
+} as const;
+
+type ControlBarLocation =
+	(typeof CONTROL_BAR_LOCATIONS)[keyof typeof CONTROL_BAR_LOCATIONS];
+
 interface ControlBarProps {
 	map: L.Map | null;
+	position?: ControlBarLocation;
 }
 
-const ControlBar = ({ map }: ControlBarProps) => {
+const ControlBar = ({
+	map,
+	position = CONTROL_BAR_LOCATIONS.BOTTOM_RIGHT,
+}: ControlBarProps) => {
 	const [isLocating, setIsLocating] = useState<boolean>(false);
 	const [isSaving, setIsSaving] = useState<boolean>(false);
 	const [showInfo, setShowInfo] = useState<boolean>(false);
@@ -204,9 +217,18 @@ const ControlBar = ({ map }: ControlBarProps) => {
 				data-testid="control-bar"
 				style={{
 					position: "fixed",
-					right: "30px",
-					top: "50%",
-					transform: "translateY(-50%)",
+					left: isMobile
+						? "unset"
+						: position === CONTROL_BAR_LOCATIONS.BOTTOM_RIGHT
+							? "unset"
+							: "30px",
+					right: isMobile
+						? "30px"
+						: position === CONTROL_BAR_LOCATIONS.BOTTOM_RIGHT
+							? "40px"
+							: "unset",
+					top: isMobile ? "50%" : "130px",
+					transform: isMobile ? "translateY(-50%)" : "unset",
 					zIndex: 600, // 600-700 now reserved for control elements on map. 1000 for modals. 300-400 for map layers.
 					display: "flex",
 					flexDirection: "column",
