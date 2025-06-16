@@ -22,12 +22,12 @@ interface Model {
 	icon?: string;
 	color?: string;
 	details?: string;
-	image?: string; // Optional graph/chart image URL
-	authors?: string[]; // Optional array of author names
+	image?: string;
+	authors?: string[];
 	paper?: {
 		paperTitle: string;
 		url: string;
-	}; // Optional paper reference
+	};
 }
 
 interface ModelDetailsModalProps {
@@ -50,7 +50,16 @@ const ModelDetailsModal: React.FC<ModelDetailsModalProps> = ({
 
 	const [sidebarHidden, setSidebarHidden] = useState(false);
 	const [singleModelDetailsHidden, setSingleModelDetailsHidden] =
-		useState(false);
+		useState(isMobile); // Hide details on mobile initially
+
+	// Reset view state when modal opens/closes
+	useEffect(() => {
+		if (isOpen) {
+			setSidebarHidden(false);
+			setSingleModelDetailsHidden(isMobile); // Show list view on mobile when opening
+			setSelectedDetailModelId(selectedModelId);
+		}
+	}, [isOpen, selectedModelId]);
 
 	const selectedDetailModel =
 		models.find((m) => m.id === selectedDetailModelId) || models[0];
