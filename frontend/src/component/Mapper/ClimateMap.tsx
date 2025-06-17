@@ -20,6 +20,8 @@ import ControlBar from "./InterfaceInputs/ControlBar.tsx";
 import MapHeader from "./MapHeader.tsx";
 import "leaflet-simple-map-screenshoter";
 import { isMobile } from "react-device-detect";
+import { errorStore } from "../../stores/ErrorStore";
+import { loadingStore } from "../../stores/LoadingStore";
 import TimelineSelector from "./InterfaceInputs/TimelineSelector.tsx";
 import type {
 	DataExtremes,
@@ -52,7 +54,6 @@ const ClimateMap = ({ onMount = () => true }) => {
 		skipped: 0,
 		errors: 0,
 	});
-	const [outbreaks, setOutbreaks] = useState<OutbreakData[]>([]);
 	const [temperatureData, setTemperatureData] = useState<
 		TemperatureDataPoint[]
 	>([]);
@@ -76,14 +77,21 @@ const ClimateMap = ({ onMount = () => true }) => {
 
 	const handleLoadTemperatureData = useCallback(async (year: number) => {
 		try {
+			loadingStore.start();
 			const { dataPoints, extremes, bounds } = await loadTemperatureData(year);
 			setTemperatureData(dataPoints);
 			setDataExtremes(extremes);
 			if (bounds) {
 				setDataBounds(bounds);
 			}
+			loadingStore.complete();
 		} catch (err: unknown) {
 			const error = err as Error;
+			loadingStore.complete();
+			errorStore.showError(
+				"Temperature Data Error",
+				`Failed to load temperature data: ${error.message}`,
+			);
 			setError(`Failed to load temperature data: ${error.message}`);
 		}
 	}, []);
@@ -98,33 +106,24 @@ const ClimateMap = ({ onMount = () => true }) => {
 		}
 	}, [map, dataBounds]);
 
-	useEffect(() => {
-		fetch("/data/outbreaks.csv")
-			.then((response) => response.text())
-			.then((csvData) => {
-				const parsedOutbreaks = parseCSVToOutbreaks(csvData);
-				setOutbreaks(parsedOutbreaks);
-			})
-			.catch((err: Error) => {
-				console.error("Error loading outbreaks data:", err);
-				setError(err.message);
-			});
-	}, []);
-
 	const loadNutsData = () => {
 		setLoading(true);
 		setError(null);
+		loadingStore.start();
 
 		fetch("/data/nutsRegions.csv")
 			.then((response) => response.text())
 			.then((csvData) => {
 				processCSVData(csvData);
 				setLoading(false);
+				loadingStore.complete();
 			})
 			.catch((err: Error) => {
 				console.error("Error loading NUTS data:", err);
 				setError(err.message);
 				setLoading(false);
+				loadingStore.complete();
+				errorStore.showError("NUTS Data Error", err.message);
 			});
 	};
 
@@ -134,6 +133,7 @@ const ClimateMap = ({ onMount = () => true }) => {
 
 		setLoading(true);
 		setError(null);
+		loadingStore.start();
 
 		const reader = new FileReader();
 		reader.onload = (e) => {
@@ -145,12 +145,19 @@ const ClimateMap = ({ onMount = () => true }) => {
 				console.error("Error processing uploaded file:", error);
 				setError(error.message);
 				setLoading(false);
+				loadingStore.complete();
+				errorStore.showError("File Processing Error", error.message);
 			}
 		};
 		reader.onerror = (err) => {
 			console.error("File reading error:", err);
 			setError("Error reading file");
 			setLoading(false);
+			loadingStore.complete();
+			errorStore.showError(
+				"File Reading Error",
+				"Error reading the uploaded file",
+			);
 		};
 		reader.readAsText(file);
 	};
@@ -182,6 +189,7 @@ const ClimateMap = ({ onMount = () => true }) => {
 			const error = err as Error;
 			console.error("Error processing CSV data:", error);
 			setError(error.message);
+			errorStore.showError("CSV Processing Error", error.message);
 		} finally {
 			setLoading(false);
 		}
@@ -359,43 +367,6 @@ const ClimateMap = ({ onMount = () => true }) => {
 										onEachFeature={onEachFeature}
 									/>
 								)}
-							</Pane>
-
-							<Pane name="markersPane" style={{ zIndex: 330 }}>
-								{outbreaks.map((outbreak) => (
-									<CircleMarker
-										key={outbreak.id}
-										center={[outbreak.latitude, outbreak.longitude]}
-										radius={10}
-										pathOptions={{
-											fillColor: "#8A2BE2",
-											color: "#000",
-											weight: 1,
-											opacity: 1,
-											fillOpacity: 0.8,
-										}}
-									>
-										<Popup className="outbreak-popup">
-											<div>
-												<h3>{outbreak.category}</h3>
-												<p>
-													<strong>Location:</strong> {outbreak.location}
-												</p>
-												<p>
-													<strong>Date:</strong> {outbreak.date}
-												</p>
-												<p>
-													<strong>Cases:</strong> {outbreak.cases}
-												</p>
-												{outbreak.notes && (
-													<p>
-														<strong>Notes:</strong> {outbreak.notes}
-													</p>
-												)}
-											</div>
-										</Popup>
-									</CircleMarker>
-								))}
 							</Pane>
 
 							<ViewportMonitor onViewportChange={handleViewportChange} />

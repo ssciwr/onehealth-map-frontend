@@ -10,6 +10,7 @@ import {
 export const MIN_ZOOM = 3.4;
 export const MAX_ZOOM = 7;
 
+/* Blue-red-red:
 const TEMP_COLORS = [
 	"#2c7bd4",
 	"#5a9ee8",
@@ -19,22 +20,18 @@ const TEMP_COLORS = [
 	"#e89c35",
 	"#d67220",
 	"#c44020",
-	"#dc143c",
 ];
-
-// Generate color for temperature value based on gradient
-const getColorForTemperature = (
-	temp: number,
-	min: number,
-	max: number,
-): string => {
-	const normalizedTemp = (temp - min) / (max - min);
-	const colorIndex = Math.min(
-		Math.floor(normalizedTemp * (TEMP_COLORS.length - 1)),
-		TEMP_COLORS.length - 1,
-	);
-	return TEMP_COLORS[colorIndex];
-};
+ */
+export const TEMP_COLORS = [
+	"#4c1d4b", // Deep purple
+	"#663399", // Purple
+	"#7b4397", // Purple-blue
+	"#2e86ab", // Blue
+	"#39a97e", // Teal-green
+	"#56c579", // Light green
+	"#a7d88f", // Pale green
+	"#e2fba2", // Very light green/yellow
+];
 
 // Generate whole number intervals every 10 degrees
 const generateIntervals = (
@@ -42,13 +39,15 @@ const generateIntervals = (
 	max: number,
 	maxIntervals: number,
 ): number[] => {
+	const practicalMin = min + 3;
+	const practicalMax = max - 3; // 3 degree padding so that it doesn't overlap on the scale.
 	const intervals: number[] = [];
-	const startTemp = Math.ceil(min / 10) * 10;
+	const startTemp = Math.ceil(practicalMin / 10) * 10;
 
 	for (
 		let temp = startTemp;
-		temp < max && intervals.length < maxIntervals;
-		temp += 10
+		temp < practicalMax && intervals.length < maxIntervals;
+		temp += 5
 	) {
 		intervals.push(temp);
 	}
@@ -57,10 +56,10 @@ const generateIntervals = (
 };
 
 export const BottomLegend = ({
-								 extremes,
-								 unit = "°C",
-								 isMobile = false,
-							 }: { extremes: DataExtremes; unit?: string; isMobile?: boolean }) => {
+	extremes,
+	unit = "°C",
+	isMobile = false,
+}: { extremes: DataExtremes; unit?: string; isMobile?: boolean }) => {
 	if (!extremes) return null;
 
 	const intervals = generateIntervals(
@@ -72,15 +71,18 @@ export const BottomLegend = ({
 	const isVertical = !isMobile;
 
 	// Wrapper styles for positioning
-	const wrapperStyle: React.CSSProperties = isMobile ? {
-		minWidth: "100%",
-		marginTop: "12px",
-	} : {
-		position: "fixed",
-		top: "130px",
-		left: "40px",
-		zIndex: 700,
-	};
+	const wrapperStyle: React.CSSProperties = isMobile
+		? {
+				minWidth: "100%",
+				marginTop: "12px",
+			}
+		: {
+				position: "fixed",
+				top: "120px",
+				left: "32px",
+				zIndex: 700,
+				minHeight: "100%",
+			};
 
 	// Container styles
 	const containerStyle: React.CSSProperties = {
@@ -100,9 +102,8 @@ export const BottomLegend = ({
 		display: "flex",
 		flexDirection: isVertical ? "column" : "row",
 		...(isVertical
-				? { width: "40px", height: "300px" }
-				: { width: "100%", height: "30px" }
-		),
+			? { width: "40px", height: "70vh" }
+			: { width: "100%", height: "30px" }),
 	};
 
 	const labelsStyle: React.CSSProperties = {
@@ -111,10 +112,7 @@ export const BottomLegend = ({
 		justifyContent: "space-between",
 		alignItems: isVertical ? "flex-start" : "center",
 		position: "relative",
-		...(isVertical
-				? { height: "300px" }
-				: { width: "100%", marginTop: "20px" }
-		),
+		...(isVertical ? { height: "70vh" } : { width: "100%" }),
 	};
 
 	// Color blocks with proper orientation
@@ -126,12 +124,20 @@ export const BottomLegend = ({
 			const isFirst = i === 0;
 			const isLast = i === numBlocks - 1;
 			const borderRadius = isVertical
-				? isFirst ? "8px 8px 0 0" : isLast ? "0 0 8px 8px" : "0"
-				: isFirst ? "8px 0 0 8px" : isLast ? "0 8px 8px 0" : "0";
+				? isFirst
+					? "8px 8px 0 0"
+					: isLast
+						? "0 0 8px 8px"
+						: "0"
+				: isFirst
+					? "8px 0 0 8px"
+					: isLast
+						? "0 8px 8px 0"
+						: "0";
 
 			return (
 				<div
-					key={`${color}-${i}`}
+					key={`${color}`}
 					style={{
 						[isVertical ? "height" : "width"]: `${100 / numBlocks}%`,
 						[isVertical ? "width" : "height"]: "100%",
@@ -174,7 +180,8 @@ export const BottomLegend = ({
 			<>
 				{/* Min/Max extremes */}
 				<span style={labelStyle("large")}>
-					{isVertical ? Math.round(extremes.max) : Math.round(extremes.min)}{unit}
+					{isVertical ? Math.round(extremes.max) : Math.round(extremes.min)}
+					{unit}
 				</span>
 
 				{/* Interval labels */}
@@ -190,7 +197,8 @@ export const BottomLegend = ({
 								...labelStyle("small"),
 							}}
 						>
-							{temp}{unit}
+							{temp}
+							{unit}
 						</span>
 					);
 				})}
@@ -203,7 +211,8 @@ export const BottomLegend = ({
 						[isVertical ? "bottom" : "right"]: 0,
 					}}
 				>
-					{isVertical ? Math.round(extremes.min) : Math.round(extremes.max)}{unit}
+					{isVertical ? Math.round(extremes.min) : Math.round(extremes.max)}
+					{unit}
 				</span>
 			</>
 		);
@@ -216,9 +225,7 @@ export const BottomLegend = ({
 					{renderColorBlocks()}
 					{renderIntervalMarkers()}
 				</div>
-				<div style={labelsStyle}>
-					{renderLabels()}
-				</div>
+				<div style={labelsStyle}>{renderLabels()}</div>
 			</div>
 		</div>
 	);
