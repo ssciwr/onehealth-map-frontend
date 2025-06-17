@@ -19,8 +19,8 @@ import DebugStatsPanel from "./DebugStatsPanel.tsx";
 import ControlBar from "./InterfaceInputs/ControlBar.tsx";
 import MapHeader from "./MapHeader.tsx";
 import "leaflet-simple-map-screenshoter";
-import TimelineSelector from "./InterfaceInputs/TimelineSelector.tsx";
 import { isMobile } from "react-device-detect";
+import TimelineSelector from "./InterfaceInputs/TimelineSelector.tsx";
 import type {
 	DataExtremes,
 	NutsGeoJSON,
@@ -247,11 +247,11 @@ const ClimateMap = ({ onMount = () => true }) => {
 		return {
 			fillColor: dataExtremes
 				? getColorFromGradient(
-					properties.intensity || 0,
-					dataExtremes,
-					"#8b5cf6",
-					"#cccccc",
-				)
+						properties.intensity || 0,
+						dataExtremes,
+						"#8b5cf6",
+						"#cccccc",
+					)
 				: "blue",
 			weight: 1,
 			opacity: 1,
@@ -317,7 +317,6 @@ const ClimateMap = ({ onMount = () => true }) => {
 					getOptimismLevels={getOptimismLevels}
 				/>
 
-
 				<div className="map-content-wrapper">
 					<div className="map-content" style={{ position: "relative" }}>
 						<MapContainer
@@ -329,12 +328,16 @@ const ClimateMap = ({ onMount = () => true }) => {
 							ref={setMap}
 							zoomControl={false}
 							worldCopyJump={false}
+							style={{
+								backgroundColor: "white",
+								marginLeft: isMobile ? "0px" : "140px",
+								width: isMobile ? "100%" : "calc(100% - 140px)",
+							}}
 						>
 							<TileLayer
 								url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
 								noWrap={true}
 							/>
-
 							<Pane name="gridPane" style={{ zIndex: 340, opacity: 0.5 }}>
 								{temperatureData.length > 0 && viewport && dataExtremes && (
 									<div>
@@ -400,14 +403,18 @@ const ClimateMap = ({ onMount = () => true }) => {
 
 						{/* TimelineSelector positioned absolutely over the map */}
 						<div
-							style={ isMobile ? {} : {
-								position: "fixed",
-								bottom: "10px",
-								left: "50%",
-								transform: "translateX(-50%)",
-								zIndex: 1000,
-								pointerEvents: "auto",
-							}}
+							style={
+								isMobile
+									? {}
+									: {
+											position: "fixed",
+											bottom: "10px",
+											left: "50%",
+											transform: "translateX(-50%)",
+											zIndex: 1000,
+											pointerEvents: "auto",
+										}
+							}
 						>
 							<TimelineSelector
 								year={currentYear}
@@ -416,7 +423,11 @@ const ClimateMap = ({ onMount = () => true }) => {
 								onMonthChange={setCurrentMonth}
 								legend={
 									dataExtremes ? (
-										<BottomLegend extremes={dataExtremes} unit="°C" isMobile={isMobile} />
+										<BottomLegend
+											extremes={dataExtremes}
+											unit="°C"
+											isMobile={isMobile}
+										/>
 									) : (
 										<div />
 									)
