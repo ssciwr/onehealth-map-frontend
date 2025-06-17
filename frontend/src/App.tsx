@@ -1,6 +1,9 @@
 import { observer } from "mobx-react-lite";
 import { Route, Routes } from "react-router-dom";
 import "./App.css";
+import GlobalErrorModal from "./component/General/GlobalErrorModal";
+import GlobalLoadingBar from "./component/General/GlobalLoadingBar";
+import AdvancedClimateMap from "./component/Mapper/AdvancedClimateMap.tsx";
 import ClimateMap from "./component/Mapper/ClimateMap.tsx";
 import MapWithExpertiseModal from "./component/Mapper/InterfaceInputs/MapWithExpertiseModal.tsx";
 import NotFound from "./pages/NotFound.tsx";
@@ -16,6 +19,8 @@ const App = observer(() => {
      */
 	return (
 		<>
+			<GlobalLoadingBar />
+			<GlobalErrorModal />
 			<Routes>
 				<Route
 					path="/map/citizen"
@@ -41,6 +46,7 @@ const App = observer(() => {
 						/>
 					}
 				/>
+				<Route path="/map/advanced" element={<AdvancedClimateMap />} />
 				<Route path="/map" element={<MapWithExpertiseModal />} />
 				<Route path="/OldOverview" element={<Overview />} />
 				<Route path="/" element={<ClimateMap />} />
