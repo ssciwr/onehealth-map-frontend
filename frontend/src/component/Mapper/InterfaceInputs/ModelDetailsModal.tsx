@@ -79,20 +79,14 @@ const ModelDetailsModal: React.FC<ModelDetailsModalProps> = React.memo(
 				return;
 			}
 
-			// Fetch new data
 			setIsLoadingChartData(true);
 			loadingStore.start();
 
 			try {
 				const data = await fetchModelChartData(modelId);
-
-				// Cache the data
 				modelDataCache.current.set(modelId, data);
 				setCurrentChartData(data);
-
-				loadingStore.complete();
 			} catch (error) {
-				loadingStore.complete();
 				errorStore.showError(
 					"Chart Data Error",
 					`Failed to load chart data for model: ${error instanceof Error ? error.message : "Unknown error"}`,
@@ -100,6 +94,7 @@ const ModelDetailsModal: React.FC<ModelDetailsModalProps> = React.memo(
 				setCurrentChartData(null);
 			} finally {
 				setIsLoadingChartData(false);
+				loadingStore.complete();
 			}
 		}, []);
 
@@ -337,7 +332,8 @@ const ModelDetailsModal: React.FC<ModelDetailsModalProps> = React.memo(
 												>
 													<Text type="secondary">
 														{" "}
-														<Spin size="large" /> Loading chart data...
+														<Spin size="large" />
+														&nbsp;Loading chart data...
 													</Text>
 												</div>
 											) : (
