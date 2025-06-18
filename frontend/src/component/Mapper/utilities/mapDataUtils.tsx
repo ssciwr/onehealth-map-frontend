@@ -1,11 +1,6 @@
 import * as turf from "@turf/turf";
 import L from "leaflet";
-import {
-	COLOR_SCHEMES,
-	type DataExtremes,
-	type OutbreakData,
-	type TemperatureDataPoint,
-} from "../types.ts";
+import type { DataExtremes, TemperatureDataPoint } from "../types.ts";
 
 export const MIN_ZOOM = 3.4;
 export const MAX_ZOOM = 7;
@@ -320,38 +315,4 @@ export const loadTemperatureData = async (
 	}
 
 	return { dataPoints, extremes, bounds };
-};
-
-export const parseCSVToOutbreaks = (csvData: string): OutbreakData[] => {
-	const lines = csvData.trim().split("\n");
-	const headers = lines[0].split(",");
-
-	return lines.slice(1).map((line, index) => {
-		const values = line.split(",");
-		const outbreak: Record<string, string | number> = {};
-
-		headers.forEach((header, i) => {
-			const value = values[i];
-			if (
-				header === "latitude" ||
-				header === "longitude" ||
-				header === "cases"
-			) {
-				outbreak[header] = Number.parseFloat(value) || 0;
-			} else {
-				outbreak[header] = value || "";
-			}
-		});
-
-		return {
-			id: (outbreak.id as string) || `outbreak-${index}`,
-			category: (outbreak.category as string) || "Unknown",
-			location: (outbreak.location as string) || "Unknown",
-			latitude: (outbreak.latitude as number) || 0,
-			longitude: (outbreak.longitude as number) || 0,
-			date: (outbreak.date as string) || "",
-			cases: (outbreak.cases as number) || 0,
-			notes: (outbreak.notes as string) || undefined,
-		} as OutbreakData;
-	});
 };

@@ -2,10 +2,10 @@ import { CalendarOutlined } from "@ant-design/icons";
 import { Select, Slider, Tooltip, Typography } from "antd";
 import type { ReactNode } from "react";
 import { isMobile } from "react-device-detect";
+import { useLocation } from "react-router-dom";
 import { viewingMode } from "../../../stores/ViewingModeStore.ts";
-import GeneralCard from "../../Multiuse/GeneralCard.tsx";
+import GeneralCard from "../../General/GeneralCard.tsx";
 
-const { Text } = Typography;
 const { Option } = Select;
 
 interface AntdTimelineSelectorProps {
@@ -23,6 +23,9 @@ const TimelineSelector: React.FC<AntdTimelineSelectorProps> = ({
 	onMonthChange,
 	legend,
 }) => {
+	const location = useLocation();
+	const isAdvanced = location.pathname.includes("/advanced");
+
 	const months = [
 		"January",
 		"February",
@@ -74,7 +77,13 @@ const TimelineSelector: React.FC<AntdTimelineSelectorProps> = ({
 								backgroundColor: "rgba(255,255,255,0.8)",
 								border: "0",
 							}
-						: { minWidth: "91vw" }
+						: {
+								minWidth: isAdvanced ? "unset" : "calc(91vw - 160px)",
+								marginLeft:
+									false === isAdvanced && false === isMobile
+										? "160px"
+										: "unset",
+							}
 				}
 				bodyStyle={{ padding: "10px 24px" }}
 			>
@@ -90,12 +99,6 @@ const TimelineSelector: React.FC<AntdTimelineSelectorProps> = ({
 					}
 				>
 					<div style={{ width: "100%" }}>
-						{1 === 2 && (
-							<Text hidden style={{ fontSize: 24, display: "block" }}>
-								{year}
-							</Text>
-						)}
-
 						<div
 							style={{
 								display: "flex",
@@ -112,9 +115,16 @@ const TimelineSelector: React.FC<AntdTimelineSelectorProps> = ({
 										onChange={onYearChange}
 										style={{
 											width: "100%",
-											height: "50px",
+											height: "60px",
+											fontSize: "20px",
 											fontWeight: "600",
 											textAlign: "center",
+											borderRadius: "20px",
+											border: "2px solid #e0e7ff",
+											boxShadow: "0 8px 32px rgba(0, 0, 0, 0.12)",
+											background:
+												"linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)",
+											transition: "all 0.3s ease",
 										}}
 										placeholder="Select Year"
 										className={isMobile ? "light-box-shadow" : ""}
@@ -128,11 +138,7 @@ const TimelineSelector: React.FC<AntdTimelineSelectorProps> = ({
 										}
 									>
 										{yearOptions.map((yearOption) => (
-											<Option
-												style={{ background: "translucent" }}
-												key={yearOption}
-												value={yearOption}
-											>
+											<Option key={yearOption} value={yearOption}>
 												{yearOption}
 											</Option>
 										))}
@@ -147,7 +153,7 @@ const TimelineSelector: React.FC<AntdTimelineSelectorProps> = ({
 											included={false}
 											onChange={onYearChange}
 											trackStyle={{ background: "transparent" }}
-											railStyle={{ background: "#d9d9d9" }}
+											railStyle={{ background: "var(--primary)" }}
 											handleStyle={{
 												borderColor: "#1890ff",
 												backgroundColor: "#1890ff",
@@ -159,19 +165,23 @@ const TimelineSelector: React.FC<AntdTimelineSelectorProps> = ({
 								)}
 							</div>
 
-							{/* Month selector
-							<Select
-								value={month}
-								onChange={onMonthChange}
-								style={{ minWidth: 140, flexShrink: 0 }}
-								suffixIcon={<CalendarOutlined />}
-							>
-								{months.map((monthName, index) => (
-									<Option key={index.toString() + monthName} value={index + 1}>
-										{monthName}
-									</Option>
-								))}
-							</Select>*/}
+							{false === isMobile && (
+								<Select
+									value={month}
+									onChange={onMonthChange}
+									style={{ minWidth: 140, flexShrink: 0 }}
+									suffixIcon={<CalendarOutlined />}
+								>
+									{months.map((monthName, index) => (
+										<Option
+											key={index.toString() + monthName}
+											value={index + 1}
+										>
+											{monthName}
+										</Option>
+									))}
+								</Select>
+							)}
 						</div>
 					</div>
 

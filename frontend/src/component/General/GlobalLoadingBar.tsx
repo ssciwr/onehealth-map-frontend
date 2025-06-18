@@ -14,6 +14,8 @@ const GlobalLoadingBar: React.FC = observer(() => {
 			} else if (loadingStore.progress === 100) {
 				ref.current?.complete();
 			}
+		} else {
+			ref.current?.complete();
 		}
 	}, []);
 

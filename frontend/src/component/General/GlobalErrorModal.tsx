@@ -13,7 +13,7 @@ const GlobalErrorModal: React.FC = observer(() => {
 			cancelButtonProps={{ style: { display: "none" } }}
 			okText="OK"
 			centered
-			destroyOnClose
+			destroyOnHidden
 		>
 			<p>
 				{errorStore.currentError?.message || "An unexpected error occurred."}
