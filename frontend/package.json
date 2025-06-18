@@ -29,6 +29,7 @@
 		"react-leaflet-cluster": "^2.1.0",
 		"react-leaflet-heatmap-layer-v3": "3.0.3-beta-1",
 		"react-router-dom": "^7.5.3",
+		"react-top-loading-bar": "^3.0.2",
 		"topojson-client": "^3.1.0"
 	},
 	"devDependencies": {

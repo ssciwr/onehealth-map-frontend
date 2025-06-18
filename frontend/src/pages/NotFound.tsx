@@ -1,7 +1,7 @@
 import { Button } from "antd";
 import { MapPinIcon } from "lucide-react";
 import { Link } from "react-router-dom";
-import GeneralCard from "../component/Multiuse/GeneralCard.tsx";
+import GeneralCard from "../component/General/GeneralCard.tsx";
 import Footer from "../static/Footer.tsx";
 import Header from "../static/Header.tsx";
 

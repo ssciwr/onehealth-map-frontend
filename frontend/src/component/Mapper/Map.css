@@ -29,11 +29,18 @@
 	flex-shrink: 0;
 }
 
+.land-only-tiles {
+	/* Filter out blue colors and enhance land visibility */
+	filter: hue-rotate(200deg) saturate(0) brightness(1.0) contrast(1.2);
+	mix-blend-mode: multiply;
+}
+
 .full-height-map {
 	height: 100vh;
 	min-height: 100vh;
 	width: 100%;
 	border-radius: 16px;
+	background-color: white !important;
 	/*border-top-left-radius: 0px;
 	border-top-right-radius: 0px;*/
 }

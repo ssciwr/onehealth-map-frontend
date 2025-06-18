@@ -8,6 +8,11 @@ Z-index is reserved as such:
 600: Dropdowns
 1000: Modals
  */
+.body {
+	font-family: "Helvetica Neue UltraLight", "Helvetica Neue",
+		"Avenir Next Ultra Light", "Segoe UI Light", "SF Pro Display Light",
+		system-ui, sans-serif;
+}
 
 .text-primary {
 	color: black;
@@ -45,10 +50,14 @@ Z-index is reserved as such:
 	--dark: #303030;
 }
 
+.interactable {
+	color: #0052cc;
+}
+
 .button-icon {
 	width: 57px;
 	height: 57px;
-	background-color: rgba(255, 255, 255, 0.75);
+	background-color: rgba(255, 255, 255, 0.95);
 	border: none;
 	border-radius: 50%;
 	cursor: pointer;
@@ -61,10 +70,6 @@ Z-index is reserved as such:
 
 .light-box-shadow {
 	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-}
-
-.button-icon-text {
-	color: rgba(33, 33, 33, 0.65);
 }
 
 @media (min-width: 768px) {

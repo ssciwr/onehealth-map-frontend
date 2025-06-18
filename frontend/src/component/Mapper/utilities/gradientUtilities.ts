@@ -1,3 +1,5 @@
+import { TEMP_COLORS } from "./mapDataUtils";
+
 interface ExtremePoints {
 	min: number;
 	max: number;
@@ -53,42 +55,41 @@ export const getColorFromGradient = (
 	const { min, max } = extremePoints;
 
 	if (min === max) {
-		return minColor || "#537bcc";
+		return minColor || TEMP_COLORS[0];
 	}
 
 	const clampedValue = Math.max(min, Math.min(max, value));
 	const factor = (clampedValue - min) / (max - min);
 
-	if (!minColor || !maxColor) {
-		const blueRgb = hexToRgb("#537bcc");
-		const yellowRgb = hexToRgb("#FFFB00");
-		const redRgb = hexToRgb("#f63f1f");
+	// If custom colors are provided, use them
+	if (minColor && maxColor) {
+		const minRgb = hexToRgb(minColor);
+		const maxRgb = hexToRgb(maxColor);
 
-		if (factor <= 0.5) {
-			const localFactor = factor * 2;
-			const interpolatedRgb: RGBColor = {
-				r: blueRgb.r + (yellowRgb.r - blueRgb.r) * localFactor,
-				g: blueRgb.g + (yellowRgb.g - blueRgb.g) * localFactor,
-				b: blueRgb.b + (yellowRgb.b - blueRgb.b) * localFactor,
-			};
-			return rgbToHex(interpolatedRgb);
-		}
-		const localFactor = (factor - 0.5) * 2;
 		const interpolatedRgb: RGBColor = {
-			r: yellowRgb.r + (redRgb.r - yellowRgb.r) * localFactor,
-			g: yellowRgb.g + (redRgb.g - yellowRgb.g) * localFactor,
-			b: yellowRgb.b + (redRgb.b - yellowRgb.b) * localFactor,
+			r: minRgb.r + (maxRgb.r - minRgb.r) * factor,
+			g: minRgb.g + (maxRgb.g - minRgb.g) * factor,
+			b: minRgb.b + (maxRgb.b - minRgb.b) * factor,
 		};
+
 		return rgbToHex(interpolatedRgb);
 	}
 
-	const minRgb = hexToRgb(minColor);
-	const maxRgb = hexToRgb(maxColor);
+	// Use the temperature color palette
+	const segmentSize = 1 / (TEMP_COLORS.length - 1);
+	const segmentIndex = Math.min(
+		Math.floor(factor / segmentSize),
+		TEMP_COLORS.length - 2,
+	);
+	const localFactor = (factor - segmentIndex * segmentSize) / segmentSize;
+
+	const startColor = hexToRgb(TEMP_COLORS[segmentIndex]);
+	const endColor = hexToRgb(TEMP_COLORS[segmentIndex + 1]);
 
 	const interpolatedRgb: RGBColor = {
-		r: minRgb.r + (maxRgb.r - minRgb.r) * factor,
-		g: minRgb.g + (maxRgb.g - minRgb.g) * factor,
-		b: minRgb.b + (maxRgb.b - minRgb.b) * factor,
+		r: startColor.r + (endColor.r - startColor.r) * localFactor,
+		g: startColor.g + (endColor.g - startColor.g) * localFactor,
+		b: startColor.b + (endColor.b - startColor.b) * localFactor,
 	};
 
 	return rgbToHex(interpolatedRgb);

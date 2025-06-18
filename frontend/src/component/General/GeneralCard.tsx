@@ -16,8 +16,10 @@ const GeneralCard = ({ children, style, bodyStyle }: GeneralCardProps) => (
 			margin: "12px 20px", // match to the map padding.
 			...style,
 		}}
-		bodyStyle={{
-			...bodyStyle,
+		styles={{
+			body: {
+				...bodyStyle,
+			},
 		}}
 	>
 		{children}

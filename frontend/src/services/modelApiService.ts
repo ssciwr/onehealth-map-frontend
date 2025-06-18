@@ -3,14 +3,13 @@ export interface ModelChartData {
 	[year: number]: number;
 }
 
-// Simulate API delay
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export async function fetchModelChartData(
 	modelId: string,
 ): Promise<ModelChartData> {
 	// Simulate network delay
-	await delay(1000 + Math.random() * 1000);
+	await delay(200 + Math.random() * 1000);
 
 	return {
 		2016: 1230,

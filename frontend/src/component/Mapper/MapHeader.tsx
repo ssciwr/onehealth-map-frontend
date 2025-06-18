@@ -3,7 +3,7 @@ import { Button, Modal } from "antd";
 import { useState } from "react";
 import { isMobile } from "react-device-detect";
 import { viewingMode } from "../../stores/ViewingModeStore.ts";
-import GeneralCard from "../Multiuse/GeneralCard.tsx";
+import GeneralCard from "../General/GeneralCard.tsx";
 import ModelSelector from "./InterfaceInputs/ModelSelector.tsx";
 import OptimismLevelSelector from "./InterfaceInputs/OptimismSelector.tsx";
 import TimelineSelector from "./InterfaceInputs/TimelineSelector.tsx";
@@ -118,9 +118,12 @@ export default ({
 		</div>
 	) : (
 		<div className="header-section center min-w-100">
-			<GeneralCard style={{ border: "0px solid" }}>
+			<GeneralCard
+				style={{ border: "0px solid", marginBottom: "0px", marginTop: "10px" }}
+				bodyStyle={{ paddingTop: "20px", paddingBottom: "20px" }}
+			>
 				<div className="logo-section">
-					<h1 className="map-title">
+					<h1 hidden className="map-title">
 						<span className="title-one">One</span>
 						<span className="title-health">Health</span>
 						<span className="title-platform">Platform</span>
@@ -129,16 +132,43 @@ export default ({
 						</small>
 					</h1>
 				</div>
-				<ModelSelector
-					selectedModel={selectedModel}
-					onModelSelect={handleModelSelect}
-				/>
-				&nbsp; with&nbsp;
-				<OptimismLevelSelector
-					availableOptimismLevels={getOptimismLevels()}
-					selectedOptimism={selectedOptimism}
-					setOptimism={setSelectedOptimism}
-				/>
+				<div
+					className="header-font-size"
+					style={{
+						display: "flex",
+						alignItems: "center",
+						justifyContent: "center",
+						gap: "8px",
+						flexWrap: "wrap",
+					}}
+				>
+					<img
+						style={{ height: "36px" }}
+						alt="OneHealth Logo - two objects on either side that appear to be holding a circular shape inbetween the them"
+						src="/images/oneHealthLogoFullLight.png"
+					/>
+					<ModelSelector
+						selectedModel={selectedModel}
+						onModelSelect={handleModelSelect}
+					/>
+					<span>with</span>
+					<OptimismLevelSelector
+						availableOptimismLevels={getOptimismLevels()}
+						selectedOptimism={selectedOptimism}
+						setOptimism={setSelectedOptimism}
+					/>
+					<small
+						className="tertiary"
+						style={{
+							border: "1px solid lightgray",
+							padding: "2px 4px",
+							borderRadius: "4px",
+						}}
+						hidden={viewingMode.isExpert === false}
+					>
+						Expert Mode
+					</small>
+				</div>
 			</GeneralCard>
 		</div>
 	);

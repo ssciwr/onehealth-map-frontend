@@ -1,12 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import {
-	CircleMarker,
-	GeoJSON,
-	MapContainer,
-	Pane,
-	Popup,
-	TileLayer,
-} from "react-leaflet";
+import { GeoJSON, MapContainer, Pane, TileLayer } from "react-leaflet";
 import NutsMapperV5 from "./utilities/prepareNutsDataForDrawing";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
@@ -26,7 +19,6 @@ import TimelineSelector from "./InterfaceInputs/TimelineSelector.tsx";
 import type {
 	DataExtremes,
 	NutsGeoJSON,
-	OutbreakData,
 	ProcessingStats,
 	TemperatureDataPoint,
 	ViewportBounds,
@@ -37,7 +29,6 @@ import {
 	MAX_ZOOM,
 	MIN_ZOOM,
 	loadTemperatureData,
-	parseCSVToOutbreaks,
 } from "./utilities/mapDataUtils";
 
 interface ViewportChangeData {
@@ -78,12 +69,14 @@ const ClimateMap = ({ onMount = () => true }) => {
 	const handleLoadTemperatureData = useCallback(async (year: number) => {
 		try {
 			loadingStore.start();
+			console.log("Started loading of store...");
 			const { dataPoints, extremes, bounds } = await loadTemperatureData(year);
 			setTemperatureData(dataPoints);
 			setDataExtremes(extremes);
 			if (bounds) {
 				setDataBounds(bounds);
 			}
+			console.log("Finished loading of store...");
 			loadingStore.complete();
 		} catch (err: unknown) {
 			const error = err as Error;
@@ -109,20 +102,17 @@ const ClimateMap = ({ onMount = () => true }) => {
 	const loadNutsData = () => {
 		setLoading(true);
 		setError(null);
-		loadingStore.start();
 
 		fetch("/data/nutsRegions.csv")
 			.then((response) => response.text())
 			.then((csvData) => {
 				processCSVData(csvData);
 				setLoading(false);
-				loadingStore.complete();
 			})
 			.catch((err: Error) => {
 				console.error("Error loading NUTS data:", err);
 				setError(err.message);
 				setLoading(false);
-				loadingStore.complete();
 				errorStore.showError("NUTS Data Error", err.message);
 			});
 	};
@@ -134,6 +124,7 @@ const ClimateMap = ({ onMount = () => true }) => {
 		setLoading(true);
 		setError(null);
 		loadingStore.start();
+		console.log("Started loading of file upload store...");
 
 		const reader = new FileReader();
 		reader.onload = (e) => {

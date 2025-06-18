@@ -63,10 +63,10 @@ const OptimismLevelSelector = observer(
 		);
 
 		return (
-			<span className="model-selector">
+			<span className="model-selector header-font-size">
 				<button
 					type="button"
-					className="model-selector-button"
+					className="model-selector-button header-font-size"
 					onClick={() => setIsOpen(!isOpen)}
 				>
 					<Space>
