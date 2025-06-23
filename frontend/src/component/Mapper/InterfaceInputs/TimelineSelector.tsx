@@ -1,5 +1,5 @@
 import { CalendarOutlined } from "@ant-design/icons";
-import { Select, Slider, Tooltip, Typography } from "antd";
+import { Select, Slider, Tooltip } from "antd";
 import type { ReactNode } from "react";
 import { isMobile } from "react-device-detect";
 import { useLocation } from "react-router-dom";
@@ -107,6 +107,17 @@ const TimelineSelector: React.FC<AntdTimelineSelectorProps> = ({
 								width: "100%",
 							}}
 						>
+							<div
+								style={{
+									fontSize: "2rem",
+									borderRight: "1px solid lightgray",
+									paddingRight: "20px",
+									marginRight: "10px",
+								}}
+							>
+								{year}
+							</div>
+
 							{/* Year input - slider on desktop, dropdown on mobile */}
 							<div style={{ flex: 1, paddingRight: "10px" }}>
 								{isMobile ? (
