@@ -1,9 +1,20 @@
 import { Modal, Spin } from "antd";
 import L from "leaflet";
-import { Camera, Info, MapPin, Minus, Plus } from "lucide-react";
+import {
+	Camera,
+	ChevronDown,
+	ChevronUp,
+	FileText,
+	Info,
+	MapPin,
+	Minus,
+	Palette,
+	Plus,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { isMobile } from "react-device-detect";
 import { AboutContent } from "../../../static/Footer.tsx";
+import ModelDetailsModal from "./ModelDetailsModal";
 
 interface ScreenshotOptions {
 	mimeType?: "image/png" | "image/jpeg" | "image/webp";
@@ -58,11 +69,15 @@ type ControlBarLocation =
 interface ControlBarProps {
 	map: L.Map | null;
 	position?: ControlBarLocation;
+	selectedModel?: string;
+	onModelSelect?: (modelId: string) => void;
 }
 
 const ControlBar = ({
 	map,
 	position = CONTROL_BAR_LOCATIONS.BOTTOM_RIGHT,
+	selectedModel,
+	onModelSelect,
 }: ControlBarProps) => {
 	const [isLocating, setIsLocating] = useState<boolean>(false);
 	const [isSaving, setIsSaving] = useState<boolean>(false);
@@ -72,6 +87,103 @@ const ControlBar = ({
 	const [showLocationModal, setShowLocationModal] = useState<boolean>(false);
 	const [screenshoter, setScreenshoter] =
 		useState<L.SimpleMapScreenshoter | null>(null);
+	const [currentTheme, setCurrentTheme] = useState<"default" | "outline">(
+		"default",
+	);
+	const [isMinimized, setIsMinimized] = useState<boolean>(false);
+	const [showModelDetails, setShowModelDetails] = useState<boolean>(false);
+	const [models, setModels] = useState<any[]>([]);
+
+	// Apply theme to document root
+	useEffect(() => {
+		console.log("Applying theme to document:", currentTheme);
+		document.documentElement.setAttribute("data-theme", currentTheme);
+		console.log(
+			"Document data-theme attribute:",
+			document.documentElement.getAttribute("data-theme"),
+		);
+	}, [currentTheme]);
+
+	// Load models for the modal
+	useEffect(() => {
+		const loadModels = async () => {
+			const modelFiles = [
+				"westNileModel1.yaml",
+				"westNileModel2.yaml",
+				"dengueModel1.yaml",
+				"malariaModel1.yaml",
+				"covidModel1.yaml",
+				"zikaModel1.yaml",
+			];
+
+			const loadedModels: any[] = [];
+
+			for (const filename of modelFiles) {
+				try {
+					const response = await fetch(`/modelsyaml/${filename}`);
+					if (!response.ok) continue;
+
+					const yamlText = await response.text();
+					const lines = yamlText.split("\n");
+					const result: Record<string, string> = {};
+
+					for (const line of lines) {
+						const trimmed = line.trim();
+						if (trimmed && !trimmed.startsWith("#")) {
+							const colonIndex = trimmed.indexOf(":");
+							if (colonIndex > 0) {
+								const key = trimmed.substring(0, colonIndex).trim();
+								let value = trimmed.substring(colonIndex + 1).trim();
+								if (
+									(value.startsWith("'") && value.endsWith("'")) ||
+									(value.startsWith('"') && value.endsWith('"'))
+								) {
+									value = value.slice(1, -1);
+								}
+								result[key] = value;
+							}
+						}
+					}
+
+					const model = {
+						id: result.id || "",
+						virusType: result["virus-type"] || "",
+						modelName: result["model-name"] || "",
+						title: result.title || "",
+						description: result.description || "",
+						emoji: result.emoji || "",
+						icon: result.icon || "",
+						color: result.color || "",
+						details: result.details || "",
+					};
+
+					loadedModels.push(model);
+				} catch (error) {
+					console.error(`Error loading ${filename}:`, error);
+				}
+			}
+
+			if (loadedModels.length === 0) {
+				// Fallback model
+				loadedModels.push({
+					id: "west-nile-a17",
+					virusType: "west-nile",
+					modelName: "Model A17",
+					title: "West Nile Virus",
+					description: "Mosquito-borne disease affecting humans and animals",
+					emoji: "🦟",
+					icon: "Bug",
+					color: "#754910",
+					details:
+						"Advanced climate model incorporating temperature, humidity, and precipitation data from NOAA weather stations.",
+				});
+			}
+
+			setModels(loadedModels);
+		};
+
+		loadModels();
+	}, []);
 
 	// todo: Make this call a callback to set resolution to high detail right before screenshot (Artificially increase
 	// zoom to cause this perhaps (a bit hacky but logical).
@@ -209,86 +321,235 @@ const ControlBar = ({
 		}
 	};
 
+	const handleThemeToggle = () => {
+		const newTheme = currentTheme === "default" ? "outline" : "default";
+		console.log("Switching theme from", currentTheme, "to", newTheme);
+		setCurrentTheme(newTheme);
+	};
+
+	const handleToggleMinimize = () => {
+		setIsMinimized(!isMinimized);
+	};
+
 	const circularButtonSize = 24;
 
+	const getControlBarClasses = () => {
+		const baseClass = isMobile
+			? "control-bar control-bar-mobile"
+			: "control-bar control-bar-desktop";
+		if (isMobile) return baseClass;
+		return position === CONTROL_BAR_LOCATIONS.BOTTOM_RIGHT
+			? `${baseClass} control-bar-bottom-right`
+			: `${baseClass} control-bar-top-left`;
+	};
+
+	const buttonSize = 20;
+
+	if (isMobile) {
+		// Mobile: circular buttons with minimize functionality
+		return (
+			<>
+				<div data-testid="control-bar" className={getControlBarClasses()}>
+					{!isMinimized ? (
+						<>
+							<button
+								type="button"
+								onClick={handleZoomIn}
+								className="button-icon light-box-shadow"
+							>
+								<Plus size={circularButtonSize} className="button-icon-text" />
+							</button>
+
+							<button
+								type="button"
+								onClick={handleZoomOut}
+								className="button-icon light-box-shadow"
+							>
+								<Minus size={circularButtonSize} className="button-icon-text" />
+							</button>
+
+							<button
+								type="button"
+								onClick={handleLocationRequest}
+								disabled={isLocating}
+								className="button-icon light-box-shadow"
+							>
+								<MapPin
+									size={circularButtonSize}
+									className="button-icon-text"
+								/>
+							</button>
+
+							<button
+								type="button"
+								onClick={handleSaveScreenshot}
+								disabled={isSaving || !screenshoter}
+								className="button-icon light-box-shadow"
+								title={
+									!screenshoter
+										? "Screenshot plugin not loaded"
+										: "Take screenshot"
+								}
+							>
+								<Camera
+									size={circularButtonSize}
+									className="button-icon-text"
+								/>
+							</button>
+
+							<button
+								type="button"
+								onClick={handleThemeToggle}
+								className="button-icon light-box-shadow"
+								title={`Switch to ${currentTheme === "default" ? "outline" : "filled"} theme`}
+							>
+								<Palette
+									size={circularButtonSize}
+									className="button-icon-text"
+								/>
+							</button>
+
+							<button
+								type="button"
+								onClick={() => setShowInfo(true)}
+								className="button-icon light-box-shadow"
+							>
+								<Info size={circularButtonSize} className="button-icon-text" />
+							</button>
+
+							<button
+								type="button"
+								onClick={() => setShowModelDetails(true)}
+								className="button-icon light-box-shadow"
+								disabled={!selectedModel || models.length === 0}
+							>
+								<FileText
+									size={circularButtonSize}
+									className="button-icon-text"
+								/>
+							</button>
+						</>
+					) : null}
+
+					<button
+						type="button"
+						onClick={handleToggleMinimize}
+						className="button-icon light-box-shadow minimize-button"
+					>
+						{isMinimized ? (
+							<ChevronUp
+								size={circularButtonSize}
+								className="button-icon-text"
+							/>
+						) : (
+							<ChevronDown
+								size={circularButtonSize}
+								className="button-icon-text"
+							/>
+						)}
+					</button>
+				</div>
+				{/* Mobile modals remain the same */}
+			</>
+		);
+	}
+
+	// Desktop: rectangular buttons with labels
 	return (
 		<>
-			<div
-				data-testid="control-bar"
-				style={{
-					position: "fixed",
-					left: isMobile
-						? "unset"
-						: position === CONTROL_BAR_LOCATIONS.BOTTOM_RIGHT
-							? "unset"
-							: "30px",
-					right: isMobile
-						? "30px"
-						: position === CONTROL_BAR_LOCATIONS.BOTTOM_RIGHT
-							? "40px"
-							: "unset",
-					top: isMobile ? "50%" : "130px",
-					transform: isMobile ? "translateY(-50%)" : "unset",
-					zIndex: 600, // 600-700 now reserved for control elements on map. 1000 for modals. 300-400 for map layers.
-					display: "flex",
-					flexDirection: "column",
-					gap: "4px",
-					backgroundColor: "rgba(255,255,255,0.35)",
-					borderRadius: "30px",
-					padding: "4px",
-				}}
-			>
-				<button
-					type="button"
-					onClick={handleZoomIn}
-					className="button-icon light-box-shadow"
-				>
-					<Plus size={circularButtonSize} className="button-icon-text" />
-				</button>
+			<div data-testid="control-bar" className={getControlBarClasses()}>
+				{!isMinimized ? (
+					<>
+						<div className="control-button-group">
+							<button
+								type="button"
+								onClick={handleZoomOut}
+								className="control-button-compact control-button-compact-left"
+								title="Zoom Out"
+							>
+								<Minus size={buttonSize} className="control-button-icon" />
+							</button>
+							<button
+								type="button"
+								onClick={handleLocationRequest}
+								disabled={isLocating}
+								className="control-button-compact control-button-compact-center"
+								title="My Location"
+							>
+								<MapPin size={buttonSize} className="control-button-icon" />
+							</button>
+							<button
+								type="button"
+								onClick={handleZoomIn}
+								className="control-button-compact control-button-compact-right"
+								title="Zoom In"
+							>
+								<Plus size={buttonSize} className="control-button-icon" />
+							</button>
+						</div>
+
+						<button
+							type="button"
+							onClick={handleSaveScreenshot}
+							disabled={isSaving || !screenshoter}
+							className="control-button light-box-shadow"
+							title={
+								!screenshoter
+									? "Screenshot plugin not loaded"
+									: "Take screenshot"
+							}
+						>
+							<Camera size={buttonSize} className="control-button-icon" />
+							<span className="control-button-label">Share Map</span>
+						</button>
+
+						<button
+							type="button"
+							onClick={handleThemeToggle}
+							className="control-button light-box-shadow"
+							title={`Switch to ${currentTheme === "default" ? "outline" : "filled"} theme`}
+						>
+							<Palette size={buttonSize} className="control-button-icon" />
+							<span className="control-button-label">Theme</span>
+						</button>
+
+						<button
+							type="button"
+							onClick={() => setShowInfo(true)}
+							className="control-button light-box-shadow"
+						>
+							<Info size={buttonSize} className="control-button-icon" />
+							<span className="control-button-label">About</span>
+						</button>
+
+						<button
+							type="button"
+							onClick={() => setShowModelDetails(true)}
+							className="control-button light-box-shadow"
+							disabled={!selectedModel || models.length === 0}
+						>
+							<FileText size={buttonSize} className="control-button-icon" />
+							<span className="control-button-label">Model Info</span>
+						</button>
+					</>
+				) : null}
 
 				<button
 					type="button"
-					onClick={handleZoomOut}
-					className="button-icon light-box-shadow"
+					onClick={handleToggleMinimize}
+					className="control-button light-box-shadow minimize-button"
 				>
-					<Minus size={circularButtonSize} className="button-icon-text" />
-				</button>
-
-				<button
-					type="button"
-					onClick={handleLocationRequest}
-					disabled={isLocating}
-					className="button-icon light-box-shadow"
-					style={{
-						cursor: isLocating ? "not-allowed" : "pointer",
-						opacity: isLocating ? 0.6 : 1,
-					}}
-				>
-					<MapPin size={circularButtonSize} className="button-icon-text" />
-				</button>
-
-				<button
-					type="button"
-					onClick={handleSaveScreenshot}
-					disabled={isSaving || !screenshoter}
-					className="button-icon light-box-shadow"
-					style={{
-						cursor: isSaving || !screenshoter ? "not-allowed" : "pointer",
-						opacity: isSaving || !screenshoter ? 0.6 : 1,
-					}}
-					title={
-						!screenshoter ? "Screenshot plugin not loaded" : "Take screenshot"
-					}
-				>
-					<Camera size={circularButtonSize} className="button-icon-text" />
-				</button>
-
-				<button
-					type="button"
-					onClick={() => setShowInfo(true)}
-					className="button-icon light-box-shadow"
-				>
-					<Info size={circularButtonSize} className="button-icon-text" />
+					{isMinimized ? (
+						<>
+							<ChevronDown size={buttonSize} className="control-button-icon" />
+							<span className="control-button-label">Expand</span>
+						</>
+					) : (
+						<>
+							<ChevronUp size={buttonSize} className="control-button-icon" />
+							<span className="control-button-label">Minimize</span>
+						</>
+					)}
 				</button>
 			</div>
 
@@ -326,6 +587,14 @@ const ControlBar = ({
 					<p style={{ marginTop: "16px", marginBottom: 0 }}>Zooming to you!</p>
 				</div>
 			</Modal>
+
+			<ModelDetailsModal
+				isOpen={showModelDetails}
+				onClose={() => setShowModelDetails(false)}
+				models={models}
+				selectedModelId={selectedModel || ""}
+				onModelSelect={onModelSelect || (() => {})}
+			/>
 		</>
 	);
 };
