@@ -108,6 +108,7 @@ const TimelineSelector: React.FC<AntdTimelineSelectorProps> = ({
 							}}
 						>
 							<div
+								hidden={isMobile}
 								style={{
 									fontSize: "2rem",
 									borderRight: "1px solid lightgray",

@@ -1,11 +1,9 @@
-import { Button, Dropdown, Space, Typography } from "antd";
-import type { MenuProps } from "antd";
-import { ChevronDown, Plug } from "lucide-react";
-import type React from "react";
+import { Button } from "antd";
+import { Plug } from "lucide-react";
 import { useEffect, useState } from "react";
 import { isMobile } from "react-device-detect";
+import Selector from "../../General/Selector.tsx";
 import ModelDetailsModal from "./ModelDetailsModal";
-const { Title } = Typography;
 
 interface YamlData {
 	id?: string;
@@ -125,8 +123,6 @@ const ModelSelector = ({
 	const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
-	// State to control dropdown visibility
-	const [dropdownOpen, setDropdownOpen] = useState(false);
 
 	useEffect(() => {
 		const loadData = async () => {
@@ -169,89 +165,19 @@ const ModelSelector = ({
 
 	const selectedModelData = models.find((m) => m.id === selectedModel);
 
-	const items: MenuProps["items"] = models.map((model) => ({
-		key: model.id,
-		label: (
-			<div
-				style={{
-					display: "flex",
-					alignItems: "center",
-					gap: "12px",
-					padding: "8px 0",
-				}}
-			>
-				<div
-					style={{
-						width: "32px",
-						height: "32px",
-						borderRadius: "6px",
-						background: `${model.color}20`,
-						display: "flex",
-						alignItems: "center",
-						justifyContent: "center",
-						fontSize: "16px",
-					}}
-				>
-					{model.emoji}
-				</div>
-				<div style={{ flex: 1 }}>
-					<div style={{ fontWeight: 600, fontSize: "14px", color: "#172B4D" }}>
-						{model.title} - {model.modelName}
-					</div>
-					<div style={{ fontSize: "12px", color: "#6B778C" }}>
-						{model.description}
-					</div>
-				</div>
-			</div>
-		),
-		onClick: () => {
-			onModelSelect(model.id);
-			// Close dropdown after model selection
-			setDropdownOpen(false);
-		},
+	// Convert models to selector items format
+	const selectorItems = models.map((model) => ({
+		id: model.id,
+		title: `${model.title} - ${model.modelName}`,
+		description: model.description,
+		emoji: model.emoji,
+		color: model.color,
 	}));
 
-	// Handler to open modal and close dropdown
+	// Handler to open modal
 	const handleViewDetailsClick = () => {
 		setIsDetailsModalOpen(true);
-		setDropdownOpen(false); // Close dropdown when modal opens
 	};
-
-	const dropdownRender = (originNode: React.ReactNode) => (
-		<div
-			style={{
-				backgroundColor: "white",
-				borderRadius: "16px",
-				border: "1px solid rgb(240,240,240)",
-			}}
-		>
-			<div style={{ padding: "16px 20px" }}>
-				<Title level={5} style={{ margin: "0 0 8px 0" }}>
-					Disease Models
-				</Title>
-				<p className="tertiary">
-					{loading
-						? "Loading models..."
-						: error
-							? "Error loading models (using fallback)"
-							: "Select a disease model to visualize spread patterns"}
-				</p>
-			</div>
-			{originNode}
-			<div style={{ padding: "12px 20px", borderTop: "1px solid #EBECF0" }}>
-				<Button
-					data-testid="view-all-models"
-					type="link"
-					size="small"
-					onClick={handleViewDetailsClick}
-					style={{ padding: 0, height: "auto", color: "#0052CC" }}
-					disabled={loading}
-				>
-					View Details & Compare Models
-				</Button>
-			</div>
-		</div>
-	);
 
 	// Create display text with proper truncation
 	const getDisplayText = (modelData: Model) => {
@@ -259,37 +185,27 @@ const ModelSelector = ({
 		return truncateText(fullText, isMobile ? 20 : 30);
 	};
 
-	return (
-		<span className="model-selector">
-			{isMobile === false && "Display"}&nbsp;
-			<Dropdown
-				data-testid="model-dropdown"
-				menu={{ items }}
-				trigger={["click"]}
-				popupRender={dropdownRender}
-				overlayStyle={{ minWidth: "350px" }}
-				disabled={loading}
-				open={dropdownOpen}
-				onOpenChange={isMobile ? setIsDetailsModalOpen : setDropdownOpen}
-			>
+	if (isMobile) {
+		// On mobile, just show button that opens modal
+		return (
+			<span className="model-selector">
 				<Button
-					className="header-font-size"
+					className="header-font-size bg-surface-raised border-light"
 					style={{
 						display: "inline-flex",
 						alignItems: "center",
 						gap: "8px",
 						padding: "8px 16px",
-						background: "white",
-						border: "1px solid #DFE1E6",
 						borderRadius: "8px",
-						color: "#172B4D",
+						color: "var(--text-primary)",
 						height: "auto",
-						maxWidth: isMobile ? "200px" : "300px", // Limit button width
+						maxWidth: "200px",
 					}}
 					loading={loading}
+					onClick={() => setIsDetailsModalOpen(true)}
 				>
 					{selectedModelData ? (
-						<Space>
+						<>
 							<span>{selectedModelData.emoji}</span>
 							<span
 								style={{
@@ -297,26 +213,64 @@ const ModelSelector = ({
 									textOverflow: "ellipsis",
 									whiteSpace: "nowrap",
 								}}
-								title={`${selectedModelData.title} - ${selectedModelData.modelName}`} // Show full text on hover
+								title={`${selectedModelData.title} - ${selectedModelData.modelName}`}
 							>
 								{getDisplayText(selectedModelData)}
 							</span>
-						</Space>
+						</>
 					) : (
-						<Space>
+						<>
 							<Plug size={18} style={{ color: "#0052CC" }} />
 							<span>Data Source</span>
-						</Space>
+						</>
 					)}
-					<ChevronDown size={16} style={{ color: "#6B778C" }} />
 				</Button>
-			</Dropdown>
+				<ModelDetailsModal
+					isOpen={isDetailsModalOpen}
+					onClose={() => setIsDetailsModalOpen(false)}
+					models={models}
+					selectedModelId={selectedModel}
+					onModelSelect={onModelSelect}
+				/>
+			</span>
+		);
+	}
+
+	return (
+		<span className="model-selector" data-testid="model-selector">
+			Display&nbsp;
+			<Selector
+				items={selectorItems}
+				selectedId={selectedModel}
+				onSelect={onModelSelect}
+				title="Disease Models"
+				description={
+					loading
+						? "Loading models..."
+						: error
+							? "Error loading models (using fallback)"
+							: "Select a disease model to visualize spread patterns"
+				}
+				buttonText={
+					selectedModelData ? getDisplayText(selectedModelData) : "Data Source"
+				}
+				className="header-font-size"
+				footerAction={
+					<Button
+						data-testid="view-all-models"
+						type="link"
+						size="small"
+						onClick={handleViewDetailsClick}
+						style={{ padding: 0, height: "auto", color: "var(--primary)" }}
+						disabled={loading}
+					>
+						View Details & Compare Models
+					</Button>
+				}
+			/>
 			<ModelDetailsModal
 				isOpen={isDetailsModalOpen}
-				onClose={() => {
-					setIsDetailsModalOpen(false);
-					setDropdownOpen(false);
-				}}
+				onClose={() => setIsDetailsModalOpen(false)}
 				models={models}
 				selectedModelId={selectedModel}
 				onModelSelect={onModelSelect}

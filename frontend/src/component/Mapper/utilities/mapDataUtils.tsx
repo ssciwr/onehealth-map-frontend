@@ -155,7 +155,7 @@ export const BottomLegend = ({
 						[isVertical ? "right" : "top"]: "100%",
 						[isVertical ? "width" : "height"]: isVertical ? "12px" : "8px",
 						[isVertical ? "height" : "width"]: "2px",
-						backgroundColor: "#666",
+						backgroundColor: "#f8f9fa",
 						transform: isVertical ? "translateY(50%)" : "translateX(-50%)",
 					}}
 				/>
@@ -166,7 +166,7 @@ export const BottomLegend = ({
 		const labelStyle = (size: "small" | "large") => ({
 			fontSize: size === "small" ? "11px" : "13px",
 			fontWeight: size === "small" ? "500" : "bold",
-			color: size === "small" ? "#666" : "#333",
+			color: "rgb(80,80,80)",
 		});
 
 		const sortedIntervals = isVertical ? [...intervals].reverse() : intervals;

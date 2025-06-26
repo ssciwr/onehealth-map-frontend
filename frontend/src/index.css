@@ -13,10 +13,10 @@
 	-moz-osx-font-smoothing: grayscale;
 
 	/* Design System - Colors */
-	--primary: #0052cc; /* for text */
-	--primary-hover: #0747a6; /* Main Client Color */
+	--primary: #db3c1c;
+	--primary-hover: #0747a6;
 	--primary-light: #deebff;
-	--brand: #a2274c; /* Secondary Client Color */
+	--brand: #a2274c;
 	--white: #ffffff;
 	--dark: #303030;
 	--surface: #f8f9fa;
@@ -40,9 +40,9 @@
 	/* Status Colors */
 	--error: #de350b;
 	--error-light: #ffebe6;
-	--error-border: #ff8b8b; /* clashes so not currently in use */
+	--error-border: #ff8b8b;
 	--success: #00875a;
-	--warning: #ff8b00; /* clashes so not currently in use */
+	--warning: #ff8b00;
 
 	/* Shadows */
 	--shadow-light: 0 2px 4px rgba(0, 0, 0, 0.2);
@@ -64,6 +64,7 @@
 	--radius-md: 0.5rem;
 	--radius-lg: 0.75rem;
 	--radius-xl: 1rem;
+	--radius-2xl: 1rem;
 	--radius-full: 50%;
 
 	/* Font Families */
@@ -84,11 +85,11 @@
 
 a {
 	font-weight: 500;
-	color: #646cff;
+	color: #db3c1c;
 	text-decoration: inherit;
 }
 a:hover {
-	color: #535bf2;
+	color: #db3c1c;
 }
 
 body {
@@ -106,10 +107,10 @@ h1 {
 
 /* Button System */
 .btn {
-	border-radius: var(--radius-md);
+	border-radius: var(--radius-xl);
 	border: 1px solid transparent;
 	padding: var(--space-md) var(--space-lg);
-	font-size: 0.875rem;
+	font-size: 1rem;
 	font-weight: 500;
 	font-family: inherit;
 	cursor: pointer;
@@ -152,7 +153,7 @@ h1 {
 .btn-icon {
 	width: 57px;
 	height: 57px;
-	background-color: rgba(255, 255, 255, 0.95);
+	background-color: #db3c1c;
 	border: none;
 	border-radius: var(--radius-full);
 	cursor: pointer;
@@ -162,11 +163,50 @@ h1 {
 	padding: 0;
 	margin: 1px;
 	transition: all 0.2s ease;
+	color: white;
+}
+
+.btn-icon svg {
+	color: white;
 }
 
 .btn-icon:hover:not(:disabled) {
 	transform: translateY(-1px);
 	box-shadow: var(--shadow-medium);
+}
+
+/* Compact Icon Button Variations */
+.btn-icon-compact {
+	width: 40px;
+	max-height: 40px;
+	padding: 0;
+	margin: 0;
+	flex: 1;
+}
+
+.btn-icon-compact-left {
+	border-top-right-radius: 0;
+	border-bottom-right-radius: 0;
+}
+
+.btn-icon-compact-center {
+	border-radius: 0;
+}
+
+.btn-icon-compact-right {
+	border-top-left-radius: 0;
+	border-bottom-left-radius: 0;
+}
+
+/* Control button group styling */
+.control-button-group {
+	display: flex;
+	width: 120px;
+	gap: 0;
+}
+
+[data-theme="outline"] .btn-icon-compact svg {
+	color: white;
 }
 
 /* Desktop Control Buttons */
@@ -177,10 +217,10 @@ h1 {
 	padding: 10px 12px;
 	background-color: rgba(255, 255, 255, 0.95);
 	border: 1px solid rgba(0, 0, 0, 0.1);
-	border-radius: 8px;
+	border-radius: var(--radius-2xl);
 	cursor: pointer;
 	transition: all 0.2s ease;
-	font-size: 14px;
+	font-size: 16px;
 	font-weight: 500;
 	color: #374151;
 	min-width: 120px;
@@ -226,7 +266,7 @@ h1 {
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	padding: 10px 8px;
+	padding: 6px 8px;
 	background-color: rgba(255, 255, 255, 0.95);
 	border: 1px solid rgba(0, 0, 0, 0.1);
 	cursor: pointer;
@@ -253,19 +293,23 @@ h1 {
 .control-button-compact-left {
 	border-top-left-radius: 8px;
 	border-bottom-left-radius: 8px;
-	border-right: none;
+	border-top-right-radius: 0;
+	border-bottom-right-radius: 0;
+	border-right: none !important;
 }
 
 .control-button-compact-center {
-	border-radius: 0;
-	border-left: none;
-	border-right: none;
+	border-radius: 0 !important;
+	border-left: none !important;
+	border-right: none !important;
 }
 
 .control-button-compact-right {
 	border-top-right-radius: 8px;
 	border-bottom-right-radius: 8px;
-	border-left: none;
+	border-top-left-radius: 0;
+	border-bottom-left-radius: 0;
+	border-left: none !important;
 }
 
 /* Legacy button support */
@@ -273,7 +317,7 @@ button {
 	border-radius: 8px;
 	border: 1px solid transparent;
 	padding: 0.6em 1.2em;
-	font-size: 1em;
+	font-size: 1.15em;
 	font-weight: 500;
 	font-family: inherit;
 	background-color: #1a1a1a;
@@ -302,13 +346,13 @@ button:focus-visible {
 	text-align: center;
 }
 .text-lg {
-	font-size: 1.125rem;
+	font-size: 1.3rem;
 }
 .text-sm {
-	font-size: 0.875rem;
+	font-size: 1rem;
 }
 .text-xs {
-	font-size: 0.75rem;
+	font-size: 0.875rem;
 }
 
 .bg-surface {
@@ -413,9 +457,7 @@ button:focus-visible {
 
 .control-bar-desktop {
 	border-radius: 12px;
-	background-color: rgba(255, 255, 255, 0.9);
-	backdrop-filter: blur(10px);
-	border: 1px solid rgba(255, 255, 255, 0.3);
+	background-color: transparent;
 	padding: 8px;
 	gap: 6px;
 	min-width: 140px;
@@ -425,6 +467,8 @@ button:focus-visible {
 	border-radius: 30px;
 	padding: 4px;
 	gap: 4px;
+	background-color: rgba(211, 211, 211, 0.3) !important;
+	backdrop-filter: blur(10px);
 }
 
 .control-bar-bottom-right {
@@ -443,232 +487,467 @@ button:focus-visible {
 	transform: translateY(-50%);
 }
 
-/* Theme Support - Outline Theme */
+/* ==========================================
+   THEME: OUTLINE - Purple Gradient Theme
+   ========================================== */
 [data-theme="outline"] {
+	/* Theme Variables */
+	--outline-purple: #2b4172;
+	--outline-purple-hover: #1f2d52;
+	--outline-purple-dark: #1a2544;
+	--outline-purple-light: rgba(43, 65, 114, 0.1);
+	--outline-shadow: rgba(43, 65, 114, 0.3);
+	--outline-shadow-hover: rgba(43, 65, 114, 0.5);
+
+	/* Dark Mode Variables */
+	--dark-bg-primary: #13161c;
+	--dark-bg-secondary: #3f4870;
+	--dark-bg-tertiary: #2e364c;
+	--dark-bg-elevated: #353c5b;
+	--dark-border: rgba(255, 255, 255, 0.1);
+	--dark-border-subtle: rgba(255, 255, 255, 0.05);
+	--dark-text-primary: #f8fafc;
+	--dark-text-secondary: #cbd5e1;
+	--dark-text-muted: #94a3b8;
+
+	/* Button Variables Override */
 	--btn-style: outline;
-	--btn-primary-bg: transparent;
-	--btn-primary-border: var(--primary);
-	--btn-primary-color: var(--primary);
-	--outline-purple: #8b5cf6;
-	--outline-purple-hover: #7c3aed;
+	--btn-primary-bg: linear-gradient(45deg, #2b4172, #1f2d52);
+	--btn-primary-border: transparent;
+	--btn-primary-color: var(--text-inverse);
+
+	/* Override global colors for dark mode */
+	--surface: var(--dark-bg-primary);
+	--surface-raised: var(--dark-bg-secondary);
+	--surface-overlay: var(--dark-bg-tertiary);
+	--text-primary: var(--dark-text-primary);
+	--text-secondary: var(--dark-text-secondary);
+	--text-tertiary: var(--dark-text-muted);
+	--border-light: var(--dark-border);
+}
+
+/* Dark Mode Base Styling */
+[data-theme="outline"] body {
+	background: var(--dark-bg-primary);
+	color: var(--dark-text-primary);
+}
+
+[data-theme="outline"] .climate-map-container {
+	background: var(--dark-bg-primary);
+}
+
+[data-theme="outline"] .ant-card,
+[data-theme="outline"] .general-card {
+	background: var(--dark-bg-secondary) !important;
+	border: 1px solid var(--dark-border) !important;
+	color: var(--dark-text-primary) !important;
+}
+
+[data-theme="outline"] .ant-card-body {
+	background: transparent !important;
+	color: var(--dark-text-primary) !important;
+}
+
+[data-theme="outline"] .header-section {
+	background: var(--dark-bg-secondary);
+}
+
+[data-theme="outline"] .map-content {
+	background: var(--dark-bg-primary);
+}
+
+/* Dark Mode Text Colors */
+[data-theme="outline"] h1,
+[data-theme="outline"] h2,
+[data-theme="outline"] h3,
+[data-theme="outline"] h4,
+[data-theme="outline"] h5,
+[data-theme="outline"] h6 {
+	color: var(--dark-text-primary) !important;
+}
+
+[data-theme="outline"] p,
+[data-theme="outline"] span {
+	color: var(--dark-text-secondary);
+}
+
+[data-theme="outline"] .tertiary {
+	color: var(--dark-text-muted) !important;
+}
+
+/* Primary Button - Off White Style */
+[data-theme="outline"] .btn-primary {
+	background: #f8f9fa !important;
+	border: none !important;
+	border-radius: 8px !important;
+	color: #2b4172 !important;
+	box-shadow: none !important;
 }
 
 [data-theme="outline"] .btn-primary:hover:not(:disabled) {
-	background: var(--primary-light);
-	border-color: var(--primary-hover);
-	color: var(--primary-hover);
-}
-
-/* Special outline theme styling for control bar buttons */
-[data-theme="outline"] .button-icon {
-	background: linear-gradient(
-		135deg,
-		var(--outline-purple) 0%,
-		var(--outline-purple-hover) 100%
-	);
-	border: none;
-	box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4);
-}
-
-[data-theme="outline"] .button-icon:hover:not(:disabled) {
-	background: linear-gradient(
-		135deg,
-		var(--outline-purple-hover) 0%,
-		#6d28d9 100%
-	);
-	box-shadow: 0 6px 20px rgba(139, 92, 246, 0.6);
+	background: #e9ecef !important;
+	border: none !important;
+	box-shadow: none !important;
 	transform: translateY(-2px);
 }
 
-[data-theme="outline"] .button-icon .button-icon-text {
-	color: white;
+/* Secondary Button - Off White Style */
+[data-theme="outline"] .btn-secondary {
+	background: #f8f9fa !important;
+	border: none !important;
+	border-radius: 8px !important;
+	color: #2b4172 !important;
+	box-shadow: none !important;
 }
 
-[data-theme="outline"] .button-icon:hover:not(:disabled) .button-icon-text {
-	color: white;
+[data-theme="outline"] .btn-secondary:hover:not(:disabled) {
+	background: #e9ecef !important;
+	border: none !important;
+	box-shadow: none !important;
+	transform: translateY(-1px);
 }
 
-/* Desktop Control Buttons Purple Theme */
+[data-theme="outline"] .btn-icon svg,
+[data-theme="outline"] .btn-icon .icon {
+	color: #2b4172 !important;
+}
+
+/* Desktop Control Buttons - Off White Style */
 [data-theme="outline"] .control-button {
-	background: linear-gradient(
-		135deg,
-		var(--outline-purple) 0%,
-		var(--outline-purple-hover) 100%
-	);
-	border: none;
-	color: white;
-	box-shadow: 0 3px 12px rgba(139, 92, 246, 0.3);
+	background: #f8f9fa !important;
+	border: none !important;
+	border-radius: 8px !important;
+	color: #2b4172 !important;
+	box-shadow: none !important;
+	margin-top: 6px !important;
+	padding-bottom: 6px !important;
+	transition: all 0.1s ease !important;
 }
 
 [data-theme="outline"] .control-button:hover:not(:disabled) {
-	background: linear-gradient(
-		135deg,
-		var(--outline-purple-hover) 0%,
-		#6d28d9 100%
-	);
-	box-shadow: 0 5px 18px rgba(139, 92, 246, 0.5);
-	transform: translateY(-2px);
+	background: #e9ecef !important;
+	border: none !important;
+	box-shadow: none !important;
+	transform: translateY(-1px) !important;
 }
 
 [data-theme="outline"] .control-button-icon {
-	color: white;
+	color: #2b4172 !important;
 }
 
 [data-theme="outline"] .control-button-label {
-	color: white;
+	color: #2b4172 !important;
 }
 
 [data-theme="outline"] .minimize-button {
 	border-top-color: rgba(255, 255, 255, 0.2);
 }
 
-/* Compact Control Buttons Purple Theme */
+/* Compact Control Buttons - Off White Style for Outline Theme */
 [data-theme="outline"] .control-button-compact {
-	background: linear-gradient(
-		135deg,
-		var(--outline-purple) 0%,
-		var(--outline-purple-hover) 100%
-	);
-	border-color: var(--outline-purple);
-	color: white;
-	box-shadow: 0 3px 12px rgba(139, 92, 246, 0.3);
+	background: #f8f9fa !important;
+	border: none !important;
+	color: #2b4172 !important;
+	box-shadow: none !important;
 }
 
 [data-theme="outline"] .control-button-compact:hover:not(:disabled) {
-	background: linear-gradient(
-		135deg,
-		var(--outline-purple-hover) 0%,
-		#6d28d9 100%
-	);
-	border-color: var(--outline-purple-hover);
-	box-shadow: 0 5px 18px rgba(139, 92, 246, 0.5);
-	transform: translateY(-2px);
+	background: #e9ecef !important;
+	border: none !important;
+	color: #2b4172 !important;
+	box-shadow: none !important;
+	transform: translateY(-1px);
 }
 
 [data-theme="outline"] .control-button-compact .control-button-icon {
-	color: white;
+	color: #2b4172 !important;
 }
 
-/* Timeline Selector Purple Theme - Modern gradient sliders */
-[data-theme="outline"] .ant-slider .ant-slider-rail {
-	background: linear-gradient(
-		90deg,
-		var(--outline-purple) 0%,
-		var(--outline-purple-hover) 100%
-	) !important;
-	box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3) !important;
+[data-theme="outline"] .control-button-compact:hover .control-button-icon {
+	color: #2b4172 !important;
+}
+
+/* Ensure proper border handling for grouped buttons */
+[data-theme="outline"] .control-button-compact-left {
+	border-right: none !important;
+	border-top-left-radius: 8px !important;
+	border-bottom-left-radius: 8px !important;
+	border-top-right-radius: 0 !important;
+	border-bottom-right-radius: 0 !important;
+}
+
+[data-theme="outline"] .control-button-compact-center {
+	border-left: none !important;
+	border-right: none !important;
+	border-radius: 0 !important;
+	border-top-left-radius: 0 !important;
+	border-top-right-radius: 0 !important;
+	border-bottom-left-radius: 0 !important;
+	border-bottom-right-radius: 0 !important;
+}
+
+[data-theme="outline"] .control-button-compact-right {
+	border-left: none !important;
+	border-top-right-radius: 8px !important;
+	border-bottom-right-radius: 8px !important;
+	border-top-left-radius: 0 !important;
+	border-bottom-left-radius: 0 !important;
+}
+
+/* Control Bar Background for Dark Theme */
+[data-theme="outline"] .control-bar-desktop {
+	background-color: rgba(33, 39, 66, 0.8);
+	backdrop-filter: blur(12px);
+	border: 1px solid var(--dark-border);
+}
+
+[data-theme="outline"] .control-bar-mobile {
+	background-color: rgba(33, 39, 66, 0.9) !important;
+}
+
+/* Timeline Selector - Red Theme (Both Themes) */
+.ant-slider .ant-slider-rail,
+[data-theme="outline"] .ant-slider .ant-slider-rail,
+[data-theme="default"] .ant-slider .ant-slider-rail {
+	background: #db3c1c !important;
+	box-shadow: 0 2px 8px rgba(219, 60, 28, 0.3) !important;
 	border-radius: 10px !important;
 }
 
-[data-theme="outline"] .ant-slider .ant-slider-track {
+.ant-slider .ant-slider-track,
+[data-theme="outline"] .ant-slider .ant-slider-track,
+[data-theme="default"] .ant-slider .ant-slider-track {
 	background-color: transparent !important;
 }
 
-[data-theme="outline"] .ant-slider .ant-slider-handle {
+.ant-slider .ant-slider-handle,
+[data-theme="outline"] .ant-slider .ant-slider-handle,
+[data-theme="default"] .ant-slider .ant-slider-handle {
 	border: none !important;
-	background: linear-gradient(
-		135deg,
-		var(--outline-purple) 0%,
-		var(--outline-purple-hover) 100%
-	) !important;
-	box-shadow: 0 3px 12px rgba(139, 92, 246, 0.5) !important;
-	width: 18px !important;
-	height: 18px !important;
+	background: #db3c1c !important;
+	box-shadow: 0 3px 12px rgba(165, 39, 78, 0.5) !important;
+	width: 24px !important;
+	height: 24px !important;
+	border-radius: 50%;
+	margin-left: -12px !important;
+	margin-top: -7px !important; /* Not sure why it is 7 here ? */
 }
 
-[data-theme="outline"] .ant-slider .ant-slider-handle:hover {
-	background: linear-gradient(
-		135deg,
-		var(--outline-purple-hover) 0%,
-		#6d28d9 100%
-	) !important;
-	box-shadow: 0 4px 16px rgba(139, 92, 246, 0.7) !important;
+.ant-slider-handle::before,
+.ant-slider-handle::after,
+[data-theme="outline"] .ant-slider-handle::before,
+[data-theme="outline"] .ant-slider-handle::after,
+[data-theme="default"] .ant-slider-handle::before,
+[data-theme="default"] .ant-slider-handle::after {
+	content: none !important;
+}
+
+.ant-slider .ant-slider-handle:hover,
+[data-theme="outline"] .ant-slider .ant-slider-handle:hover,
+[data-theme="default"] .ant-slider .ant-slider-handle:hover {
+	background: linear-gradient(45deg, #a5274e, #8b1e3f) !important;
+	box-shadow: 0 4px 16px rgba(165, 39, 78, 0.7) !important;
 	transform: scale(1.1) !important;
 }
 
-/* Month/Year Select Purple Theme - Modern gradient backgrounds */
-[data-theme="outline"] .ant-select-selector {
+/* Select Components - Off White Style */
+[data-theme="branded"] .ant-select-selector {
+	background: #db3c1c !important;
 	border: none !important;
-	background: linear-gradient(
-		135deg,
-		var(--outline-purple) 0%,
-		var(--outline-purple-hover) 100%
-	) !important;
-	box-shadow: 0 3px 10px rgba(139, 92, 246, 0.3) !important;
 	border-radius: 8px !important;
+	box-shadow: none !important;
+	margin-top: 6px !important;
+	padding-top: 6px !important;
+	padding-bottom: 6px !important;
+	transition: all 0.1s ease !important;
+	color: white !important;
+}
+
+[data-theme="branded"] .ant-select-selection-item,
+[data-theme="branded"] .ant-select-arrow,
+[data-theme="branded"] .ant-select .anticon {
+	color: white !important;
 }
 
 [data-theme="outline"] .ant-select-selection-item {
-	color: white !important;
 	font-weight: 500 !important;
 }
 
-[data-theme="outline"] .ant-select-arrow {
-	color: white !important;
-}
-
-[data-theme="outline"] .ant-select:hover .ant-select-selector {
-	background: linear-gradient(
-		135deg,
-		var(--outline-purple-hover) 0%,
-		#6d28d9 100%
-	) !important;
-	box-shadow: 0 5px 15px rgba(139, 92, 246, 0.5) !important;
+[data-theme="branded"] .ant-select:hover .ant-select-selector {
+	background: #efe9eb !important;
+	color: #db3c1c !important;
+	border: none !important;
+	box-shadow: none !important;
 	transform: translateY(-1px) !important;
 }
 
-/* Calendar icon and other Ant Design icons in selectors */
-[data-theme="outline"] .ant-select .anticon {
-	color: white !important;
-}
-
 [data-theme="outline"] .ant-select-item-option-selected {
-	background: linear-gradient(
-		135deg,
-		var(--outline-purple) 0%,
-		var(--outline-purple-hover) 100%
-	) !important;
+	background: linear-gradient(45deg, #2b4172, #1f2d52) !important;
 	color: white !important;
-	box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3) !important;
+	box-shadow: 0 2px 8px var(--outline-shadow) !important;
 }
 
 [data-theme="outline"] .ant-select-item-option:hover {
-	background-color: rgba(139, 92, 246, 0.1) !important;
+	background-color: var(--outline-purple-light) !important;
 }
 
-/* Ensure mobile year selector also gets purple styling */
-[data-theme="outline"] .ant-select.light-box-shadow .ant-select-selector {
-	border-color: var(--outline-purple) !important;
+/* Dark Mode Select Dropdown */
+[data-theme="outline"] .ant-select-dropdown {
+	background: var(--dark-bg-elevated) !important;
+	border: 1px solid var(--dark-border) !important;
 }
 
-[data-theme="outline"] .ant-select.light-box-shadow .ant-select-selection-item {
-	color: var(--outline-purple) !important;
+[data-theme="outline"] .ant-select-dropdown .ant-select-item {
+	color: var(--dark-text-primary) !important;
+	background: transparent !important;
+}
+
+[data-theme="outline"] .ant-select-dropdown .ant-select-item:hover {
+	background: var(--dark-bg-tertiary) !important;
+}
+
+[data-theme="outline"] .ant-select-dropdown .ant-select-item-option {
+	color: var(--dark-text-primary) !important;
+	background: transparent !important;
+}
+
+[data-theme="outline"] .ant-select-dropdown .ant-select-item-option:hover {
+	background: var(--dark-bg-tertiary) !important;
+}
+
+/* Dark Mode Modal */
+[data-theme="outline"] .ant-modal-content {
+	background: var(--dark-bg-secondary) !important;
+	border: 1px solid var(--dark-border) !important;
+}
+
+[data-theme="outline"] .ant-modal-header {
+	background: var(--dark-bg-secondary) !important;
+	border-bottom: 1px solid var(--dark-border) !important;
+}
+
+[data-theme="outline"] .ant-modal-title {
+	color: var(--dark-text-primary) !important;
+}
+
+[data-theme="outline"] .ant-modal-body {
+	background: var(--dark-bg-secondary) !important;
+	color: var(--dark-text-secondary) !important;
+}
+
+[data-theme="outline"] .ant-modal-footer {
+	background: var(--dark-bg-secondary) !important;
+	border-top: 1px solid var(--dark-border) !important;
+}
+
+/* Modal Close Button */
+[data-theme="outline"] .ant-modal-close {
+	color: var(--dark-text-secondary) !important;
+}
+
+[data-theme="outline"] .ant-modal-close:hover {
+	color: var(--dark-text-primary) !important;
+}
+
+/* Modal Mask */
+[data-theme="outline"] .ant-modal-mask {
+	background: rgba(0, 0, 0, 0.6) !important;
+}
+
+/* Ensure all text in modals is properly colored */
+[data-theme="outline"] .ant-modal * {
+	color: inherit;
+}
+
+[data-theme="outline"] .ant-modal h1,
+[data-theme="outline"] .ant-modal h2,
+[data-theme="outline"] .ant-modal h3,
+[data-theme="outline"] .ant-modal h4,
+[data-theme="outline"] .ant-modal h5,
+[data-theme="outline"] .ant-modal h6 {
+	color: var(--dark-text-primary) !important;
+}
+
+/* Virus Item Styling - Dark Mode */
+[data-theme="outline"] .virus-item {
+	background: var(--dark-bg-tertiary);
+	border: 1px solid var(--dark-border-subtle);
 }
 
 [data-theme="outline"] .virus-item:hover {
-	background: rgba(139, 92, 246, 0.25);
+	background: var(--dark-bg-elevated);
+	border-color: var(--dark-border);
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 [data-theme="outline"] .virus-item.selected {
-	background: linear-gradient(
-		135deg,
-		var(--outline-purple) 0%,
-		var(--outline-purple-hover) 100%
-	);
+	background: linear-gradient(45deg, #2b4172, #1f2d52);
 	color: white;
-	box-shadow: 0 3px 12px rgba(139, 92, 246, 0.4);
+	box-shadow: 0 3px 12px var(--outline-shadow);
 	border-radius: 8px;
+	border: 1px solid var(--outline-purple);
 }
 
-[data-theme="outline"] .virus-item.selected .virus-info h4 {
+[data-theme="outline"] .virus-item.selected .virus-info h4,
+[data-theme="outline"] .virus-item.selected .virus-info p {
 	color: white;
 }
 
 [data-theme="outline"] .virus-item.selected .virus-info p {
-	color: rgba(255, 255, 255, 0.8);
+	opacity: 0.9;
 }
 
-/* Emoji container styling */
+[data-theme="outline"] .virus-item .virus-info h4 {
+	color: var(--dark-text-primary);
+}
+
+[data-theme="outline"] .virus-item .virus-info p {
+	color: var(--dark-text-secondary);
+}
+
+/* Model Selector Button - Off White Style */
+[data-theme="outline"] .model-selector-button {
+	background: #f8f9fa !important;
+	border: none !important;
+	border-radius: 8px !important;
+	color: #2b4172 !important;
+	box-shadow: none !important;
+	font-weight: 500;
+	margin-top: 6px !important;
+	padding-bottom: 6px !important;
+	transition: all 0.1s ease !important;
+}
+
+[data-theme="outline"] .model-selector-button:hover {
+	background: #e9ecef !important;
+	border: none !important;
+	box-shadow: none !important;
+	transform: translateY(-1px) !important;
+}
+
+[data-theme="outline"] .model-selector-button .icon,
+[data-theme="outline"] .model-selector-button .chevron {
+	color: #2b4172 !important;
+}
+
+[data-theme="outline"] .model-selector-button .chevron {
+	opacity: 0.8;
+}
+
+/* Mobile Settings Button */
+[data-theme="outline"] .ant-btn-link {
+	color: var(--outline-purple) !important;
+}
+
+[data-theme="outline"] .ant-btn-link:hover {
+	color: var(--outline-purple-hover) !important;
+}
+
+/* ==========================================
+   THEME: DEFAULT - Light Mode White Buttons
+   ========================================== */
+
+/* Emoji Container */
 .emoji-container {
 	background: white;
 	border-radius: 6px;
@@ -678,47 +957,6 @@ button:focus-visible {
 	align-items: center;
 	justify-content: center;
 	font-size: 16px;
-}
-
-/* Model Selector Button Purple Theme */
-[data-theme="outline"] .model-selector-button {
-	background: linear-gradient(
-		135deg,
-		var(--outline-purple) 0%,
-		var(--outline-purple-hover) 100%
-	);
-	border: none;
-	color: white;
-	box-shadow: 0 3px 12px rgba(139, 92, 246, 0.3);
-	border-radius: 10px;
-	font-weight: 500;
-}
-
-[data-theme="outline"] .model-selector-button:hover {
-	background: linear-gradient(
-		135deg,
-		var(--outline-purple-hover) 0%,
-		#6d28d9 100%
-	);
-	box-shadow: 0 5px 18px rgba(139, 92, 246, 0.5);
-	transform: translateY(-2px);
-}
-
-[data-theme="outline"] .model-selector-button .icon {
-	color: white;
-}
-
-[data-theme="outline"] .model-selector-button .chevron {
-	color: rgba(255, 255, 255, 0.8);
-}
-
-/* Mobile Settings Button Purple Theme */
-[data-theme="outline"] .ant-btn-link {
-	color: var(--outline-purple) !important;
-}
-
-[data-theme="outline"] .ant-btn-link:hover {
-	color: var(--outline-purple-hover) !important;
 }
 
 /* Onboarding Tour Styles */
@@ -758,22 +996,14 @@ button:focus-visible {
 }
 
 .tour-button-primary {
-	background: linear-gradient(
-		135deg,
-		var(--outline-purple) 0%,
-		var(--outline-purple-hover) 100%
-	);
+	background: linear-gradient(45deg, #2b4172, #1f2d52);
 	color: white;
-	box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);
+	box-shadow: 0 2px 8px var(--outline-shadow);
 }
 
 .tour-button-primary:hover {
-	background: linear-gradient(
-		135deg,
-		var(--outline-purple-hover) 0%,
-		#6d28d9 100%
-	);
-	box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
+	background: linear-gradient(45deg, #2b4172, #1f2d52);
+	box-shadow: 0 4px 12px var(--outline-shadow);
 	transform: translateY(-1px);
 }
 
@@ -788,6 +1018,218 @@ button:focus-visible {
 	border-color: var(--border-medium);
 }
 
+/* Dark Mode Tour Buttons */
+[data-theme="outline"] .tour-button-secondary {
+	background: var(--dark-bg-tertiary);
+	color: var(--dark-text-primary);
+	border: 1px solid var(--dark-border);
+}
+
+[data-theme="outline"] .tour-button-secondary:hover {
+	background: var(--dark-bg-elevated);
+	border-color: var(--outline-purple);
+}
+
+/* Dark Mode Input Fields */
+[data-theme="outline"] .ant-input {
+	background: var(--dark-bg-tertiary) !important;
+	border: 1px solid var(--dark-border) !important;
+	color: var(--dark-text-primary) !important;
+}
+
+[data-theme="outline"] .ant-input:focus {
+	border-color: var(--outline-purple) !important;
+	box-shadow: 0 0 0 2px rgba(43, 65, 114, 0.2) !important;
+}
+
+/* Dark Mode Additional Elements */
+[data-theme="outline"] .ant-btn {
+	background: var(--dark-bg-tertiary);
+	border: 1px solid var(--dark-border);
+	color: var(--dark-text-primary);
+}
+
+[data-theme="outline"] .ant-btn:hover {
+	background: var(--dark-bg-elevated);
+	border-color: var(--outline-purple);
+	color: var(--dark-text-primary);
+}
+
+[data-theme="outline"] .ant-tooltip-inner {
+	background: var(--dark-bg-elevated);
+	color: var(--dark-text-primary);
+}
+
+[data-theme="outline"] .ant-tooltip-arrow-content {
+	background: var(--dark-bg-elevated);
+}
+
+/* Dark Mode Bottom Legend */
+[data-theme="outline"] .bottom-legend,
+[data-theme="outline"] .legend-container {
+	background: var(--dark-bg-secondary) !important;
+	border: 1px solid var(--dark-border) !important;
+	color: var(--dark-text-primary) !important;
+}
+
+[data-theme="outline"] .legend-container > div {
+	background: var(--dark-bg-secondary) !important;
+}
+
+/* Dark Mode - Override any white backgrounds in legends */
+[data-theme="outline"] div[style*="background-color: white"],
+[data-theme="outline"] div[style*="backgroundColor: white"] {
+	background-color: var(--dark-bg-secondary) !important;
+}
+
+/* Dark Mode Model Dropdown & Footer */
+[data-theme="outline"] .model-dropdown {
+	background: var(--dark-bg-secondary) !important;
+	border: 1px solid var(--dark-border) !important;
+	box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4), 0 0 20px rgba(43, 65, 114, 0.15) !important;
+}
+
+[data-theme="outline"] .model-header {
+	background: var(--dark-bg-secondary) !important;
+	border-bottom: 1px solid var(--dark-border) !important;
+}
+
+[data-theme="outline"] .model-footer {
+	background: var(--dark-bg-tertiary) !important;
+	border-top: 1px solid var(--dark-border) !important;
+	color: var(--dark-text-secondary) !important;
+}
+
+/* Creative Glow Effects for Better Contrast */
+[data-theme="outline"] .model-selector-button {
+	background: var(--dark-bg-elevated) !important;
+	border: 1px solid var(--dark-border) !important;
+	color: var(--dark-text-primary) !important;
+	box-shadow: 0 0 15px rgba(43, 65, 114, 0.4), 0 0 30px rgba(43, 65, 114, 0.2),
+		0 2px 8px rgba(0, 0, 0, 0.3) !important;
+	transition: all 0.3s ease !important;
+}
+
+[data-theme="outline"] .model-selector-button:hover {
+	background: var(--dark-bg-elevated) !important;
+	border-color: var(--outline-purple) !important;
+	box-shadow: 0 0 25px rgba(43, 65, 114, 0.8), 0 0 50px rgba(43, 65, 114, 0.4),
+		0 0 75px rgba(43, 65, 114, 0.2), 0 4px 12px rgba(0, 0, 0, 0.4) !important;
+	transform: translateY(-2px) scale(1.02) !important;
+}
+
+/* Enhanced Glow for Control Buttons */
+[data-theme="outline"] .control-button {
+	box-shadow: 0 0 12px rgba(43, 65, 114, 0.5), 0 0 25px rgba(43, 65, 114, 0.3),
+		0 3px 12px var(--outline-shadow) !important;
+}
+
+[data-theme="outline"] .control-button:hover:not(:disabled) {
+	box-shadow: 0 0 20px rgba(43, 65, 114, 0.9), 0 0 40px rgba(43, 65, 114, 0.6),
+		0 0 60px rgba(43, 65, 114, 0.3), 0 5px 18px var(--outline-shadow-hover) !important;
+	transform: translateY(-2px) scale(1.03) !important;
+}
+
+/* Enhanced Glow for Icon Buttons */
+[data-theme="outline"] .btn-icon {
+	box-shadow: 0 0 15px rgba(43, 65, 114, 0.5), 0 0 30px rgba(43, 65, 114, 0.3),
+		0 4px 15px var(--outline-shadow) !important;
+}
+
+[data-theme="outline"] .btn-icon:hover:not(:disabled) {
+	box-shadow: 0 0 25px rgba(43, 65, 114, 1.0), 0 0 50px rgba(43, 65, 114, 0.7),
+		0 0 75px rgba(43, 65, 114, 0.4), 0 6px 20px var(--outline-shadow-hover) !important;
+	transform: translateY(-2px) scale(1.05) !important;
+}
+
+/* Enhanced Glow for Compact Control Buttons */
+[data-theme="outline"] .control-button-compact {
+	box-shadow: 0 0 10px rgba(43, 65, 114, 0.4), 0 0 20px rgba(43, 65, 114, 0.2),
+		0 2px 8px rgba(0, 0, 0, 0.3) !important;
+}
+
+[data-theme="outline"] .control-button-compact:hover:not(:disabled) {
+	box-shadow: 0 0 18px rgba(43, 65, 114, 0.8), 0 0 35px rgba(43, 65, 114, 0.5),
+		0 0 50px rgba(43, 65, 114, 0.3), 0 4px 12px var(--outline-shadow) !important;
+	transform: translateY(-1px) scale(1.02) !important;
+}
+
+/* Desktop Control Bar - New Horizontal Layout */
+.desktop-control-container {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	width: 100%;
+	max-width: 400px;
+	background-color: rgba(255, 255, 255, 0.95);
+	backdrop-filter: blur(10px);
+	border-radius: 16px;
+	padding: 8px 16px;
+	box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+	border-top: 1px solid rgba(220, 220, 220, 0.5);
+}
+
+.desktop-control-buttons {
+	display: flex;
+	flex: 1;
+	justify-content: left;
+}
+
+.desktop-zoom-controls {
+	display: flex;
+	align-items: center;
+	gap: 0;
+}
+
+.desktop-control-btn {
+	background-color: #db3c1c;
+	border: none;
+	border-radius: 12px;
+	color: white;
+	padding: 12px 16px;
+	cursor: pointer;
+	transition: all 0.2s ease;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 48px;
+	height: 48px;
+}
+
+.desktop-control-btn:hover:not(:disabled) {
+	background-color: #c2351a;
+	transform: translateY(-1px);
+	box-shadow: 0 4px 12px rgba(219, 60, 28, 0.3);
+}
+
+.desktop-control-btn:disabled {
+	background-color: #999;
+	cursor: not-allowed;
+	opacity: 0.6;
+}
+
+.desktop-zoom-btn {
+	padding: 12px 16px;
+	min-width: 40px;
+	min-width: 48px;
+	height: 48px;
+}
+
+.desktop-zoom-left {
+	border-top-right-radius: 0;
+	border-bottom-right-radius: 0;
+}
+
+.desktop-zoom-center {
+	border-radius: 0;
+}
+
+.desktop-zoom-right {
+	border-top-left-radius: 0;
+	border-bottom-left-radius: 0;
+}
+
+/* Light Mode Support */
 @media (prefers-color-scheme: light) {
 	:root {
 		color: #213547;

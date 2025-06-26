@@ -3,7 +3,7 @@ import { expect, test } from "@playwright/test";
 test.describe("ControlBar Component", () => {
 	test.beforeEach(async ({ page }) => {
 		// Navigate to the page before each test
-		await page.goto("http://localhost:5174/");
+		await page.goto("http://localhost:5174/?notour=true");
 
 		// Wait for the map and control bar to load
 		await expect(page.locator("body")).toContainText("Data Source");

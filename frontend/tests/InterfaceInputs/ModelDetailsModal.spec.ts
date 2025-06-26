@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 
 test.describe("ModelDetailsModal", () => {
 	test.beforeEach(async ({ page }) => {
-		await page.goto("http://localhost:5174/map/expert");
+		await page.goto("http://localhost:5174/map/expert?notour=true");
 	});
 
 	test("Model details dropdown should open and allow the user to view all models", async ({

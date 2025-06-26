@@ -5,7 +5,7 @@ import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import ViewportMonitor from "./ViewportMonitor.tsx";
 import "./Map.css";
-import { Layers, Map } from "lucide-react";
+import { Layers } from "lucide-react";
 import Footer from "../../static/Footer.tsx";
 import AdaptiveGridLayer from "./AdaptiveGridLayer.tsx";
 import DebugStatsPanel from "./DebugStatsPanel.tsx";
@@ -24,6 +24,7 @@ import type {
 	ViewportBounds,
 } from "./types.ts";
 import { getColorFromGradient } from "./utilities/gradientUtilities";
+import { gridToNutsConverter } from "./utilities/gridToNutsConverter";
 import {
 	BottomLegend,
 	MAX_ZOOM,
@@ -60,6 +61,8 @@ const ClimateMap = ({ onMount = () => true }) => {
 	const [dataBounds, setDataBounds] = useState<L.LatLngBounds | null>(null);
 	const [worldGeoJSON, setWorldGeoJSON] =
 		useState<GeoJSON.FeatureCollection | null>(null);
+	const [convertedNutsGeoJSON, setConvertedNutsGeoJSON] =
+		useState<NutsGeoJSON | null>(null);
 	const fileInputRef = useRef<HTMLInputElement>(null);
 
 	// Cities loaded from external data source
@@ -75,6 +78,10 @@ const ClimateMap = ({ onMount = () => true }) => {
 
 	// Grid/NUTS mode state
 	const [mapMode, setMapMode] = useState<"grid" | "nuts">("nuts");
+	const [hoverTimeout, setHoverTimeout] = useState<NodeJS.Timeout | null>(null);
+	const [currentHoveredLayer, setCurrentHoveredLayer] =
+		useState<L.Layer | null>(null);
+	const [showTileLayer, setShowTileLayer] = useState<boolean>(false);
 
 	// Load cities data from JSON file
 	useEffect(() => {
@@ -84,20 +91,27 @@ const ClimateMap = ({ onMount = () => true }) => {
 				const data = await response.json();
 
 				// Create tiers based on population
-				const citiesWithTiers = data.cities.map((city: any) => ({
-					...city,
-					tier:
-						city.population >= 10000000
-							? 1
-							: // Tier 1: 10M+ population
-								city.population >= 5000000
-								? 2
-								: // Tier 2: 5M-10M population
-									city.population >= 1000000
-									? 3
-									: // Tier 3: 1M-5M population
-										4, // Tier 4: <1M population
-				}));
+				const citiesWithTiers = data.cities.map(
+					(city: {
+						name: string;
+						lat: number;
+						lng: number;
+						population: number;
+					}) => ({
+						...city,
+						tier:
+							city.population >= 10000000
+								? 1
+								: // Tier 1: 10M+ population
+									city.population >= 5000000
+									? 2
+									: // Tier 2: 5M-10M population
+										city.population >= 1000000
+										? 3
+										: // Tier 3: 1M-5M population
+											4, // Tier 4: <1M population
+					}),
+				);
 
 				setCities(citiesWithTiers);
 			} catch (error) {
@@ -107,7 +121,6 @@ const ClimateMap = ({ onMount = () => true }) => {
 			}
 		};
 
-		loadCities();
 		onMount();
 	});
 
@@ -218,6 +231,44 @@ const ClimateMap = ({ onMount = () => true }) => {
 	useEffect(() => {
 		handleLoadTemperatureData(currentYear);
 	}, [currentYear, handleLoadTemperatureData]);
+
+	// Convert grid data to NUTS when mode is NUTS and temperature data is available
+	useEffect(() => {
+		const convertToNuts = async () => {
+			if (mapMode === "nuts" && temperatureData.length > 0) {
+				try {
+					console.log("Converting grid data to NUTS regions...");
+					const { nutsGeoJSON, extremes } =
+						await gridToNutsConverter.convertGridDataToNuts(temperatureData);
+					setConvertedNutsGeoJSON(nutsGeoJSON);
+					setDataExtremes(extremes);
+				} catch (error) {
+					console.error("Failed to convert grid data to NUTS:", error);
+				}
+			} else if (mapMode === "grid") {
+				setConvertedNutsGeoJSON(null);
+				// Restore original extremes for grid mode
+				if (temperatureData.length > 0) {
+					const temps = temperatureData.map((d) => d.temperature);
+					setDataExtremes({
+						min: Math.min(...temps),
+						max: Math.max(...temps),
+					});
+				}
+			}
+		};
+
+		convertToNuts();
+	}, [mapMode, temperatureData]);
+
+	// Cleanup timeouts on unmount
+	useEffect(() => {
+		return () => {
+			if (hoverTimeout) {
+				clearTimeout(hoverTimeout);
+			}
+		};
+	}, [hoverTimeout]);
 
 	useEffect(() => {
 		if (map && dataBounds) {
@@ -386,23 +437,36 @@ const ClimateMap = ({ onMount = () => true }) => {
 		};
 	};
 
-	const worldStyle = () => {
-		// Check current theme
-		const isOutlineTheme =
-			document.documentElement.getAttribute("data-theme") === "outline";
+	const nutsStyle = (feature: GeoJSON.Feature) => {
+		if (!feature || !feature.properties) return {};
+
+		const properties = feature.properties as { intensity?: number };
 
 		return {
-			fillColor: isOutlineTheme ? "white" : "#374151", // Dark grey in light mode, white in dark mode
+			fillColor: dataExtremes
+				? getColorFromGradient(properties.intensity || 0, dataExtremes)
+				: "#cccccc",
+			weight: 2,
+			opacity: 1,
+			color: "white",
+			dashArray: "",
+			fillOpacity: 0.8,
+		};
+	};
+
+	const worldStyle = () => {
+		return {
+			fillColor: "#374151",
 			weight: 0.5,
 			opacity: 0.8,
-			color: isOutlineTheme ? "#ccc" : "#6b7280", // Border color
+			color: "#6b7280",
 			fillOpacity: 1,
 		};
 	};
 
 	const createCityLabelIcon = (
 		city: { name: string; tier: number; population: number },
-		zoom: number,
+		_zoom: number,
 	) => {
 		const fontSize =
 			city.tier === 1 ? 13 : city.tier === 2 ? 12 : city.tier === 3 ? 11 : 10;
@@ -425,6 +489,31 @@ const ClimateMap = ({ onMount = () => true }) => {
 
 	const highlightFeature = (e: L.LeafletMouseEvent) => {
 		const layer = e.target as L.Path;
+
+		// Clear any existing timeout
+		if (hoverTimeout) {
+			clearTimeout(hoverTimeout);
+		}
+
+		// If this is the same layer, don't do anything
+		if (currentHoveredLayer === layer) {
+			return;
+		}
+
+		// Reset previous layer if exists
+		if (currentHoveredLayer) {
+			const prevLayer = currentHoveredLayer as L.Path & {
+				feature: GeoJSON.Feature;
+			};
+			if (mapMode === "nuts" && convertedNutsGeoJSON) {
+				prevLayer.setStyle(nutsStyle(prevLayer.feature));
+			} else if (nutsGeoJSON) {
+				prevLayer.setStyle(style(prevLayer.feature));
+			}
+			(prevLayer as L.Layer & { closePopup: () => void }).closePopup();
+		}
+
+		// Set new layer styling
 		layer.setStyle({
 			weight: 3,
 			color: "#666",
@@ -435,12 +524,43 @@ const ClimateMap = ({ onMount = () => true }) => {
 		if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
 			layer.bringToFront();
 		}
+
+		setCurrentHoveredLayer(layer);
+
+		// Show popup on hover for NUTS mode with slight delay
+		if (mapMode === "nuts") {
+			const timeout = setTimeout(() => {
+				if (currentHoveredLayer === layer) {
+					(layer as L.Layer & { openPopup: () => void }).openPopup();
+				}
+			}, 100);
+			setHoverTimeout(timeout);
+		}
 	};
 
 	const resetHighlight = (e: L.LeafletMouseEvent) => {
-		if (nutsGeoJSON) {
-			const geoJSONLayer = e.target as L.Path & { feature: GeoJSON.Feature };
-			geoJSONLayer.setStyle(style(geoJSONLayer.feature));
+		const geoJSONLayer = e.target as L.Path & { feature: GeoJSON.Feature };
+
+		// Clear any existing timeout
+		if (hoverTimeout) {
+			clearTimeout(hoverTimeout);
+			setHoverTimeout(null);
+		}
+
+		// Only reset if this is the currently hovered layer
+		if (currentHoveredLayer === geoJSONLayer) {
+			if (mapMode === "nuts" && convertedNutsGeoJSON) {
+				geoJSONLayer.setStyle(nutsStyle(geoJSONLayer.feature));
+			} else if (nutsGeoJSON) {
+				geoJSONLayer.setStyle(style(geoJSONLayer.feature));
+			}
+
+			// Close popup on mouseout for NUTS mode
+			if (mapMode === "nuts") {
+				(geoJSONLayer as L.Layer & { closePopup: () => void }).closePopup();
+			}
+
+			setCurrentHoveredLayer(null);
 		}
 	};
 
@@ -460,6 +580,45 @@ const ClimateMap = ({ onMount = () => true }) => {
         <div class="nuts-popup">
           <h4>NUTS Region: ${NUTS_ID || "Unknown"}</h4>
           <p>Value: ${intensity !== null && intensity !== undefined ? `${intensity.toFixed(1)}°C` : "N/A"}</p>
+        </div>
+      `;
+			(layer as L.Layer & { bindPopup: (content: string) => void }).bindPopup(
+				popupContent,
+			);
+		}
+	};
+
+	const onEachNutsFeature = (feature: GeoJSON.Feature, layer: L.Layer) => {
+		layer.on({
+			mouseover: highlightFeature,
+			mouseout: resetHighlight,
+		});
+
+		if (feature.properties) {
+			const properties = feature.properties as {
+				NUTS_ID?: string;
+				intensity?: number;
+				countryName?: string;
+				pointCount?: number;
+				isFallback?: boolean;
+			};
+			const { NUTS_ID, intensity, countryName, pointCount, isFallback } =
+				properties;
+			const displayName = countryName || NUTS_ID || "Unknown Country";
+
+			const dataSource = isFallback
+				? "Nearest point"
+				: pointCount && pointCount > 0
+					? `${pointCount} data points`
+					: "Calculated";
+
+			const popupContent = `
+        <div class="nuts-popup">
+          <h4>${displayName}</h4>
+          <p><strong>Temperature:</strong> ${intensity !== null && intensity !== undefined ? `${intensity.toFixed(1)}°C` : "N/A"}</p>
+          <p><strong>Data Source:</strong> ${dataSource}</p>
+          ${isFallback ? `<p><small style="color: #666;">⚠️ Using nearest available data point</small></p>` : ""}
+          <p><small>Region: ${NUTS_ID || "N/A"}</small></p>
         </div>
       `;
 			(layer as L.Layer & { bindPopup: (content: string) => void }).bindPopup(
@@ -498,27 +657,46 @@ const ClimateMap = ({ onMount = () => true }) => {
 								width: isMobile ? "100%" : "calc(100% - 140px)",
 							}}
 						>
-							{/*<TileLayer
-								url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-								noWrap={true}
-							/>*/}
-							<Pane name="worldPane" style={{ zIndex: 300 }}>
-								{worldGeoJSON && (
-									<GeoJSON data={worldGeoJSON} style={worldStyle} />
-								)}
-							</Pane>
-							<Pane name="gridPane" style={{ zIndex: 340, opacity: 0.5 }}>
-								{temperatureData.length > 0 && viewport && dataExtremes && (
-									<div>
-										<AdaptiveGridLayer
-											dataPoints={[...temperatureData]}
-											viewport={viewport}
-											resolutionLevel={resolutionLevel}
-											extremes={dataExtremes}
-										/>
-									</div>
-								)}
-							</Pane>
+							{showTileLayer && (
+								<TileLayer
+									url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+									noWrap={true}
+								/>
+							)}
+							{mapMode === "grid" && (
+								<Pane name="worldPane" style={{ zIndex: 300 }}>
+									{worldGeoJSON && (
+										<GeoJSON data={worldGeoJSON} style={worldStyle} />
+									)}
+								</Pane>
+							)}
+							{mapMode === "grid" && (
+								<Pane name="gridPane" style={{ zIndex: 340, opacity: 0.5 }}>
+									{temperatureData.length > 0 && viewport && dataExtremes && (
+										<div>
+											<AdaptiveGridLayer
+												dataPoints={[...temperatureData]}
+												viewport={viewport}
+												resolutionLevel={resolutionLevel}
+												extremes={dataExtremes}
+											/>
+										</div>
+									)}
+								</Pane>
+							)}
+
+							{mapMode === "nuts" && (
+								<Pane name="nutsPane" style={{ zIndex: 340, opacity: 0.9 }}>
+									{convertedNutsGeoJSON?.features &&
+										convertedNutsGeoJSON.features.length > 0 && (
+											<GeoJSON
+												data={convertedNutsGeoJSON}
+												style={(f) => (f ? nutsStyle(f) : {})}
+												onEachFeature={onEachNutsFeature}
+											/>
+										)}
+								</Pane>
+							)}
 
 							<Pane name="geoJsonPane" style={{ zIndex: 320 }}>
 								{nutsGeoJSON?.features && nutsGeoJSON.features.length > 0 && (
@@ -533,9 +711,9 @@ const ClimateMap = ({ onMount = () => true }) => {
 							{mapMode === "grid" && (
 								<Pane name="cityLabelsPane" style={{ zIndex: 350 }}>
 									{viewport &&
-										getVisibleCities(viewport.zoom).map((city, index) => (
+										getVisibleCities(viewport.zoom).map((city) => (
 											<Marker
-												key={index}
+												key={`${city.name}-${city.lat}-${city.lng}`}
 												position={[city.lat, city.lng]}
 												icon={createCityLabelIcon(city, viewport.zoom)}
 											/>
@@ -546,7 +724,7 @@ const ClimateMap = ({ onMount = () => true }) => {
 							<ViewportMonitor onViewportChange={handleViewportChange} />
 						</MapContainer>
 
-						{/* TimelineSelector positioned absolutely over the map */}
+						{/* Bottom UI Container - TimelineSelector and ControlBar */}
 						<div
 							style={
 								isMobile
@@ -558,9 +736,21 @@ const ClimateMap = ({ onMount = () => true }) => {
 											transform: "translateX(-50%)",
 											zIndex: 1000,
 											pointerEvents: "auto",
+											display: "flex",
+											flexDirection: "column",
+											alignItems: "center",
+											gap: "12px",
 										}
 							}
 						>
+							{!isMobile && (
+								<ControlBar
+									map={map}
+									selectedModel={selectedModel}
+									onModelSelect={handleModelSelect}
+								/>
+							)}
+
 							<TimelineSelector
 								year={currentYear}
 								month={currentMonth}
@@ -580,11 +770,14 @@ const ClimateMap = ({ onMount = () => true }) => {
 							/>
 						</div>
 
-						<ControlBar
-							map={map}
-							selectedModel={selectedModel}
-							onModelSelect={handleModelSelect}
-						/>
+						{/* Mobile ControlBar stays in original position */}
+						{isMobile && (
+							<ControlBar
+								map={map}
+								selectedModel={selectedModel}
+								onModelSelect={handleModelSelect}
+							/>
+						)}
 					</div>
 				</div>
 
@@ -612,6 +805,17 @@ const ClimateMap = ({ onMount = () => true }) => {
 							className="secondary-button"
 						>
 							Upload NUTS CSV
+						</button>
+
+						<button
+							type="button"
+							onClick={() => setShowTileLayer(!showTileLayer)}
+							className={showTileLayer ? "primary-button" : "secondary-button"}
+							title={
+								showTileLayer ? "Hide map background" : "Show map background"
+							}
+						>
+							🗺️ {showTileLayer ? "Hide" : "Show"} Background
 						</button>
 
 						<input

@@ -9,27 +9,25 @@ Z-index is reserved as such:
 1000: Modals
  */
 .body {
-	font-family: "Helvetica Neue UltraLight", "Helvetica Neue",
-		"Avenir Next Ultra Light", "Segoe UI Light", "SF Pro Display Light",
-		system-ui, sans-serif;
+	font-family: var(--font-helvetica);
 }
 
 .text-primary {
-	color: black;
+	color: var(--text-primary);
 	font-size: 2em;
 }
 
 .tertiary {
-	color: rgb(100, 100, 100);
+	color: var(--text-tertiary);
 }
 
 .emphasize {
 	margin: 0 0 16px 0;
-	color: #172b4d;
+	color: var(--text-primary);
 }
 
 .deemphasize {
-	color: #42526e;
+	color: var(--text-secondary);
 	line-height: 1.5;
 	margin: 0 0 12px 0;
 }
@@ -42,16 +40,10 @@ Z-index is reserved as such:
 	text-align: center;
 }
 
-:root {
-	--primary: #00437d;
-	--brand: #a2274c; /* using brand rather than second/secondary because secondary is already a text type (lighter
-    smaller text) and in this case, this color is certainly not secondary/depromoting, just one of two equal parts. */
-	--white: #ffffff;
-	--dark: #303030;
-}
+/* Legacy colors - now using centralized theme from index.css */
 
 .interactable {
-	color: #0052cc;
+	color: var(--text-link);
 }
 
 .button-icon {
@@ -59,7 +51,7 @@ Z-index is reserved as such:
 	height: 57px;
 	background-color: rgba(255, 255, 255, 0.95);
 	border: none;
-	border-radius: 50%;
+	border-radius: var(--radius-full);
 	cursor: pointer;
 	display: flex;
 	align-items: center;
@@ -68,8 +60,14 @@ Z-index is reserved as such:
 	margin: 1px;
 }
 
+.white-icon-bg {
+	background-color: white;
+	border-radius: 5px;
+	padding: 4px;
+}
+
 .light-box-shadow {
-	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+	box-shadow: var(--shadow-light);
 }
 
 @media (min-width: 768px) {

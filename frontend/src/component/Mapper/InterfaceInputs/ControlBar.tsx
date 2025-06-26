@@ -8,7 +8,6 @@ import {
 	Info,
 	MapPin,
 	Minus,
-	Palette,
 	Plus,
 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -87,12 +86,24 @@ const ControlBar = ({
 	const [showLocationModal, setShowLocationModal] = useState<boolean>(false);
 	const [screenshoter, setScreenshoter] =
 		useState<L.SimpleMapScreenshoter | null>(null);
-	const [currentTheme, setCurrentTheme] = useState<"default" | "outline">(
+	const [currentTheme, setCurrentTheme] = useState<"default" | "branded">(
 		"default",
 	);
 	const [isMinimized, setIsMinimized] = useState<boolean>(false);
 	const [showModelDetails, setShowModelDetails] = useState<boolean>(false);
-	const [models, setModels] = useState<any[]>([]);
+	const [models, setModels] = useState<
+		Array<{
+			id: string;
+			virusType: string;
+			modelName: string;
+			title: string;
+			description: string;
+			emoji: string;
+			icon: string;
+			color: string;
+			details: string;
+		}>
+	>([]);
 
 	// Apply theme to document root
 	useEffect(() => {
@@ -116,7 +127,17 @@ const ControlBar = ({
 				"zikaModel1.yaml",
 			];
 
-			const loadedModels: any[] = [];
+			const loadedModels: Array<{
+				id: string;
+				virusType: string;
+				modelName: string;
+				title: string;
+				description: string;
+				emoji: string;
+				icon: string;
+				color: string;
+				details: string;
+			}> = [];
 
 			for (const filename of modelFiles) {
 				try {
@@ -322,7 +343,7 @@ const ControlBar = ({
 	};
 
 	const handleThemeToggle = () => {
-		const newTheme = currentTheme === "default" ? "outline" : "default";
+		const newTheme = currentTheme === "default" ? "branded" : "default";
 		console.log("Switching theme from", currentTheme, "to", newTheme);
 		setCurrentTheme(newTheme);
 	};
@@ -343,8 +364,6 @@ const ControlBar = ({
 			: `${baseClass} control-bar-top-left`;
 	};
 
-	const buttonSize = 20;
-
 	if (isMobile) {
 		// Mobile: circular buttons with minimize functionality
 		return (
@@ -352,81 +371,55 @@ const ControlBar = ({
 				<div data-testid="control-bar" className={getControlBarClasses()}>
 					{!isMinimized ? (
 						<>
-							<button
-								type="button"
-								onClick={handleZoomIn}
-								className="button-icon light-box-shadow"
-							>
-								<Plus size={circularButtonSize} className="button-icon-text" />
+							<button type="button" onClick={handleZoomIn} className="btn-icon">
+								<Plus size={circularButtonSize} />
 							</button>
 
 							<button
 								type="button"
 								onClick={handleZoomOut}
-								className="button-icon light-box-shadow"
+								className="btn-icon"
 							>
-								<Minus size={circularButtonSize} className="button-icon-text" />
+								<Minus size={circularButtonSize} />
 							</button>
 
 							<button
 								type="button"
 								onClick={handleLocationRequest}
 								disabled={isLocating}
-								className="button-icon light-box-shadow"
+								className="btn-icon"
 							>
-								<MapPin
-									size={circularButtonSize}
-									className="button-icon-text"
-								/>
+								<MapPin size={circularButtonSize} />
 							</button>
 
 							<button
 								type="button"
 								onClick={handleSaveScreenshot}
 								disabled={isSaving || !screenshoter}
-								className="button-icon light-box-shadow"
+								className="btn-icon"
 								title={
 									!screenshoter
 										? "Screenshot plugin not loaded"
 										: "Take screenshot"
 								}
 							>
-								<Camera
-									size={circularButtonSize}
-									className="button-icon-text"
-								/>
+								<Camera size={circularButtonSize} />
 							</button>
-
-							<button
-								type="button"
-								onClick={handleThemeToggle}
-								className="button-icon light-box-shadow"
-								title={`Switch to ${currentTheme === "default" ? "outline" : "filled"} theme`}
-							>
-								<Palette
-									size={circularButtonSize}
-									className="button-icon-text"
-								/>
-							</button>
-
 							<button
 								type="button"
 								onClick={() => setShowInfo(true)}
-								className="button-icon light-box-shadow"
+								className="btn-icon"
 							>
-								<Info size={circularButtonSize} className="button-icon-text" />
+								<Info size={circularButtonSize} />
 							</button>
 
 							<button
 								type="button"
 								onClick={() => setShowModelDetails(true)}
-								className="button-icon light-box-shadow"
+								className="btn-icon"
 								disabled={!selectedModel || models.length === 0}
 							>
-								<FileText
-									size={circularButtonSize}
-									className="button-icon-text"
-								/>
+								<FileText size={circularButtonSize} />
 							</button>
 						</>
 					) : null}
@@ -434,18 +427,12 @@ const ControlBar = ({
 					<button
 						type="button"
 						onClick={handleToggleMinimize}
-						className="button-icon light-box-shadow minimize-button"
+						className="btn-icon minimize-button"
 					>
 						{isMinimized ? (
-							<ChevronUp
-								size={circularButtonSize}
-								className="button-icon-text"
-							/>
+							<ChevronDown size={circularButtonSize} />
 						) : (
-							<ChevronDown
-								size={circularButtonSize}
-								className="button-icon-text"
-							/>
+							<ChevronUp size={circularButtonSize} />
 						)}
 					</button>
 				</div>
@@ -454,103 +441,72 @@ const ControlBar = ({
 		);
 	}
 
-	// Desktop: rectangular buttons with labels
+	// Desktop: horizontal layout with red buttons
 	return (
 		<>
-			<div data-testid="control-bar" className={getControlBarClasses()}>
-				{!isMinimized ? (
-					<>
-						<div className="control-button-group">
-							<button
-								type="button"
-								onClick={handleZoomOut}
-								className="control-button-compact control-button-compact-left"
-								title="Zoom Out"
-							>
-								<Minus size={buttonSize} className="control-button-icon" />
-							</button>
-							<button
-								type="button"
-								onClick={handleLocationRequest}
-								disabled={isLocating}
-								className="control-button-compact control-button-compact-center"
-								title="My Location"
-							>
-								<MapPin size={buttonSize} className="control-button-icon" />
-							</button>
-							<button
-								type="button"
-								onClick={handleZoomIn}
-								className="control-button-compact control-button-compact-right"
-								title="Zoom In"
-							>
-								<Plus size={buttonSize} className="control-button-icon" />
-							</button>
-						</div>
+			<div data-testid="control-bar" className="desktop-control-container">
+				{/* Center buttons */}
+				<div className="desktop-control-buttons">
+					<button
+						type="button"
+						onClick={() => setShowModelDetails(true)}
+						className="desktop-control-btn desktop-zoom-btn desktop-zoom-left"
+						disabled={!selectedModel || models.length === 0}
+						title="Model Info"
+					>
+						<FileText size={20} />
+					</button>
 
-						<button
-							type="button"
-							onClick={handleSaveScreenshot}
-							disabled={isSaving || !screenshoter}
-							className="control-button light-box-shadow"
-							title={
-								!screenshoter
-									? "Screenshot plugin not loaded"
-									: "Take screenshot"
-							}
-						>
-							<Camera size={buttonSize} className="control-button-icon" />
-							<span className="control-button-label">Share Map</span>
-						</button>
+					<button
+						type="button"
+						onClick={handleSaveScreenshot}
+						disabled={isSaving || !screenshoter}
+						className="desktop-control-btn desktop-zoom-btn desktop-zoom-center"
+						title={
+							!screenshoter ? "Screenshot plugin not loaded" : "Take screenshot"
+						}
+					>
+						<Camera size={20} />
+					</button>
 
-						<button
-							type="button"
-							onClick={handleThemeToggle}
-							className="control-button light-box-shadow"
-							title={`Switch to ${currentTheme === "default" ? "outline" : "filled"} theme`}
-						>
-							<Palette size={buttonSize} className="control-button-icon" />
-							<span className="control-button-label">Theme</span>
-						</button>
+					<button
+						type="button"
+						onClick={() => setShowInfo(true)}
+						className="desktop-control-btn desktop-zoom-btn desktop-zoom-right"
+						title="About"
+					>
+						<Info size={20} />
+					</button>
+				</div>
 
-						<button
-							type="button"
-							onClick={() => setShowInfo(true)}
-							className="control-button light-box-shadow"
-						>
-							<Info size={buttonSize} className="control-button-icon" />
-							<span className="control-button-label">About</span>
-						</button>
-
-						<button
-							type="button"
-							onClick={() => setShowModelDetails(true)}
-							className="control-button light-box-shadow"
-							disabled={!selectedModel || models.length === 0}
-						>
-							<FileText size={buttonSize} className="control-button-icon" />
-							<span className="control-button-label">Model Info</span>
-						</button>
-					</>
-				) : null}
-
-				<button
-					type="button"
-					onClick={handleToggleMinimize}
-					className="control-button light-box-shadow minimize-button"
-				>
-					{isMinimized ? (
-						<>
-							<ChevronDown size={buttonSize} className="control-button-icon" />
-							<span className="control-button-label">Expand</span>
-						</>
-					) : (
-						<>
-							<ChevronUp size={buttonSize} className="control-button-icon" />
-							<span className="control-button-label">Minimize</span>
-						</>
-					)}
-				</button>
+				{/* Zoom controls on the right */}
+				<div className="desktop-zoom-controls">
+					<button
+						type="button"
+						onClick={handleZoomOut}
+						className="desktop-control-btn desktop-zoom-btn desktop-zoom-left"
+						title="Zoom Out"
+					>
+						<Minus size={18} />
+					</button>
+					<button
+						type="button"
+						onClick={handleLocationRequest}
+						disabled={isLocating}
+						className="desktop-control-btn desktop-zoom-btn desktop-zoom-center"
+						title="My Location"
+					>
+						<MapPin size={18} />
+					</button>
+					<button
+						type="button"
+						onClick={handleZoomIn}
+						className="desktop-control-btn desktop-zoom-btn desktop-zoom-right"
+						title="Zoom In"
+					>
+						<Plus size={18} />
+					</button>
+				</div>
 			</div>
 
 			<Modal
@@ -561,6 +517,20 @@ const ControlBar = ({
 				width={400}
 			>
 				<AboutContent />
+				<br />
+				<button
+					type="button"
+					onClick={handleThemeToggle}
+					style={{
+						background: "none",
+						border: "none",
+						color: "inherit",
+						textDecoration: "underline",
+						cursor: "pointer",
+					}}
+				>
+					Change Theme
+				</button>
 			</Modal>
 
 			<Modal

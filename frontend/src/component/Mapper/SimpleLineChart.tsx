@@ -147,7 +147,7 @@ const SimpleLineChart: React.FC<LineChartProps> = ({
 			<path
 				d={pathData}
 				fill="none"
-				stroke="#3b82f6"
+				stroke="#8b5cf6"
 				strokeWidth="2"
 				strokeLinecap="round"
 				strokeLinejoin="round"
@@ -159,7 +159,7 @@ const SimpleLineChart: React.FC<LineChartProps> = ({
 					cx={point.x}
 					cy={point.y}
 					r="4"
-					fill="#3b82f6"
+					fill="#8b5cf6"
 					stroke="white"
 					strokeWidth="2"
 				/>
