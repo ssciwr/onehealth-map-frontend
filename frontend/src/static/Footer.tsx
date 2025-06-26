@@ -191,7 +191,6 @@ export default () => (
 		}}
 	>
 		{/* <OneHealthHTMLFooter /> */}
-		<AboutContent />
 	</div>
 );
 

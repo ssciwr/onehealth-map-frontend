@@ -1,11 +1,11 @@
 import { CalendarOutlined } from "@ant-design/icons";
-import { Select, Slider, Tooltip, Typography } from "antd";
-import type React from "react";
+import { Select, Slider, Tooltip } from "antd";
+import type { ReactNode } from "react";
 import { isMobile } from "react-device-detect";
+import { useLocation } from "react-router-dom";
 import { viewingMode } from "../../../stores/ViewingModeStore.ts";
-import GeneralCard from "../../Multiuse/GeneralCard.tsx";
+import GeneralCard from "../../General/GeneralCard.tsx";
 
-const { Text } = Typography;
 const { Option } = Select;
 
 interface AntdTimelineSelectorProps {
@@ -13,6 +13,7 @@ interface AntdTimelineSelectorProps {
 	month: number;
 	onYearChange: (value: number) => void;
 	onMonthChange: (value: number) => void;
+	legend?: ReactNode;
 }
 
 const TimelineSelector: React.FC<AntdTimelineSelectorProps> = ({
@@ -20,7 +21,11 @@ const TimelineSelector: React.FC<AntdTimelineSelectorProps> = ({
 	month,
 	onYearChange,
 	onMonthChange,
+	legend,
 }) => {
+	const location = useLocation();
+	const isAdvanced = location.pathname.includes("/advanced");
+
 	const months = [
 		"January",
 		"February",
@@ -47,7 +52,6 @@ const TimelineSelector: React.FC<AntdTimelineSelectorProps> = ({
 		2100: "2100",
 	};
 
-	// Generate year options for mobile dropdown
 	const yearOptions = [];
 	for (let y = 1960; y <= 2100; y++) {
 		yearOptions.push(y);
@@ -55,27 +59,33 @@ const TimelineSelector: React.FC<AntdTimelineSelectorProps> = ({
 
 	const mobileContainerStyle: React.CSSProperties = {
 		position: "fixed",
-		bottom: "40px",
+		bottom: "0em",
 		left: "50%",
 		transform: "translateX(-50%)",
 		zIndex: 500,
 	};
 
-	const containerStyle = isMobile ? mobileContainerStyle : {};
+	const containerStyle = isMobile ? mobileContainerStyle : { zIndex: 500 };
 
 	return (
-		<div style={containerStyle}>
+		<div style={containerStyle} data-testid="timeline-selector">
 			<GeneralCard
 				style={
 					isMobile
 						? {
 								minWidth: "85vw",
-								backgroundColor: "rgba(255,255,255,0.3)",
+								backgroundColor: "rgba(255,255,255,0.8)",
 								border: "0",
-								padding: "0px",
 							}
-						: {}
+						: {
+								minWidth: isAdvanced ? "unset" : "calc(91vw - 160px)",
+								marginLeft:
+									false === isAdvanced && false === isMobile
+										? "160px"
+										: "unset",
+							}
 				}
+				bodyStyle={{ padding: "10px 24px" }}
 			>
 				<div
 					style={
@@ -89,15 +99,6 @@ const TimelineSelector: React.FC<AntdTimelineSelectorProps> = ({
 					}
 				>
 					<div style={{ width: "100%" }}>
-						{isMobile === false && (
-							<Text
-								type="secondary"
-								style={{ fontSize: 12, marginBottom: 8, display: "block" }}
-							>
-								Year: {year}
-							</Text>
-						)}
-
 						<div
 							style={{
 								display: "flex",
@@ -106,16 +107,41 @@ const TimelineSelector: React.FC<AntdTimelineSelectorProps> = ({
 								width: "100%",
 							}}
 						>
+							<div
+								hidden={isMobile}
+								style={{
+									fontSize: "2rem",
+									borderRight: "1px solid lightgray",
+									paddingRight: "20px",
+									marginRight: "10px",
+								}}
+							>
+								{year}
+							</div>
+
 							{/* Year input - slider on desktop, dropdown on mobile */}
 							<div style={{ flex: 1, paddingRight: "10px" }}>
 								{isMobile ? (
 									<Select
 										value={year}
 										onChange={onYearChange}
-										style={{ width: "100%" }}
+										style={{
+											width: "100%",
+											height: "60px",
+											fontSize: "20px",
+											fontWeight: "600",
+											textAlign: "center",
+											borderRadius: "20px",
+											border: "2px solid #e0e7ff",
+											boxShadow: "0 8px 32px rgba(0, 0, 0, 0.12)",
+											background:
+												"linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)",
+											transition: "all 0.3s ease",
+										}}
 										placeholder="Select Year"
 										className={isMobile ? "light-box-shadow" : ""}
 										showSearch
+										size="large"
 										filterOption={(input, option) =>
 											option?.children
 												?.toString()
@@ -139,7 +165,7 @@ const TimelineSelector: React.FC<AntdTimelineSelectorProps> = ({
 											included={false}
 											onChange={onYearChange}
 											trackStyle={{ background: "transparent" }}
-											railStyle={{ background: "#d9d9d9" }}
+											railStyle={{ background: "var(--primary)" }}
 											handleStyle={{
 												borderColor: "#1890ff",
 												backgroundColor: "#1890ff",
@@ -151,27 +177,39 @@ const TimelineSelector: React.FC<AntdTimelineSelectorProps> = ({
 								)}
 							</div>
 
-							{/* Month selector */}
-							<Select
-								value={month}
-								onChange={onMonthChange}
-								style={{ minWidth: 140, flexShrink: 0 }}
-								suffixIcon={<CalendarOutlined />}
-							>
-								{months.map((monthName, index) => (
-									<Option key={index.toString() + monthName} value={index + 1}>
-										{monthName}
-									</Option>
-								))}
-							</Select>
+							{false === isMobile && (
+								<Select
+									value={month}
+									onChange={onMonthChange}
+									style={{ minWidth: 140, flexShrink: 0 }}
+									suffixIcon={<CalendarOutlined />}
+								>
+									{months.map((monthName, index) => (
+										<Option
+											key={index.toString() + monthName}
+											value={index + 1}
+										>
+											{monthName}
+										</Option>
+									))}
+								</Select>
+							)}
 						</div>
 					</div>
-					<div
-						hidden={viewingMode.isExpert === false}
-						style={{ width: "100%", textAlign: "center" }}
-					>
-						Expert Mode
-					</div>
+
+					{/* Legend appears below on mobile only */}
+					{isMobile && (
+						<div
+							style={{
+								display: "flex",
+								alignItems: "center",
+								gap: 16,
+								width: "100%",
+							}}
+						>
+							{legend}
+						</div>
+					)}
 				</div>
 			</GeneralCard>
 		</div>
