@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { GeoJSON, MapContainer, Pane, TileLayer } from "react-leaflet";
+import { GeoJSON, MapContainer, Marker, Pane, TileLayer } from "react-leaflet";
 import NutsMapperV5 from "./utilities/prepareNutsDataForDrawing";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import ViewportMonitor from "./ViewportMonitor.tsx";
 import "./Map.css";
-import { Layers } from "lucide-react";
+import { Layers, Map } from "lucide-react";
 import Footer from "../../static/Footer.tsx";
 import AdaptiveGridLayer from "./AdaptiveGridLayer.tsx";
 import DebugStatsPanel from "./DebugStatsPanel.tsx";
@@ -50,7 +50,7 @@ const ClimateMap = ({ onMount = () => true }) => {
 	>([]);
 	const [viewport, setViewport] = useState<ViewportBounds | null>(null);
 	const [resolutionLevel, setResolutionLevel] = useState<number>(1);
-	const [selectedModel, setSelectedModel] = useState<string>("temperature");
+	const [selectedModel, setSelectedModel] = useState<string>("");
 	const [selectedOptimism, setSelectedOptimism] =
 		useState<string>("optimistic");
 	const [currentYear, setCurrentYear] = useState<number>(2025);
@@ -58,11 +58,137 @@ const ClimateMap = ({ onMount = () => true }) => {
 	const [map, setMap] = useState<L.Map | null>(null);
 	const [dataExtremes, setDataExtremes] = useState<DataExtremes | null>(null);
 	const [dataBounds, setDataBounds] = useState<L.LatLngBounds | null>(null);
+	const [worldGeoJSON, setWorldGeoJSON] =
+		useState<GeoJSON.FeatureCollection | null>(null);
 	const fileInputRef = useRef<HTMLInputElement>(null);
 
+	// Cities loaded from external data source
+	const [cities, setCities] = useState<
+		Array<{
+			name: string;
+			lat: number;
+			lng: number;
+			tier: number;
+			population: number;
+		}>
+	>([]);
+
+	// Grid/NUTS mode state
+	const [mapMode, setMapMode] = useState<"grid" | "nuts">("nuts");
+
+	// Load cities data from JSON file
 	useEffect(() => {
+		const loadCities = async () => {
+			try {
+				const response = await fetch("/data/cities.json");
+				const data = await response.json();
+
+				// Create tiers based on population
+				const citiesWithTiers = data.cities.map((city: any) => ({
+					...city,
+					tier:
+						city.population >= 10000000
+							? 1
+							: // Tier 1: 10M+ population
+								city.population >= 5000000
+								? 2
+								: // Tier 2: 5M-10M population
+									city.population >= 1000000
+									? 3
+									: // Tier 3: 1M-5M population
+										4, // Tier 4: <1M population
+				}));
+
+				setCities(citiesWithTiers);
+			} catch (error) {
+				console.error("Failed to load cities data:", error);
+				// Fallback to empty array if loading fails
+				setCities([]);
+			}
+		};
+
+		loadCities();
 		onMount();
 	});
+
+	// Load world GeoJSON data
+	useEffect(() => {
+		const loadWorldData = async () => {
+			try {
+				const response = await fetch(
+					"https://raw.githubusercontent.com/holtzy/D3-graph-gallery/master/DATA/world.geojson",
+				);
+				const worldData = await response.json();
+				setWorldGeoJSON(worldData);
+			} catch (error) {
+				console.warn("Failed to load world GeoJSON:", error);
+			}
+		};
+		loadWorldData();
+	}, []);
+
+	// Load models and set first one as default
+	useEffect(() => {
+		const loadDefaultModel = async () => {
+			try {
+				const modelFiles = [
+					"westNileModel1.yaml",
+					"westNileModel2.yaml",
+					"dengueModel1.yaml",
+					"malariaModel1.yaml",
+					"covidModel1.yaml",
+					"zikaModel1.yaml",
+				];
+
+				for (const filename of modelFiles) {
+					try {
+						const response = await fetch(`/modelsyaml/${filename}`);
+						if (!response.ok) continue;
+
+						const yamlText = await response.text();
+						const lines = yamlText.split("\n");
+						const result: Record<string, string> = {};
+
+						for (const line of lines) {
+							const trimmed = line.trim();
+							if (trimmed && !trimmed.startsWith("#")) {
+								const colonIndex = trimmed.indexOf(":");
+								if (colonIndex > 0) {
+									const key = trimmed.substring(0, colonIndex).trim();
+									let value = trimmed.substring(colonIndex + 1).trim();
+									if (
+										(value.startsWith("'") && value.endsWith("'")) ||
+										(value.startsWith('"') && value.endsWith('"'))
+									) {
+										value = value.slice(1, -1);
+									}
+									result[key] = value;
+								}
+							}
+						}
+
+						const modelId = result.id || "";
+						if (modelId) {
+							setSelectedModel(modelId);
+							return; // Use the first successfully loaded model
+						}
+					} catch (error) {
+						console.error(`Error loading ${filename}:`, error);
+					}
+				}
+
+				// Fallback to hardcoded model if no models could be loaded
+				setSelectedModel("west-nile-a17");
+			} catch (error) {
+				console.error("Error loading default model:", error);
+				setSelectedModel("west-nile-a17");
+			}
+		};
+
+		if (!selectedModel) {
+			loadDefaultModel();
+		}
+	}, [selectedModel]);
 
 	const getOptimismLevels = () => ["optimistic", "realistic", "pessimistic"];
 
@@ -260,6 +386,43 @@ const ClimateMap = ({ onMount = () => true }) => {
 		};
 	};
 
+	const worldStyle = () => {
+		// Check current theme
+		const isOutlineTheme =
+			document.documentElement.getAttribute("data-theme") === "outline";
+
+		return {
+			fillColor: isOutlineTheme ? "white" : "#374151", // Dark grey in light mode, white in dark mode
+			weight: 0.5,
+			opacity: 0.8,
+			color: isOutlineTheme ? "#ccc" : "#6b7280", // Border color
+			fillOpacity: 1,
+		};
+	};
+
+	const createCityLabelIcon = (
+		city: { name: string; tier: number; population: number },
+		zoom: number,
+	) => {
+		const fontSize =
+			city.tier === 1 ? 13 : city.tier === 2 ? 12 : city.tier === 3 ? 11 : 10;
+		const fontWeight = city.tier === 1 ? 600 : city.tier === 2 ? 500 : 400;
+
+		return L.divIcon({
+			html: `<span class="city-name" style="font-size: ${fontSize}px; font-weight: ${fontWeight};">${city.name}</span>`,
+			className: "city-label-marker",
+			iconSize: [0, 0],
+			iconAnchor: [0, 0],
+		});
+	};
+
+	const getVisibleCities = (zoom: number) => {
+		if (zoom >= 6) return cities; // Show all cities
+		if (zoom >= 5) return cities.filter((city) => city.tier <= 3); // Show tiers 1-3
+		if (zoom >= 4) return cities.filter((city) => city.tier <= 2); // Show tiers 1-2
+		return cities.filter((city) => city.tier === 1); // Show only tier 1
+	};
+
 	const highlightFeature = (e: L.LeafletMouseEvent) => {
 		const layer = e.target as L.Path;
 		layer.setStyle({
@@ -314,6 +477,8 @@ const ClimateMap = ({ onMount = () => true }) => {
 					selectedOptimism={selectedOptimism}
 					setSelectedOptimism={setSelectedOptimism}
 					getOptimismLevels={getOptimismLevels}
+					mapMode={mapMode}
+					onMapModeChange={setMapMode}
 				/>
 
 				<div className="map-content-wrapper">
@@ -321,7 +486,7 @@ const ClimateMap = ({ onMount = () => true }) => {
 						<MapContainer
 							className="full-height-map"
 							center={[10, 12]}
-							zoom={5}
+							zoom={3}
 							minZoom={MIN_ZOOM}
 							maxZoom={MAX_ZOOM}
 							ref={setMap}
@@ -333,10 +498,15 @@ const ClimateMap = ({ onMount = () => true }) => {
 								width: isMobile ? "100%" : "calc(100% - 140px)",
 							}}
 						>
-							<TileLayer
+							{/*<TileLayer
 								url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
 								noWrap={true}
-							/>
+							/>*/}
+							<Pane name="worldPane" style={{ zIndex: 300 }}>
+								{worldGeoJSON && (
+									<GeoJSON data={worldGeoJSON} style={worldStyle} />
+								)}
+							</Pane>
 							<Pane name="gridPane" style={{ zIndex: 340, opacity: 0.5 }}>
 								{temperatureData.length > 0 && viewport && dataExtremes && (
 									<div>
@@ -359,6 +529,19 @@ const ClimateMap = ({ onMount = () => true }) => {
 									/>
 								)}
 							</Pane>
+
+							{mapMode === "grid" && (
+								<Pane name="cityLabelsPane" style={{ zIndex: 350 }}>
+									{viewport &&
+										getVisibleCities(viewport.zoom).map((city, index) => (
+											<Marker
+												key={index}
+												position={[city.lat, city.lng]}
+												icon={createCityLabelIcon(city, viewport.zoom)}
+											/>
+										))}
+								</Pane>
+							)}
 
 							<ViewportMonitor onViewportChange={handleViewportChange} />
 						</MapContainer>
@@ -397,7 +580,11 @@ const ClimateMap = ({ onMount = () => true }) => {
 							/>
 						</div>
 
-						<ControlBar map={map} />
+						<ControlBar
+							map={map}
+							selectedModel={selectedModel}
+							onModelSelect={handleModelSelect}
+						/>
 					</div>
 				</div>
 
