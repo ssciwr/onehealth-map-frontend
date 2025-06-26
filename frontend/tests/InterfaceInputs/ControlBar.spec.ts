@@ -142,11 +142,11 @@ test.describe("ControlBar Component", () => {
 	test("Control bar is positioned correctly", async ({ page }) => {
 		const controlBar = page.locator('[data-testid="control-bar"]');
 
-		// Verify the control bar is visible and positioned on the right side
+		// Verify the control bar is visible
 		await expect(controlBar).toBeVisible();
 
 		// Check that all control buttons are present
 		const buttons = controlBar.locator("button");
-		await expect(buttons).toHaveCount(5); // Plus, Minus, MapPin, Camera, Info
+		await expect(buttons).toHaveCount(6);
 	});
 });
