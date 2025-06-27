@@ -47,6 +47,8 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: Build
         run: pnpm build
+        env:
+          NODE_ENV: production
       - name: Setup Pages
         uses: actions/configure-pages@v5
       - name: Upload artifact
