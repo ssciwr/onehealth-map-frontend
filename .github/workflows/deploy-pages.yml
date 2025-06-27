@@ -21,7 +21,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build-and-deploy-pages: 
+  build-and-deploy-pages:
     runs-on: ubuntu-latest
     environment:
       name: github-pages
@@ -47,13 +47,15 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: Build
         run: pnpm build
+        env:
+          NODE_ENV: production
       - name: Setup Pages
         uses: actions/configure-pages@v5
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
           # Upload dist folder
-          path: './dist'
+          path: './frontend/dist'
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
