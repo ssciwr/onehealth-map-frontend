@@ -8,6 +8,7 @@ import "./Map.css";
 import { Layers } from "lucide-react";
 import Footer from "../../static/Footer.tsx";
 import AdaptiveGridLayer from "./AdaptiveGridLayer.tsx";
+import ClippedGridLayer from "./ClippedGridLayer.tsx";
 import DebugStatsPanel from "./DebugStatsPanel.tsx";
 import ControlBar from "./InterfaceInputs/ControlBar.tsx";
 import MapHeader from "./MapHeader.tsx";
@@ -250,10 +251,14 @@ const ClimateMap = ({ onMount = () => true }) => {
 				// Restore original extremes for grid mode
 				if (temperatureData.length > 0) {
 					const temps = temperatureData.map((d) => d.temperature);
-					setDataExtremes({
+					const extremes = {
 						min: Math.min(...temps),
 						max: Math.max(...temps),
-					});
+					};
+					console.log("Setting grid extremes:", extremes);
+					setDataExtremes(extremes);
+				} else {
+					console.log("No temperature data for grid mode");
 				}
 			}
 		};
@@ -671,14 +676,15 @@ const ClimateMap = ({ onMount = () => true }) => {
 								</Pane>
 							)}
 							{mapMode === "grid" && (
-								<Pane name="gridPane" style={{ zIndex: 340, opacity: 0.5 }}>
+								<Pane name="gridPane" style={{ zIndex: 340, opacity: 1.0 }}>
 									{temperatureData.length > 0 && viewport && dataExtremes && (
 										<div>
-											<AdaptiveGridLayer
+											<ClippedGridLayer
 												dataPoints={[...temperatureData]}
 												viewport={viewport}
 												resolutionLevel={resolutionLevel}
 												extremes={dataExtremes}
+												countriesGeoJSON={worldGeoJSON || undefined}
 											/>
 										</div>
 									)}
