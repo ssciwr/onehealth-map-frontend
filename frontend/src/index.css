@@ -460,11 +460,12 @@ button:focus-visible {
 }
 
 .control-bar-mobile {
+	box-shadow: rgba(0, 0, 0, 0.1) 0px 4px 20px;
+	border-color: rgba(220, 220, 220, 0.5) currentcolor currentcolor;
 	border-radius: 30px;
 	padding: 4px;
 	gap: 4px;
-	background-color: rgba(211, 211, 211, 0.3) !important;
-	backdrop-filter: blur(10px);
+	background-color: rgba(255, 255, 255, 0.85) !important;
 }
 
 .control-bar-bottom-right {
@@ -700,4 +701,113 @@ button:focus-visible {
 	button {
 		background-color: #f9f9f9;
 	}
+}
+
+/* Modal Styles */
+.expertise-modal-header {
+	text-align: center;
+}
+
+.expertise-modal-title {
+	color: #1a1a1a !important;
+	margin: 0 0 8px 0 !important;
+	font-size: 24px !important;
+	font-weight: 600 !important;
+}
+
+.expertise-modal-subtitle {
+	color: #666 !important;
+	font-size: 16px !important;
+}
+
+.expertise-modal-content {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+}
+
+.expertise-mode-card {
+	border-radius: 8px !important;
+	cursor: pointer !important;
+	transition: all 0.2s ease !important;
+}
+
+.expertise-mode-card.guided {
+	border: 2px solid #e8f4fd !important;
+	background: #f8fbff !important;
+}
+
+.expertise-mode-card.expert {
+	border: 2px solid #f0f0f0 !important;
+	background: #ffffff !important;
+}
+
+.expertise-mode-card:hover {
+	border: 2px solid var(--primary) !important;
+	transform: translateY(-2px);
+	box-shadow: 0 4px 12px rgba(219, 60, 28, 0.15);
+}
+
+.expertise-card-content {
+	display: flex;
+	align-items: center;
+	gap: 20px;
+}
+
+.expertise-icon-container {
+	background: var(--primary);
+	border-radius: 8px;
+	padding: 12px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.expertise-icon {
+	font-size: 20px !important;
+	color: white !important;
+}
+
+.expertise-text-container {
+	flex: 1;
+}
+
+.expertise-title-row {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	margin-bottom: 6px;
+}
+
+.expertise-mode-title {
+	margin: 0 !important;
+	color: #1a1a1a !important;
+	font-size: 18px !important;
+}
+
+.expertise-mode-title.expert {
+	margin: 0 0 6px 0 !important;
+}
+
+.expertise-tag {
+	border-radius: 4px !important;
+	font-size: 11px !important;
+	font-weight: 500 !important;
+}
+
+.expertise-description {
+	color: #666 !important;
+	font-size: 15px !important;
+	line-height: 1.4 !important;
+}
+
+.expertise-skip-container {
+	display: flex;
+	justify-content: center;
+	margin-top: 24px;
+}
+
+.expertise-skip-button {
+	color: #999 !important;
+	font-size: 14px !important;
 }

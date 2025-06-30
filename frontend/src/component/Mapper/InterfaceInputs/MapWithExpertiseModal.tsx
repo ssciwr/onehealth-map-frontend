@@ -1,8 +1,4 @@
-import {
-	BarChartOutlined,
-	ExperimentOutlined,
-	UserOutlined,
-} from "@ant-design/icons";
+import { ExperimentOutlined, UserOutlined } from "@ant-design/icons";
 import { Button, Card, Modal, Tag, Typography } from "antd";
 import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
@@ -23,12 +19,16 @@ const MapWithModal = observer(() => {
 	const handleCitizenClick = () => {
 		// Already default, just close modal
 		setShowModal(false);
+		// Dispatch custom event to trigger tour
+		window.dispatchEvent(new CustomEvent("modalChoiceMade"));
 	};
 
 	const handleExpertClick = () => {
 		viewingMode.isExpert = true;
 		viewingMode.isCitizen = false;
 		setShowModal(false);
+		// Dispatch custom event to trigger tour
+		window.dispatchEvent(new CustomEvent("modalChoiceMade"));
 	};
 
 	const modalStyles = {
@@ -53,33 +53,11 @@ const MapWithModal = observer(() => {
 		<>
 			<Modal
 				title={
-					<div style={{ textAlign: "center" }}>
-						<div
-							style={{
-								width: "64px",
-								height: "64px",
-								background: "linear-gradient(135deg, #1890ff 0%, #52c41a 100%)",
-								borderRadius: "16px",
-								display: "flex",
-								alignItems: "center",
-								justifyContent: "center",
-								margin: "0 auto 20px",
-							}}
-						>
-							<BarChartOutlined style={{ fontSize: "32px", color: "white" }} />
-						</div>
-						<Title
-							style={{
-								color: "#1a1a1a",
-								margin: "0 0 8px 0",
-								fontSize: "24px",
-								fontWeight: 600,
-							}}
-							level={2}
-						>
+					<div className="expertise-modal-header">
+						<Title className="expertise-modal-title" level={2}>
 							Choose Your Experience
 						</Title>
-						<Text style={{ color: "#666", fontSize: "16px" }}>
+						<Text className="expertise-modal-subtitle">
 							Select how you'd like to explore the climate data
 						</Text>
 					</div>
@@ -91,78 +69,28 @@ const MapWithModal = observer(() => {
 				width={520}
 				styles={modalStyles}
 			>
-				<div
-					style={{
-						display: "flex",
-						flexDirection: "column",
-						gap: "16px",
-					}}
-				>
+				<div className="expertise-modal-content">
 					<Card
 						hoverable
-						style={{
-							borderRadius: "8px",
-							border: "2px solid #e8f4fd",
-							background: "#f8fbff",
-							cursor: "pointer",
-							transition: "all 0.2s ease",
-						}}
-						onMouseEnter={(e) => {
-							e.currentTarget.style.border = "2px solid #1890ff";
-							e.currentTarget.style.transform = "translateY(-2px)";
-							e.currentTarget.style.boxShadow =
-								"0 4px 12px rgba(24, 144, 255, 0.15)";
-						}}
-						onMouseLeave={(e) => {
-							e.currentTarget.style.border = "2px solid #e8f4fd";
-							e.currentTarget.style.transform = "translateY(0px)";
-							e.currentTarget.style.boxShadow = "none";
-						}}
+						className="expertise-mode-card guided"
 						onClick={handleCitizenClick}
 						bodyStyle={{ padding: "24px" }}
+						data-testid="guided-mode-card"
 					>
-						<div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
-							<div
-								style={{
-									background: "#1890ff",
-									borderRadius: "8px",
-									padding: "12px",
-									display: "flex",
-									alignItems: "center",
-									justifyContent: "center",
-								}}
-							>
-								<UserOutlined style={{ fontSize: "20px", color: "white" }} />
+						<div className="expertise-card-content">
+							<div className="expertise-icon-container">
+								<UserOutlined className="expertise-icon" />
 							</div>
-							<div style={{ flex: 1 }}>
-								<div
-									style={{
-										display: "flex",
-										alignItems: "center",
-										gap: "10px",
-										marginBottom: "6px",
-									}}
-								>
-									<Title
-										level={4}
-										style={{ margin: 0, color: "#1a1a1a", fontSize: "18px" }}
-									>
+							<div className="expertise-text-container">
+								<div className="expertise-title-row">
+									<Title level={4} className="expertise-mode-title">
 										Guided Mode
 									</Title>
-									<Tag
-										color="blue"
-										style={{
-											borderRadius: "4px",
-											fontSize: "11px",
-											fontWeight: 500,
-										}}
-									>
+									<Tag color="blue" className="expertise-tag">
 										RECOMMENDED
 									</Tag>
 								</div>
-								<Text
-									style={{ color: "#666", fontSize: "15px", lineHeight: "1.4" }}
-								>
+								<Text className="expertise-description">
 									Interactive map with guided tour and simplified interface
 								</Text>
 							</div>
@@ -171,73 +99,33 @@ const MapWithModal = observer(() => {
 
 					<Card
 						hoverable
-						style={{
-							borderRadius: "8px",
-							border: "2px solid #f0f0f0",
-							background: "#ffffff",
-							cursor: "pointer",
-							transition: "all 0.2s ease",
-						}}
-						onMouseEnter={(e) => {
-							e.currentTarget.style.border = "2px solid #722ed1";
-							e.currentTarget.style.transform = "translateY(-2px)";
-							e.currentTarget.style.boxShadow =
-								"0 4px 12px rgba(114, 46, 209, 0.15)";
-						}}
-						onMouseLeave={(e) => {
-							e.currentTarget.style.border = "2px solid #f0f0f0";
-							e.currentTarget.style.transform = "translateY(0px)";
-							e.currentTarget.style.boxShadow = "none";
-						}}
+						className="expertise-mode-card expert"
 						onClick={handleExpertClick}
 						bodyStyle={{ padding: "24px" }}
+						data-testid="expert-mode-card"
 					>
-						<div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
-							<div
-								style={{
-									background: "#722ed1",
-									borderRadius: "8px",
-									padding: "12px",
-									display: "flex",
-									alignItems: "center",
-									justifyContent: "center",
-								}}
-							>
-								<ExperimentOutlined
-									style={{ fontSize: "20px", color: "white" }}
-								/>
+						<div className="expertise-card-content">
+							<div className="expertise-icon-container">
+								<ExperimentOutlined className="expertise-icon" />
 							</div>
-							<div style={{ flex: 1 }}>
-								<Title
-									level={4}
-									style={{
-										margin: "0 0 6px 0",
-										color: "#1a1a1a",
-										fontSize: "18px",
-									}}
-								>
+							<div className="expertise-text-container">
+								<Title level={4} className="expertise-mode-title expert">
 									Expert Mode
 								</Title>
-								<Text
-									style={{ color: "#666", fontSize: "15px", lineHeight: "1.4" }}
-								>
+								<Text className="expertise-description">
 									Full interface with detailed methodology and advanced controls
 								</Text>
 							</div>
 						</div>
 					</Card>
 
-					<div
-						style={{
-							display: "flex",
-							justifyContent: "center",
-							marginTop: "24px",
-						}}
-					>
+					<div className="expertise-skip-container">
 						<Button
 							type="text"
-							style={{ color: "#999", fontSize: "14px" }}
-							onClick={() => setShowModal(false)}
+							className="expertise-skip-button"
+							onClick={() => {
+								setShowModal(false);
+							}}
 						>
 							Skip for now
 						</Button>

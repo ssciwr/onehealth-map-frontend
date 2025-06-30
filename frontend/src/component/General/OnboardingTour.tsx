@@ -41,13 +41,32 @@ const TourComponent = () => {
 		// Check if user has seen the tour before
 		const hasSeenTour = localStorage.getItem("onehealth-tour-completed");
 
-		if (!hasSeenTour && !hasCompletedOnboarding && !tourDisabled) {
-			// Wait for page to fully load before starting tour
+		// Only start tour on /map routes after modal choice, not automatically
+		const shouldStartTour =
+			!hasSeenTour && !hasCompletedOnboarding && !tourDisabled;
+		const isMapRoute = window.location.pathname.startsWith("/map");
+		const isModalChoicePage = window.location.pathname === "/map";
+
+		if (shouldStartTour && isMapRoute && !isModalChoicePage) {
+			// Start tour on /map/citizen or /map/expert routes
 			const timer = setTimeout(() => {
 				setIsOpen(true);
-			}, 3000); // Start after loading screen
+			}, 2000); // Start after page loads
 			return () => clearTimeout(timer);
 		}
+
+		// Listen for custom event when modal choice is made
+		const handleModalChoice = () => {
+			if (shouldStartTour && isModalChoicePage) {
+				setTimeout(() => {
+					setIsOpen(true);
+				}, 1000); // Short delay after modal closes
+			}
+		};
+
+		window.addEventListener("modalChoiceMade", handleModalChoice);
+		return () =>
+			window.removeEventListener("modalChoiceMade", handleModalChoice);
 	}, [setIsOpen, hasCompletedOnboarding]);
 
 	const handleTourComplete = () => {
