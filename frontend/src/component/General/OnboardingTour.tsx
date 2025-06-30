@@ -36,11 +36,11 @@ const TourComponent = () => {
 	useEffect(() => {
 		// Check if tour is disabled via URL parameter
 		const urlParams = new URLSearchParams(window.location.search);
-		const tourDisabled = urlParams.get('notour') === 'true';
-		
+		const tourDisabled = urlParams.get("notour") === "true";
+
 		// Check if user has seen the tour before
 		const hasSeenTour = localStorage.getItem("onehealth-tour-completed");
-		
+
 		if (!hasSeenTour && !hasCompletedOnboarding && !tourDisabled) {
 			// Wait for page to fully load before starting tour
 			const timer = setTimeout(() => {

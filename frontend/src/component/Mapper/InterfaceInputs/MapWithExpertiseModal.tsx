@@ -33,15 +33,16 @@ const MapWithModal = observer(() => {
 
 	const modalStyles = {
 		content: {
-			padding: "32px 24px",
-			borderRadius: "16px",
-			background: "linear-gradient(135deg, #db3c1c 0%, #4c1d4b 50%, #2e86ab 100%)",
+			padding: "40px 32px",
+			borderRadius: "12px",
+			background: "#ffffff",
 			border: "none",
+			boxShadow: "0 20px 60px rgba(0, 0, 0, 0.1)",
 		},
 		header: {
 			background: "transparent",
 			borderBottom: "none",
-			padding: "0 0 24px 0",
+			padding: "0 0 32px 0",
 		},
 		body: {
 			padding: 0,
@@ -52,23 +53,34 @@ const MapWithModal = observer(() => {
 		<>
 			<Modal
 				title={
-					<div style={{ textAlign: "center", color: "white" }}>
-						<BarChartOutlined
-							style={{ fontSize: "48px", marginBottom: "16px", color: "white" }}
-						/>
+					<div style={{ textAlign: "center" }}>
+						<div
+							style={{
+								width: "64px",
+								height: "64px",
+								background: "linear-gradient(135deg, #1890ff 0%, #52c41a 100%)",
+								borderRadius: "16px",
+								display: "flex",
+								alignItems: "center",
+								justifyContent: "center",
+								margin: "0 auto 20px",
+							}}
+						>
+							<BarChartOutlined style={{ fontSize: "32px", color: "white" }} />
+						</div>
 						<Title
 							style={{
-								color: "white",
-								margin: 0,
-								fontSize: "28px",
+								color: "#1a1a1a",
+								margin: "0 0 8px 0",
+								fontSize: "24px",
 								fontWeight: 600,
 							}}
 							level={2}
 						>
 							Choose Your Experience
 						</Title>
-						<Text style={{ color: "rgba(255,255,255,0.8)", fontSize: "16px" }}>
-							Select how you'd like to explore the platform
+						<Text style={{ color: "#666", fontSize: "16px" }}>
+							Select how you'd like to explore the climate data
 						</Text>
 					</div>
 				}
@@ -76,7 +88,7 @@ const MapWithModal = observer(() => {
 				footer={null}
 				closable={false}
 				centered
-				width={480}
+				width={520}
 				styles={modalStyles}
 			>
 				<div
@@ -84,56 +96,74 @@ const MapWithModal = observer(() => {
 						display: "flex",
 						flexDirection: "column",
 						gap: "16px",
-						marginTop: "24px",
 					}}
 				>
 					<Card
 						hoverable
 						style={{
-							borderRadius: "12px",
-							border: "none",
-							background: "rgba(255,255,255,0.95)",
-							backdropFilter: "blur(10px)",
+							borderRadius: "8px",
+							border: "2px solid #e8f4fd",
+							background: "#f8fbff",
 							cursor: "pointer",
+							transition: "all 0.2s ease",
+						}}
+						onMouseEnter={(e) => {
+							e.currentTarget.style.border = "2px solid #1890ff";
+							e.currentTarget.style.transform = "translateY(-2px)";
+							e.currentTarget.style.boxShadow =
+								"0 4px 12px rgba(24, 144, 255, 0.15)";
+						}}
+						onMouseLeave={(e) => {
+							e.currentTarget.style.border = "2px solid #e8f4fd";
+							e.currentTarget.style.transform = "translateY(0px)";
+							e.currentTarget.style.boxShadow = "none";
 						}}
 						onClick={handleCitizenClick}
-						bodyStyle={{ padding: "20px" }}
+						bodyStyle={{ padding: "24px" }}
 					>
-						<div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+						<div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
 							<div
 								style={{
-									background:
-										"linear-gradient(135deg, #db3c1c 0%, #39a97e 100%)",
-									borderRadius: "12px",
+									background: "#1890ff",
+									borderRadius: "8px",
 									padding: "12px",
 									display: "flex",
 									alignItems: "center",
 									justifyContent: "center",
 								}}
 							>
-								<UserOutlined style={{ fontSize: "24px", color: "white" }} />
+								<UserOutlined style={{ fontSize: "20px", color: "white" }} />
 							</div>
 							<div style={{ flex: 1 }}>
 								<div
 									style={{
 										display: "flex",
 										alignItems: "center",
-										gap: "8px",
-										marginBottom: "4px",
+										gap: "10px",
+										marginBottom: "6px",
 									}}
 								>
-									<Title level={4} style={{ margin: 0, color: "#1a1a1a" }}>
-										Guided
+									<Title
+										level={4}
+										style={{ margin: 0, color: "#1a1a1a", fontSize: "18px" }}
+									>
+										Guided Mode
 									</Title>
 									<Tag
 										color="blue"
-										style={{ borderRadius: "12px", fontSize: "10px" }}
+										style={{
+											borderRadius: "4px",
+											fontSize: "11px",
+											fontWeight: 500,
+										}}
 									>
 										RECOMMENDED
 									</Tag>
 								</div>
-								<Text style={{ color: "#666", fontSize: "14px" }}>
-									Interactive map with predictions for future years
+								<Text
+									style={{ color: "#666", fontSize: "15px", lineHeight: "1.4" }}
+								>
+									Interactive map with guided tour and simplified interface
 								</Text>
 							</div>
 						</div>
@@ -142,21 +172,31 @@ const MapWithModal = observer(() => {
 					<Card
 						hoverable
 						style={{
-							borderRadius: "12px",
-							border: "none",
-							background: "rgba(255,255,255,0.95)",
-							backdropFilter: "blur(10px)",
+							borderRadius: "8px",
+							border: "2px solid #f0f0f0",
+							background: "#ffffff",
 							cursor: "pointer",
+							transition: "all 0.2s ease",
+						}}
+						onMouseEnter={(e) => {
+							e.currentTarget.style.border = "2px solid #722ed1";
+							e.currentTarget.style.transform = "translateY(-2px)";
+							e.currentTarget.style.boxShadow =
+								"0 4px 12px rgba(114, 46, 209, 0.15)";
+						}}
+						onMouseLeave={(e) => {
+							e.currentTarget.style.border = "2px solid #f0f0f0";
+							e.currentTarget.style.transform = "translateY(0px)";
+							e.currentTarget.style.boxShadow = "none";
 						}}
 						onClick={handleExpertClick}
-						bodyStyle={{ padding: "20px" }}
+						bodyStyle={{ padding: "24px" }}
 					>
-						<div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+						<div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
 							<div
 								style={{
-									background:
-										"linear-gradient(135deg, #4c1d4b 0%, #2e86ab 100%)",
-									borderRadius: "12px",
+									background: "#722ed1",
+									borderRadius: "8px",
 									padding: "12px",
 									display: "flex",
 									alignItems: "center",
@@ -164,18 +204,24 @@ const MapWithModal = observer(() => {
 								}}
 							>
 								<ExperimentOutlined
-									style={{ fontSize: "24px", color: "white" }}
+									style={{ fontSize: "20px", color: "white" }}
 								/>
 							</div>
 							<div style={{ flex: 1 }}>
 								<Title
 									level={4}
-									style={{ margin: 0, color: "#1a1a1a", marginBottom: "4px" }}
+									style={{
+										margin: "0 0 6px 0",
+										color: "#1a1a1a",
+										fontSize: "18px",
+									}}
 								>
-									Expert
+									Expert Mode
 								</Title>
-								<Text style={{ color: "#666", fontSize: "14px" }}>
-									Complete map with more detailed methodology for each model.
+								<Text
+									style={{ color: "#666", fontSize: "15px", lineHeight: "1.4" }}
+								>
+									Full interface with detailed methodology and advanced controls
 								</Text>
 							</div>
 						</div>
@@ -185,15 +231,15 @@ const MapWithModal = observer(() => {
 						style={{
 							display: "flex",
 							justifyContent: "center",
-							marginTop: "16px",
+							marginTop: "24px",
 						}}
 					>
 						<Button
 							type="text"
-							style={{ color: "rgba(255,255,255,0.7)", fontSize: "14px" }}
+							style={{ color: "#999", fontSize: "14px" }}
 							onClick={() => setShowModal(false)}
 						>
-							Maybe Later
+							Skip for now
 						</Button>
 					</div>
 				</div>
