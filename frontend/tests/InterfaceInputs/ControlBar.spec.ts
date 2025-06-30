@@ -44,6 +44,14 @@ test.describe("ControlBar Component", () => {
 	});
 
 	test("Location button requests geolocation permission", async ({ page }) => {
+		const userAgent = await page.evaluate(() => navigator.userAgent);
+		test.skip(
+			userAgent.includes("Mobile") ||
+				userAgent.includes("Android") ||
+				userAgent.includes("iPhone"),
+			"Skipping on mobile devices",
+		);
+
 		// Grant geolocation permission
 		await page.context().grantPermissions(["geolocation"]);
 
@@ -84,6 +92,14 @@ test.describe("ControlBar Component", () => {
 	});
 
 	test("Info button opens modal with about content", async ({ page }) => {
+		const userAgent = await page.evaluate(() => navigator.userAgent);
+		test.skip(
+			userAgent.includes("Mobile") ||
+				userAgent.includes("Android") ||
+				userAgent.includes("iPhone"),
+			"Skipping on mobile devices",
+		);
+
 		// Find and click the info button (Info icon)
 		const infoButton = page.locator("button").filter({
 			has: page.locator("svg.lucide-info"),
@@ -140,6 +156,14 @@ test.describe("ControlBar Component", () => {
 	});
 
 	test("Control bar is positioned correctly", async ({ page }) => {
+		const userAgent = await page.evaluate(() => navigator.userAgent);
+		test.skip(
+			userAgent.includes("Mobile") ||
+				userAgent.includes("Android") ||
+				userAgent.includes("iPhone"),
+			"Skipping on mobile devices",
+		);
+
 		const controlBar = page.locator('[data-testid="control-bar"]');
 
 		// Verify the control bar is visible

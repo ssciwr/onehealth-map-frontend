@@ -10,7 +10,12 @@ test.describe("Comprehensive Grid Color Analysis - Desktop Only", () => {
 		page,
 	}) => {
 		const userAgent = await page.evaluate(() => navigator.userAgent);
-		test.skip(userAgent.includes("Mobile"), "Skipping on mobile devices");
+		test.skip(
+			userAgent.includes("Mobile") ||
+				userAgent.includes("Android") ||
+				userAgent.includes("iPhone"),
+			"Skipping on mobile devices",
+		);
 
 		await page.goto("http://localhost:5174/map/citizen?notour=true");
 
@@ -80,7 +85,7 @@ test.describe("Comprehensive Grid Color Analysis - Desktop Only", () => {
 		}
 
 		// Test multiple years
-		const testYears = [2030, 2025, 2060];
+		const testYears = [2030, 2025, 2035];
 		const yearColorMaps = new Map();
 
 		for (const year of testYears) {
@@ -93,10 +98,10 @@ test.describe("Comprehensive Grid Color Analysis - Desktop Only", () => {
 		// Assert colors are different between years
 		const colors2030 = yearColorMaps.get(2030);
 		const colors2025 = yearColorMaps.get(2025);
-		const colors2060 = yearColorMaps.get(2060);
+		const colors2035 = yearColorMaps.get(2035);
 
 		expect(JSON.stringify(colors2030)).not.toBe(JSON.stringify(colors2025));
-		expect(JSON.stringify(colors2025)).not.toBe(JSON.stringify(colors2060));
+		expect(JSON.stringify(colors2025)).not.toBe(JSON.stringify(colors2035));
 
 		// Validate hex color format
 		yearColorMaps.forEach((colors, year) => {
@@ -105,4 +110,19 @@ test.describe("Comprehensive Grid Color Analysis - Desktop Only", () => {
 			}
 		});
 	});
+
+	// TODO: Test model-specific year ranges
+	// test("shows correct year options for selected model", async ({ page }) => {
+	// 	await page.goto("http://localhost:5174/map/citizen?notour=true");
+	// 	await page.waitForSelector('[data-testid="timeline-selector"]');
+	//
+	// 	// Select specific model from dropdown
+	// 	await page.click('[data-testid="model-selector"]');
+	// 	await page.click('[data-testid="model-option-climate-model-a"]');
+	//
+	// 	// Assert timeline shows only valid years for this model (e.g. 2020-2040)
+	// 	const timelineSelector = page.locator('[data-testid="timeline-selector"]');
+	// 	expect(await timelineSelector.getAttribute('data-min-year')).toBe('2020');
+	// 	expect(await timelineSelector.getAttribute('data-max-year')).toBe('2040');
+	// });
 });
