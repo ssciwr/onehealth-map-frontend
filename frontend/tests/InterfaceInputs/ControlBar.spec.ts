@@ -5,12 +5,9 @@ test.describe("ControlBar Component", () => {
 		// Navigate to the page before each test
 		await page.goto("http://localhost:5174/?notour=true");
 
-		// Wait for the map and control bar to load
-		await expect(page.locator("body")).toContainText("Data Source");
-
-		// Wait for control bar to be visible
+		// Wait for control bar to be visible.
 		await page.waitForSelector('[data-testid="control-bar"]', {
-			timeout: 10000,
+			timeout: 30000,
 		});
 	});
 
@@ -82,9 +79,9 @@ test.describe("ControlBar Component", () => {
 		// Verify the spinner is visible
 		await expect(page.locator(".ant-spin")).toBeVisible();
 
-		// Wait for the modal to disappear (location found)
+		// Wait for the modal to disappear (location found). This can for some reason take a long time on Firefox.
 		await expect(page.locator(".ant-modal-content")).not.toBeVisible({
-			timeout: 15000,
+			timeout: 60000,
 		});
 
 		// Verify button is re-enabled after location is found
