@@ -1,6 +1,7 @@
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Info } from "lucide-react";
 import type React from "react";
 import { useState } from "react";
+import { isMobile } from "react-device-detect";
 
 interface SelectorItem {
 	id: string;
@@ -22,6 +23,7 @@ interface SelectorProps {
 	footerAction?: React.ReactNode;
 	className?: string;
 	style?: React.CSSProperties;
+	onInfoClick?: (id: string) => void;
 }
 
 const Selector: React.FC<SelectorProps> = ({
@@ -35,6 +37,7 @@ const Selector: React.FC<SelectorProps> = ({
 	footerAction,
 	className = "",
 	style = {},
+	onInfoClick,
 }) => {
 	const [isOpen, setIsOpen] = useState(false);
 
@@ -43,6 +46,13 @@ const Selector: React.FC<SelectorProps> = ({
 	const handleSelect = (id: string) => {
 		onSelect(id);
 		setIsOpen(false);
+	};
+
+	const handleInfoClick = (id: string, event: React.MouseEvent) => {
+		event.stopPropagation();
+		if (onInfoClick) {
+			onInfoClick(id);
+		}
 	};
 
 	return (
@@ -95,6 +105,36 @@ const Selector: React.FC<SelectorProps> = ({
 									<h4>{item.title}</h4>
 									<p>{item.description}</p>
 								</div>
+								{!isMobile && onInfoClick && (
+									<button
+										type="button"
+										className="info-icon-button"
+										onClick={(e) => handleInfoClick(item.id, e)}
+										style={{
+											marginLeft: "auto",
+											padding: "4px",
+											background: "var(--primary)",
+											border: "none",
+											borderRadius: "50%",
+											display: "flex",
+											alignItems: "center",
+											justifyContent: "center",
+											cursor: "pointer",
+											color: "white",
+											transition: "all 0.2s ease",
+										}}
+										onMouseEnter={(e) => {
+											e.currentTarget.style.backgroundColor =
+												"var(--primary-hover)";
+										}}
+										onMouseLeave={(e) => {
+											e.currentTarget.style.backgroundColor = "var(--primary)";
+										}}
+										title="View model details"
+									>
+										<Info size={16} />
+									</button>
+								)}
 							</button>
 						))}
 					</div>

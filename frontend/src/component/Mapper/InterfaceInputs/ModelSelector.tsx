@@ -179,6 +179,12 @@ const ModelSelector = ({
 		setIsDetailsModalOpen(true);
 	};
 
+	// Handler for info icon click - opens modal and selects the model
+	const handleInfoClick = (modelId: string) => {
+		onModelSelect(modelId);
+		setIsDetailsModalOpen(true);
+	};
+
 	// Create display text with proper truncation
 	const getDisplayText = (modelData: Model) => {
 		const fullText = `${modelData.title} - ${modelData.modelName}`;
@@ -255,6 +261,7 @@ const ModelSelector = ({
 					selectedModelData ? getDisplayText(selectedModelData) : "Data Source"
 				}
 				className="header-font-size"
+				onInfoClick={handleInfoClick}
 				footerAction={
 					<Button
 						data-testid="view-all-models"
