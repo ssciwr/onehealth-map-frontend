@@ -9,8 +9,14 @@ test.describe("Comprehensive Grid Color Analysis - Desktop Only", () => {
 
 	test("comprehensive grid color analysis across multiple years", async ({
 		page,
+		browserName,
 	}) => {
 		await skipIfMobile(page);
+		test.skip(
+			browserName !== "chromium",
+			"This test only runs on Chromium due to SVG rendering differences with react leaflet",
+		);
+		// we need both as Mobile Chromium seemed to run with the above condition if we did not also skip mobile.
 
 		await page.goto("http://localhost:5174/map/citizen?notour=true");
 

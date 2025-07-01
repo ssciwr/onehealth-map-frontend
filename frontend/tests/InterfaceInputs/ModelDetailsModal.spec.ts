@@ -9,9 +9,14 @@ test.describe("ModelDetailsModal", () => {
 		page,
 	}, testInfo) => {
 		const dropdownTrigger = page
-			.locator('[data-testid="model-dropdown"]')
-			.first()
-			.or(page.locator('button:has-text("Data Source")').first());
+			.locator('button:has-text("Data Source")')
+			.first() // pre-load
+			.or(
+				page.locator('button:has-text("West Nile Virus - Model A17")').first(),
+			) // once loaded
+			.or(page.locator('button:has-text("West Nile Virus - Mo...")').first()); // mobile
+		// so the data loads in at different speeds when you use parallel tests, the West NIle is the default one.
+		// Data Source only shows until it loads in.
 
 		await expect(dropdownTrigger).toBeVisible();
 		await dropdownTrigger.click();
