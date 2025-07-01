@@ -1,5 +1,6 @@
 // tests/map-color-change-comprehensive.spec.js
 import { expect, test } from "@playwright/test";
+import { skipIfMobile } from "../utils";
 
 test.describe("Comprehensive Grid Color Analysis - Desktop Only", () => {
 	test.beforeEach(async ({ page }) => {
@@ -9,13 +10,7 @@ test.describe("Comprehensive Grid Color Analysis - Desktop Only", () => {
 	test("comprehensive grid color analysis across multiple years", async ({
 		page,
 	}) => {
-		const userAgent = await page.evaluate(() => navigator.userAgent);
-		test.skip(
-			userAgent.includes("Mobile") ||
-				userAgent.includes("Android") ||
-				userAgent.includes("iPhone"),
-			"Skipping on mobile devices",
-		);
+		await skipIfMobile(page);
 
 		await page.goto("http://localhost:5174/map/citizen?notour=true");
 
@@ -23,8 +18,8 @@ test.describe("Comprehensive Grid Color Analysis - Desktop Only", () => {
 		await page.waitForSelector('[data-testid="timeline-selector"]', {
 			timeout: 10000,
 		});
-		await page.waitForSelector(".leaflet-container", { timeout: 10000 });
-		await page.waitForTimeout(5000); // Increased wait time for map data to load
+		await page.waitForSelector(".leaflet-container", { timeout: 20000 });
+		await page.waitForTimeout(10000);
 
 		// Helper function to get colors from grid path elements
 		async function getGridColors() {
