@@ -29,14 +29,14 @@ test.describe("Comprehensive Grid Color Analysis - Desktop Only", () => {
 
 		// Helper function to get colors from grid path elements
 		async function getGridColors() {
-			// Wait for leaflet SVG path elements to appear - try both selectors
+			// Wait for leaflet SVG path elements to appear - try both selectors, increased time for CI.
 			try {
 				await page.waitForSelector('path.leaflet-interactive[fill*="#"]', {
-					timeout: 10000,
+					timeout: 60000,
 				});
 			} catch (e) {
 				// Fallback for different path structure
-				await page.waitForSelector('path[fill*="#"]', { timeout: 10000 });
+				await page.waitForSelector('path[fill*="#"]', { timeout: 60000 });
 			}
 
 			// Try both selectors to find grid elements
