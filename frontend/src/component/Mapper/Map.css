@@ -1,12 +1,12 @@
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap");
+/* Using centralized font system from index.css */
 
 * {
 	box-sizing: border-box;
 }
 
 .climate-map-container {
-	font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
-	background: #f8f9fa;
+	font-family: var(--font-inter);
+	background: rgb(235, 235, 235);
 	min-height: 100vh;
 	min-width: 100vw;
 	padding: 10px;
@@ -14,12 +14,13 @@
 
 .map-content-wrapper {
 	display: flex;
-	gap: 20px;
-	padding: 20px;
+	gap: var(--space-3xl);
+	margin-top: 0px;
 }
 
 .map-content {
 	flex: 1;
+	padding: 16px;
 }
 
 .legend-sidebar {
@@ -27,17 +28,18 @@
 	flex-shrink: 0;
 }
 
+.land-only-tiles {
+	/* Filter out blue colors and enhance land visibility */
+	filter: hue-rotate(200deg) saturate(0) brightness(1.0) contrast(1.2);
+	mix-blend-mode: multiply;
+}
+
 .full-height-map {
 	height: 100vh;
 	min-height: 100vh;
 	width: 100%;
-	border-radius: 16px;
-}
-
-.map-header {
-	background: white;
-	padding: 1rem 2rem;
-	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+	border-radius: var(--radius-xl);
+	background-color: var(--surface-raised) !important;
 }
 
 .logo-section {
@@ -47,21 +49,21 @@
 }
 
 .title-one {
-	color: #0052cc;
+	color: var(--primary);
 }
 
 .title-health {
-	color: #0052cc;
+	color: var(--primary);
 }
 
 .title-platform {
-	color: #666;
+	color: var(--text-tertiary);
 	font-weight: 400;
 }
 
 .map-subtitle {
-	font-size: 0.875rem;
-	color: #666;
+	font-size: 1rem;
+	color: var(--text-tertiary);
 	margin: 0;
 }
 
@@ -76,56 +78,15 @@
 	gap: 0.75rem;
 }
 
-.primary-button,
-.secondary-button {
-	padding: 0.75rem 1rem;
-	border-radius: 0.5rem;
-	font-weight: 500;
-	font-size: 0.875rem;
-	cursor: pointer;
-	transition: all 0.2s;
-	border: none;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	gap: 0.5rem;
-}
-
-.primary-button {
-	background: #0052cc;
-	color: white;
-}
-
-.primary-button:hover:not(:disabled) {
-	background: #0747a6;
-	transform: translateY(-1px);
-	box-shadow: 0 4px 12px rgba(0, 82, 204, 0.3);
-}
-
-.secondary-button {
-	background: #f4f5f7;
-	color: #42526e;
-	border: 1px solid #dfe1e6;
-}
-
-.secondary-button:hover:not(:disabled) {
-	background: #ebecf0;
-	border-color: #c1c7d0;
-}
-
-.primary-button:disabled,
-.secondary-button:disabled {
-	opacity: 0.5;
-	cursor: not-allowed;
-}
+/* Using centralized button system from index.css (.btn-primary, .btn-secondary) */
 
 .error-message {
-	background: #ffebe6;
-	border: 1px solid #ff8b8b;
-	border-radius: 0.5rem;
-	padding: 0.75rem;
-	color: #de350b;
-	font-size: 0.875rem;
+	background: var(--error-light);
+	border: 1px solid var(--error-border);
+	border-radius: var(--radius-md);
+	padding: var(--space-md);
+	color: var(--error);
+	font-size: 1rem;
 }
 
 .stats-panel {
@@ -143,7 +104,7 @@
 }
 
 .stat-section h3 {
-	font-size: 0.875rem;
+	font-size: 1rem;
 	font-weight: 600;
 	color: #172b4d;
 	margin: 0 0 0.5rem 0;
@@ -154,7 +115,7 @@
 	justify-content: space-between;
 	align-items: center;
 	padding: 0.25rem 0;
-	font-size: 0.813rem;
+	font-size: 0.95rem;
 }
 
 .stat-label {
@@ -180,7 +141,7 @@
 }
 
 .legend-title {
-	font-size: 0.875rem;
+	font-size: 1rem;
 	font-weight: 600;
 	color: #172b4d;
 	margin: 0 0 0.75rem 0;
@@ -204,7 +165,7 @@
 	display: flex;
 	flex-direction: column;
 	justify-content: space-between;
-	font-size: 0.75rem;
+	font-size: 0.875rem;
 	color: #42526e;
 	padding: 0.25rem 0;
 }
@@ -215,6 +176,11 @@
 	font-weight: 500;
 }
 
+.header-font-size {
+	font-size: 18px;
+	font-weight: 400;
+}
+
 .model-selector {
 	position: relative;
 }
@@ -222,31 +188,30 @@
 .model-selector-button {
 	display: inline;
 	padding: 0.5rem 1rem;
-	background: white;
-	border: 1px solid #dfe1e6;
+	background: #db3c1c !important;
+	border: 1px solid #dfe1e6 !important;
 	border-radius: 0.5rem;
-	font-size: 0.875rem;
-	color: #172b4d;
+	color: #ffffff;
 	cursor: pointer;
 	transition: all 0.2s;
 }
 
 .model-selector-button:hover {
-	background: #f4f5f7;
+	background: #8a0000 !important;
 	border-color: #c1c7d0;
 }
 
 .model-selector-button .icon {
 	width: 18px;
 	height: 18px;
-	color: #0052cc;
+	color: #db3c1c;
 }
 
 .model-selector-button .chevron {
 	width: 16px;
 	height: 16px;
 	transition: transform 0.2s;
-	color: #6b778c;
+	color: #ffffff;
 }
 
 .model-selector-button .chevron.open {
@@ -264,7 +229,7 @@
 	box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
 	min-width: 320px;
 	max-width: 400px;
-	z-index: 1000;
+	z-index: 9999;
 	overflow: hidden;
 }
 
@@ -274,14 +239,14 @@
 }
 
 .model-header h3 {
-	font-size: 1rem;
+	font-size: 1.15rem;
 	font-weight: 600;
 	color: #172b4d;
 	margin: 0 0 0.25rem 0;
 }
 
 .model-description {
-	font-size: 0.813rem;
+	font-size: 0.95rem;
 	color: #6b778c;
 	margin: 0;
 }
@@ -329,14 +294,14 @@
 }
 
 .virus-info h4 {
-	font-size: 0.875rem;
+	font-size: 1rem;
 	font-weight: 600;
 	color: #172b4d;
 	margin: 0 0 0.125rem 0;
 }
 
 .virus-info p {
-	font-size: 0.75rem;
+	font-size: 0.875rem;
 	color: #6b778c;
 	margin: 0;
 	overflow: hidden;
@@ -345,8 +310,9 @@
 }
 
 .virus-emoji {
-	font-size: 1.5rem;
+	font-size: 1.75rem;
 	margin-right: 0.5rem;
+	padding: 6px;
 }
 
 .model-footer {
@@ -356,7 +322,7 @@
 	display: flex;
 	align-items: center;
 	gap: 0.5rem;
-	font-size: 0.813rem;
+	font-size: 0.95rem;
 	color: #6b778c;
 }
 
@@ -384,7 +350,7 @@
 .nuts-popup h4,
 .grid-popup h4,
 .outbreak-popup h3 {
-	font-size: 0.875rem;
+	font-size: 1rem;
 	font-weight: 600;
 	color: #172b4d;
 	margin: 0 0 0.5rem 0;
@@ -393,7 +359,7 @@
 .nuts-popup p,
 .grid-popup p,
 .outbreak-popup p {
-	font-size: 0.813rem;
+	font-size: 0.95rem;
 	color: #42526e;
 	margin: 0.25rem 0;
 }
@@ -404,7 +370,7 @@
 
 .tertiary {
 	color: #6b778c;
-	font-size: 0.813rem;
+	font-size: 0.95rem;
 }
 
 .map-sidebar::-webkit-scrollbar-track,
@@ -461,6 +427,10 @@
 		gap: 10px;
 	}
 
+	.map-content {
+		padding: 0;
+	}
+
 	.map-sidebar {
 		width: 100%;
 		max-height: 300px;
@@ -473,3 +443,27 @@
 		height: 500px;
 	}
 }
+
+/* City Label Styles */
+.city-label-marker {
+	background: transparent !important;
+	border: none !important;
+}
+
+.city-name {
+	color: white;
+	font-family: var(--font-inter);
+	text-shadow:
+		-1px -1px 0 rgba(0, 0, 0, 0.8),
+		1px -1px 0 rgba(0, 0, 0, 0.8),
+		-1px 1px 0 rgba(0, 0, 0, 0.8),
+		1px 1px 0 rgba(0, 0, 0, 0.8),
+		0 0 3px rgba(0, 0, 0, 0.6);
+	white-space: nowrap;
+	pointer-events: none;
+	user-select: none;
+	letter-spacing: 0.025em;
+	line-height: 1;
+}
+
+/* Outline theme removed - using only default city styling */

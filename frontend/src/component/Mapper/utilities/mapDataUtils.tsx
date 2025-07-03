@@ -1,67 +1,228 @@
 import * as turf from "@turf/turf";
 import L from "leaflet";
-import {
-	COLOR_SCHEMES,
-	type DataExtremes,
-	type OutbreakData,
-	type TemperatureDataPoint,
-} from "../types.ts";
+import type { DataExtremes, TemperatureDataPoint } from "../types.ts";
 
 export const MIN_ZOOM = 3.4;
 export const MAX_ZOOM = 7;
 
-export const BottomLegend = ({
+/* Blue-red-red:
+const TEMP_COLORS = [
+	"#2c7bd4",
+	"#5a9ee8",
+	"#87c1f2",
+	"#b8d8f5",
+	"#f0c45a",
+	"#e89c35",
+	"#d67220",
+	"#c44020",
+];
+ */
+export const TEMP_COLORS = [
+	"#4c1d4b", // Deep purple
+	"#663399", // Purple
+	"#7b4397", // Purple-blue
+	"#2e86ab", // Blue
+	"#39a97e", // Teal-green
+	"#56c579", // Light green
+	"#a7d88f", // Pale green
+	"#e2fba2", // Very light green/yellow
+];
+
+// Generate whole number intervals every 10 degrees
+const generateIntervals = (
+	min: number,
+	max: number,
+	maxIntervals: number,
+): number[] => {
+	const practicalMin = min + 3;
+	const practicalMax = max - 3; // 3 degree padding so that it doesn't overlap on the scale.
+	const intervals: number[] = [];
+	const startTemp = Math.ceil(practicalMin / 10) * 10;
+
+	for (
+		let temp = startTemp;
+		temp < practicalMax && intervals.length < maxIntervals;
+		temp += 5
+	) {
+		intervals.push(temp);
+	}
+
+	return intervals;
+};
+
+export const Legend = ({
 	extremes,
 	unit = "°C",
-}: { extremes: DataExtremes; unit?: string }) => {
+	isMobile = false,
+}: { extremes: DataExtremes; unit?: string; isMobile?: boolean }) => {
 	if (!extremes) return null;
 
-	const scheme = COLOR_SCHEMES.default;
+	const intervals = generateIntervals(
+		extremes.min,
+		extremes.max,
+		isMobile ? 2.5 : 10,
+	);
+	const totalRange = extremes.max - extremes.min;
+	const isVertical = !isMobile;
+
+	// Wrapper styles for positioning
+	const wrapperStyle: React.CSSProperties = isMobile
+		? {
+				minWidth: "100%",
+				marginTop: "12px",
+			}
+		: {
+				position: "fixed",
+				top: "20%",
+				bottom: "20%",
+				left: "32px",
+				zIndex: 700,
+			};
+
+	// Container styles
+	const containerStyle: React.CSSProperties = {
+		backgroundColor: "white",
+		borderRadius: "12px",
+		padding: isMobile ? "12px" : "16px",
+		boxShadow: `0 ${isMobile ? 2 : 4}px ${isMobile ? 8 : 12}px rgba(0, 0, 0, ${isMobile ? 0.1 : 0.15})`,
+		display: "flex",
+		flexDirection: isVertical ? "row" : "column",
+		alignItems: "center",
+		gap: isVertical ? "15px" : "12px",
+		height: isVertical ? "100%" : "auto",
+	};
+
+	const barStyle: React.CSSProperties = {
+		borderRadius: "8px",
+		position: "relative",
+		display: "flex",
+		flexDirection: isVertical ? "column" : "row",
+		...(isVertical
+			? { width: "40px", height: "100%" }
+			: { width: "100%", height: "30px" }),
+	};
+
+	const labelsStyle: React.CSSProperties = {
+		display: "flex",
+		flexDirection: isVertical ? "column" : "row",
+		justifyContent: "space-between",
+		alignItems: isVertical ? "flex-start" : "center",
+		position: "relative",
+		...(isVertical ? { height: "100%" } : { width: "100%" }),
+	};
+
+	// Color blocks with proper orientation
+	const colors = isVertical ? [...TEMP_COLORS].reverse() : TEMP_COLORS;
+	const numBlocks = colors.length;
+
+	const renderColorBlocks = () =>
+		colors.map((color, i) => {
+			const isFirst = i === 0;
+			const isLast = i === numBlocks - 1;
+			const borderRadius = isVertical
+				? isFirst
+					? "8px 8px 0 0"
+					: isLast
+						? "0 0 8px 8px"
+						: "0"
+				: isFirst
+					? "8px 0 0 8px"
+					: isLast
+						? "0 8px 8px 0"
+						: "0";
+
+			return (
+				<div
+					key={`${color}`}
+					style={{
+						[isVertical ? "height" : "width"]: `${100 / numBlocks}%`,
+						[isVertical ? "width" : "height"]: "100%",
+						backgroundColor: color,
+						borderRadius,
+					}}
+				/>
+			);
+		});
+
+	const renderIntervalMarkers = () =>
+		intervals.map((temp) => {
+			const position = ((temp - extremes.min) / totalRange) * 100;
+			return (
+				<div
+					key={temp}
+					style={{
+						position: "absolute",
+						[isVertical ? "bottom" : "left"]: `${position}%`,
+						[isVertical ? "right" : "top"]: "100%",
+						[isVertical ? "width" : "height"]: isVertical ? "12px" : "8px",
+						[isVertical ? "height" : "width"]: "2px",
+						backgroundColor: "#f8f9fa",
+						transform: isVertical ? "translateY(50%)" : "translateX(-50%)",
+					}}
+				/>
+			);
+		});
+
+	const renderLabels = () => {
+		const labelStyle = (size: "small" | "large") => ({
+			fontSize: size === "small" ? "11px" : "13px",
+			fontWeight: size === "small" ? "500" : "bold",
+			color: "rgb(80,80,80)",
+		});
+
+		const sortedIntervals = isVertical ? [...intervals].reverse() : intervals;
+
+		return (
+			<>
+				{/* Min/Max extremes */}
+				<span style={labelStyle("large")}>
+					{isVertical ? Math.round(extremes.max) : Math.round(extremes.min)}
+					{unit}
+				</span>
+
+				{/* Interval labels */}
+				{sortedIntervals.map((temp) => {
+					const position = ((temp - extremes.min) / totalRange) * 100;
+					return (
+						<span
+							key={temp}
+							style={{
+								position: "absolute",
+								[isVertical ? "bottom" : "left"]: `${position}%`,
+								transform: isVertical ? "translateY(50%)" : "translateX(-50%)",
+								...labelStyle("small"),
+							}}
+						>
+							{temp}
+							{unit}
+						</span>
+					);
+				})}
+
+				{/* Opposite extreme */}
+				<span
+					style={{
+						...labelStyle("large"),
+						position: "absolute",
+						[isVertical ? "bottom" : "right"]: 0,
+					}}
+				>
+					{isVertical ? Math.round(extremes.min) : Math.round(extremes.max)}
+					{unit}
+				</span>
+			</>
+		);
+	};
 
 	return (
-		<div
-			style={{
-				position: "fixed",
-				bottom: 0,
-				left: 0,
-				right: 0,
-				minHeight: "25px",
-				background: `linear-gradient(to right, ${scheme.low}, ${scheme.high})`, // putting the real yellow here makes it very ugly :/
-				// but yellow makes the map much easier to understand/read. Another color less contrasting could work. Grey maybe but thats bad.
-				// I would say white, but the BG is which generally.
-				zIndex: 400,
-				display: "flex",
-				alignItems: "center",
-				justifyContent: "space-between",
-				backgroundColor: "white",
-			}}
-		>
-			<span
-				style={{
-					fontSize: "12px",
-					minHeight: "100%",
-					fontWeight: "bold",
-					backgroundColor: "rgba(255,255,255,0.3)",
-					color: "white",
-					padding: "4px 2px",
-				}}
-			>
-				{extremes.min.toFixed(1)}
-				<small style={{ color: "rgba(255,255,255,0.5)" }}>{unit}</small>
-			</span>
-			<span
-				style={{
-					fontSize: "12px",
-					minHeight: "100%",
-					fontWeight: "bold",
-					backgroundColor: "rgba(255,255,255,0.3)",
-					color: "white",
-					padding: "4px 2px",
-				}}
-			>
-				{extremes.max.toFixed(1)}
-				<small style={{ color: "rgba(255,255,255,0.5)" }}>{unit}</small>
-			</span>
+		<div style={wrapperStyle}>
+			<div style={containerStyle}>
+				<div style={barStyle}>
+					{renderColorBlocks()}
+					{renderIntervalMarkers()}
+				</div>
+				<div style={labelsStyle}>{renderLabels()}</div>
+			</div>
 		</div>
 	);
 };
@@ -80,7 +241,6 @@ export const calculateExtremes = (
 
 	if (calculatePercentiles) {
 		const sortedTemps = [...temperatures].sort((a, b) => a - b);
-
 		const p5Index = Math.floor((25 / 100) * (sortedTemps.length - 1));
 		const p95Index = Math.floor((75 / 100) * (sortedTemps.length - 1));
 
@@ -89,6 +249,7 @@ export const calculateExtremes = (
 			max: sortedTemps[p95Index],
 		};
 	}
+
 	return {
 		min: Math.min(...temperatures),
 		max: Math.max(...temperatures),
@@ -104,7 +265,7 @@ export const loadTemperatureData = async (
 }> => {
 	const dataPath = `${year.toString()}_data_january_05res.csv`;
 	console.log("DataPath:", dataPath);
-	const response = await fetch(dataPath);
+	const response = await fetch(`/${dataPath}`);
 	const text = await response.text();
 	const rows = text
 		.split("\n")
@@ -155,38 +316,4 @@ export const loadTemperatureData = async (
 	}
 
 	return { dataPoints, extremes, bounds };
-};
-
-export const parseCSVToOutbreaks = (csvData: string): OutbreakData[] => {
-	const lines = csvData.trim().split("\n");
-	const headers = lines[0].split(",");
-
-	return lines.slice(1).map((line, index) => {
-		const values = line.split(",");
-		const outbreak: Record<string, string | number> = {};
-
-		headers.forEach((header, i) => {
-			const value = values[i];
-			if (
-				header === "latitude" ||
-				header === "longitude" ||
-				header === "cases"
-			) {
-				outbreak[header] = Number.parseFloat(value) || 0;
-			} else {
-				outbreak[header] = value || "";
-			}
-		});
-
-		return {
-			id: (outbreak.id as string) || `outbreak-${index}`,
-			category: (outbreak.category as string) || "Unknown",
-			location: (outbreak.location as string) || "Unknown",
-			latitude: (outbreak.latitude as number) || 0,
-			longitude: (outbreak.longitude as number) || 0,
-			date: (outbreak.date as string) || "",
-			cases: (outbreak.cases as number) || 0,
-			notes: (outbreak.notes as string) || undefined,
-		} as OutbreakData;
-	});
 };
