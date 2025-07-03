@@ -68,7 +68,6 @@ const OptimismLevelSelector = observer(
 					footerText="Adjust prediction confidence levels"
 					className="header-font-size"
 				/>
-				&nbsp;predictions
 			</span>
 		);
 	},

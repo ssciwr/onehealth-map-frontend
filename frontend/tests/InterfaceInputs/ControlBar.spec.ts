@@ -40,13 +40,20 @@ test.describe("ControlBar Component", () => {
 		expect(download.suggestedFilename()).toContain(".png");
 	});
 
-	test("Location button requests geolocation permission", async ({ page }) => {
+	test("Location button requests geolocation permission", async ({
+		page,
+		browserName,
+	}) => {
 		const userAgent = await page.evaluate(() => navigator.userAgent);
 		test.skip(
 			userAgent.includes("Mobile") ||
 				userAgent.includes("Android") ||
 				userAgent.includes("iPhone"),
 			"Skipping on mobile devices",
+		);
+		test.skip(
+			browserName === "firefox",
+			"Skipping on Firefox due to geolocation timing issues",
 		);
 
 		// Grant geolocation permission

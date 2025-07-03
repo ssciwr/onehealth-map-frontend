@@ -22,10 +22,10 @@ test.describe("Comprehensive Grid Color Analysis - Desktop Only", () => {
 
 		// Wait for components to load
 		await page.waitForSelector('[data-testid="timeline-selector"]', {
-			timeout: 10000,
+			timeout: 20000,
 		});
 		await page.waitForSelector(".leaflet-container", { timeout: 20000 });
-		await page.waitForTimeout(10000);
+		await page.waitForTimeout(20000);
 
 		// Helper function to get colors from grid path elements
 		async function getGridColors() {

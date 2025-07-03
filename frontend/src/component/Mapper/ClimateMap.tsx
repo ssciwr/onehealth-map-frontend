@@ -555,9 +555,18 @@ const ClimateMap = ({ onMount = () => true }) => {
 	};
 
 	const handleScreenshot = () => {
-		if (map && (map as any).simpleMapScreenshoter) {
+		// Type assertion for the screenshoter plugin
+		interface MapWithScreenshoter extends L.Map {
+			simpleMapScreenshoter?: {
+				takeScreen: (format: string) => Promise<Blob>;
+			};
+		}
+
+		const mapWithScreenshoter = map as MapWithScreenshoter;
+
+		if (map && mapWithScreenshoter.simpleMapScreenshoter) {
 			try {
-				(map as any).simpleMapScreenshoter
+				mapWithScreenshoter.simpleMapScreenshoter
 					.takeScreen("blob")
 					.then((blob: Blob) => {
 						const url = URL.createObjectURL(blob);
@@ -841,14 +850,14 @@ const ClimateMap = ({ onMount = () => true }) => {
 								/>
 							)}
 							{mapMode === "grid" && (
-								<Pane name="worldPane" style={{ zIndex: 300 }}>
+								<Pane name="worldPane" style={{ zIndex: 10 }}>
 									{worldGeoJSON && (
 										<GeoJSON data={worldGeoJSON} style={worldStyle} />
 									)}
 								</Pane>
 							)}
 							{mapMode === "grid" && (
-								<Pane name="gridPane" style={{ zIndex: 340, opacity: 1.0 }}>
+								<Pane name="gridPane" style={{ zIndex: 20, opacity: 1.0 }}>
 									{temperatureData.length > 0 && viewport && dataExtremes && (
 										<div>
 											<ClippedGridLayer
@@ -864,7 +873,7 @@ const ClimateMap = ({ onMount = () => true }) => {
 							)}
 
 							{mapMode === "nuts" && (
-								<Pane name="nutsPane" style={{ zIndex: 340, opacity: 0.9 }}>
+								<Pane name="nutsPane" style={{ zIndex: 30, opacity: 0.9 }}>
 									{convertedNutsGeoJSON?.features &&
 										convertedNutsGeoJSON.features.length > 0 && (
 											<GeoJSON
@@ -876,7 +885,7 @@ const ClimateMap = ({ onMount = () => true }) => {
 								</Pane>
 							)}
 
-							<Pane name="geoJsonPane" style={{ zIndex: 320 }}>
+							<Pane name="geoJsonPane" style={{ zIndex: 40 }}>
 								{nutsGeoJSON?.features && nutsGeoJSON.features.length > 0 && (
 									<GeoJSON
 										data={nutsGeoJSON}
@@ -913,7 +922,7 @@ const ClimateMap = ({ onMount = () => true }) => {
 												bottom: "10px",
 												left: "50%",
 												transform: "translateX(-50%)",
-												zIndex: 1000,
+												zIndex: 600,
 												pointerEvents: "auto",
 												display: "flex",
 												flexDirection: "column",

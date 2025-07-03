@@ -621,19 +621,21 @@ button:focus-visible {
 	align-items: center;
 	justify-content: space-between;
 	width: 100%;
-	max-width: 400px;
+	max-width: 500px;
 	background-color: rgba(255, 255, 255, 0.95);
 	backdrop-filter: blur(10px);
 	border-radius: 16px;
 	padding: 8px 16px;
 	box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
 	border-top: 1px solid rgba(220, 220, 220, 0.5);
+	gap: 32px;
 }
 
 .desktop-control-buttons {
 	display: flex;
 	flex: 1;
 	justify-content: left;
+	gap: 12px;
 }
 
 .desktop-zoom-controls {

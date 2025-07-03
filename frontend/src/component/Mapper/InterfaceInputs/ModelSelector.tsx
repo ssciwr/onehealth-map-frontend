@@ -244,7 +244,6 @@ const ModelSelector = ({
 
 	return (
 		<span className="model-selector" data-testid="model-selector">
-			Display&nbsp;
 			<Selector
 				items={selectorItems}
 				selectedId={selectedModel}

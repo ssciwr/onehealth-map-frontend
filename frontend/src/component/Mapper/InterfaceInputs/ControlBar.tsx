@@ -457,17 +457,21 @@ const ControlBar = ({
 						onClick={() => setShowModelDetails(true)}
 						disabled={!selectedModel || models.length === 0}
 						style={{
+							display: "flex",
+							alignItems: "center",
 							gap: "8px",
-							padding: "8px 16px",
+							padding: "8px 20px",
 							backgroundColor: "#db3c1c",
 							border: "1px solid #db3c1c",
 							borderRadius: "0.5rem",
 							cursor: "pointer",
-							fontSize: "14px",
+							fontSize: "18px",
 							fontWeight: "500",
 							color: "white",
 							transition: "all 0.2s ease",
 							opacity: !selectedModel || models.length === 0 ? 0.5 : 1,
+							whiteSpace: "nowrap",
+							minWidth: "fit-content",
 						}}
 						onMouseEnter={(e) => {
 							if (selectedModel && models.length > 0) {
@@ -490,18 +494,21 @@ const ControlBar = ({
 						onClick={handleSaveScreenshot}
 						disabled={isSaving || !screenshoter}
 						style={{
+							display: "flex",
 							alignItems: "center",
 							gap: "8px",
-							padding: "8px 16px",
+							padding: "8px 20px",
 							backgroundColor: "#db3c1c",
 							border: "1px solid #db3c1c",
 							borderRadius: "0.5rem",
 							cursor: "pointer",
-							fontSize: "14px",
+							fontSize: "18px",
 							fontWeight: "500",
 							color: "white",
 							transition: "all 0.2s ease",
 							opacity: isSaving || !screenshoter ? 0.5 : 1,
+							whiteSpace: "nowrap",
+							minWidth: "fit-content",
 						}}
 						onMouseEnter={(e) => {
 							if (!isSaving && screenshoter) {
@@ -527,17 +534,20 @@ const ControlBar = ({
 						type="button"
 						onClick={() => setShowInfo(true)}
 						style={{
+							display: "flex",
 							alignItems: "center",
 							gap: "8px",
-							padding: "8px 16px",
+							padding: "8px 20px",
 							backgroundColor: "#db3c1c",
 							border: "1px solid #db3c1c",
 							borderRadius: "0.5rem",
 							cursor: "pointer",
-							fontSize: "14px",
+							fontSize: "18px",
 							fontWeight: "500",
 							color: "white",
 							transition: "all 0.2s ease",
+							whiteSpace: "nowrap",
+							minWidth: "fit-content",
 						}}
 						onMouseEnter={(e) => {
 							e.currentTarget.style.backgroundColor = "#8a0000";

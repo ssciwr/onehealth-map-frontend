@@ -149,7 +149,14 @@ export default ({
 							borderBottom: "1px solid rgba(255, 255, 255, 0.2)",
 							margin: 0,
 						}
-					: {}
+					: {
+							position: "fixed",
+							top: 0,
+							left: 0,
+							right: 0,
+							zIndex: 1000,
+							backgroundColor: "white",
+						}
 			}
 		>
 			{/* Glass morphism overlay for styled modes */}
@@ -164,6 +171,7 @@ export default ({
 						background: "rgba(255, 255, 255, 0.1)",
 						backdropFilter: "blur(10px)",
 						pointerEvents: "none",
+						color: "white",
 					}}
 				/>
 			)}
@@ -220,15 +228,26 @@ export default ({
 								? {
 										background: "rgba(255, 255, 255, 0.2)",
 										border: "1px solid rgba(255, 255, 255, 0.3)",
-										borderRadius: "8px",
-										padding: "8px 12px",
+										borderRadius: "12px",
+										padding: "10px 16px",
 										backdropFilter: "blur(10px)",
 										transition: "all 0.3s ease",
+										display: "flex",
+										alignItems: "center",
+										gap: "4px",
 									}
 								: {}
 						}
 						className={styleMode !== "unchanged" ? "glass-button" : ""}
 					>
+						<span
+							style={{
+								color: styleMode === "unchanged" ? "rgb(30,30,30)" : "white",
+								fontWeight: "500",
+							}}
+						>
+							Display&nbsp;
+						</span>
 						<ModelSelector
 							selectedModel={selectedModel}
 							onModelSelect={handleModelSelect}
@@ -252,10 +271,13 @@ export default ({
 								? {
 										background: "rgba(255, 255, 255, 0.2)",
 										border: "1px solid rgba(255, 255, 255, 0.3)",
-										borderRadius: "8px",
-										padding: "8px 12px",
+										borderRadius: "12px",
+										padding: "10px 16px",
 										backdropFilter: "blur(10px)",
 										transition: "all 0.3s ease",
+										display: "flex",
+										alignItems: "center",
+										gap: "4px",
 									}
 								: {}
 						}
@@ -266,27 +288,75 @@ export default ({
 							selectedOptimism={selectedOptimism}
 							setOptimism={setSelectedOptimism}
 						/>
+						<span
+							style={{
+								color: styleMode === "unchanged" ? "rgb(30,30,30)" : "white",
+								fontWeight: "500",
+							}}
+						>
+							&nbsp;predictions
+						</span>
 					</div>
 					<button
 						type="button"
 						onClick={() =>
 							onMapModeChange?.(mapMode === "grid" ? "nuts" : "grid")
 						}
-						className=""
-						style={{
-							display: "flex",
-							alignItems: "center",
-							gap: "8px",
-							padding: "8px 12px",
-						}}
+						className={styleMode !== "unchanged" ? "glass-button" : ""}
+						style={
+							styleMode !== "unchanged"
+								? {
+										display: "flex",
+										alignItems: "center",
+										gap: "10px",
+										padding: "12px 16px",
+										background: "rgba(255, 255, 255, 0.2)",
+										border: "1px solid rgba(255, 255, 255, 0.3)",
+										borderRadius: "12px",
+										backdropFilter: "blur(10px)",
+										transition: "all 0.3s ease",
+										color: "white",
+										fontWeight: "500",
+									}
+								: {
+										display: "flex",
+										alignItems: "center",
+										gap: "8px",
+										padding: "8px 12px",
+									}
+						}
 						title={`Switch to ${mapMode === "grid" ? "NUTS" : "Grid"} mode`}
 					>
-						<MapIcon size={16} />
+						<MapIcon size={styleMode !== "unchanged" ? 20 : 16} />
 						{mapMode === "grid" ? "Grid" : "NUTS"}
 					</button>
 					{!isMobile && (
-						<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-							<Palette size={16} />
+						<div
+							className={styleMode !== "unchanged" ? "glass-button" : ""}
+							style={
+								styleMode !== "unchanged"
+									? {
+											display: "flex",
+											alignItems: "center",
+											gap: "10px",
+											padding: "12px 16px",
+											background: "rgba(255, 255, 255, 0.2)",
+											border: "1px solid rgba(255, 255, 255, 0.3)",
+											borderRadius: "12px",
+											backdropFilter: "blur(10px)",
+											transition: "all 0.3s ease",
+										}
+									: {
+											display: "flex",
+											alignItems: "center",
+											gap: "8px",
+										}
+							}
+						>
+							<Palette
+								size={styleMode !== "unchanged" ? 20 : 16}
+								color={styleMode !== "unchanged" ? "white" : "inherit"}
+							/>
 							<Select
 								value={styleMode}
 								onChange={onStyleModeChange}
@@ -300,12 +370,27 @@ export default ({
 						</div>
 					)}
 					<small
-						className="tertiary"
-						style={{
-							border: "1px solid lightgray",
-							padding: "2px 4px",
-							borderRadius: "4px",
-						}}
+						className={
+							styleMode !== "unchanged" ? "tertiary glass-button" : "tertiary"
+						}
+						style={
+							styleMode !== "unchanged"
+								? {
+										background: "rgba(255, 255, 255, 0.2)",
+										border: "1px solid rgba(255, 255, 255, 0.3)",
+										borderRadius: "12px",
+										padding: "8px 12px",
+										backdropFilter: "blur(10px)",
+										transition: "all 0.3s ease",
+										color: "white",
+										fontWeight: "500",
+									}
+								: {
+										border: "1px solid lightgray",
+										padding: "2px 4px",
+										borderRadius: "4px",
+									}
+						}
 						hidden={viewingMode.isExpert === false}
 					>
 						Expert Mode
