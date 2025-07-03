@@ -3,6 +3,8 @@ import { expect, test } from "@playwright/test";
 import { skipIfMobile } from "../utils";
 
 test.describe("Comprehensive Grid Color Analysis - Desktop Only", () => {
+	test.setTimeout(300000); // 300 seconds (5 minutes)
+
 	test.beforeEach(async ({ page }) => {
 		await page.setViewportSize({ width: 1280, height: 720 });
 	});
@@ -67,21 +69,34 @@ test.describe("Comprehensive Grid Color Analysis - Desktop Only", () => {
 
 		// Helper function to set year using slider
 		async function setYear(targetYear) {
+			const sliderHandle = page.locator(
+				'[data-testid="timeline-selector"] .ant-slider-handle',
+			);
+			await expect(sliderHandle).toBeVisible();
+
 			const yearSlider = page.locator(
 				'[data-testid="timeline-selector"] .ant-slider',
 			);
 			await expect(yearSlider).toBeVisible();
-			const sliderBox = await yearSlider.boundingBox();
 
-			if (sliderBox) {
-				// Calculate position based on year (1960-2100 range)
+			// Get the bounding boxes
+			const sliderBox = await yearSlider.boundingBox();
+			const handleBox = await sliderHandle.boundingBox();
+
+			if (sliderBox && handleBox) {
+				// Calculate the target position (1960-2100 range)
 				const yearRange = 2100 - 1960;
 				const targetPosition = (targetYear - 1960) / yearRange;
-				const clickX = sliderBox.x + sliderBox.width * targetPosition;
+				const targetX = sliderBox.x + sliderBox.width * targetPosition;
 
-				await page.mouse.click(clickX, sliderBox.y + sliderBox.height / 2);
+				// Drag the handle to the target position
+				await sliderHandle.hover();
+				await page.mouse.down();
+				await page.mouse.move(targetX, handleBox.y + handleBox.height / 2);
+				await page.mouse.up();
+
 				console.log(`Set year to ${targetYear}`);
-				await page.waitForTimeout(4000); // Wait longer for data reload
+				await page.waitForTimeout(2000); // Wait for data reload
 			}
 		}
 

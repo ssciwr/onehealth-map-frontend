@@ -73,8 +73,8 @@ export const Legend = ({
 			}
 		: {
 				position: "fixed",
-				top: "10%",
-				bottom: "10%",
+				top: "20%",
+				bottom: "20%",
 				left: "32px",
 				zIndex: 700,
 			};

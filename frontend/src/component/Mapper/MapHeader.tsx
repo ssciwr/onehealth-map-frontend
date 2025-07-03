@@ -1,6 +1,6 @@
 import { SettingOutlined } from "@ant-design/icons";
 import { Button, Modal, Select } from "antd";
-import { Map as MapIcon, Palette } from "lucide-react";
+import { Eye, EyeOff, Map as MapIcon, Palette } from "lucide-react";
 
 const { Option } = Select;
 import React, { useState } from "react";
@@ -34,6 +34,7 @@ export default ({
 	onStyleModeChange,
 }: MapHeaderProps) => {
 	const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+	const [areControlsHidden, setAreControlsHidden] = useState(false);
 
 	// Color schemes for styling
 	const colorSchemes = {
@@ -297,77 +298,112 @@ export default ({
 							&nbsp;predictions
 						</span>
 					</div>
-					<button
-						type="button"
-						onClick={() =>
-							onMapModeChange?.(mapMode === "grid" ? "nuts" : "grid")
-						}
-						className={styleMode !== "unchanged" ? "glass-button" : ""}
-						style={
-							styleMode !== "unchanged"
-								? {
-										display: "flex",
-										alignItems: "center",
-										gap: "10px",
-										padding: "12px 16px",
-										background: "rgba(255, 255, 255, 0.2)",
-										border: "1px solid rgba(255, 255, 255, 0.3)",
-										borderRadius: "12px",
-										backdropFilter: "blur(10px)",
-										transition: "all 0.3s ease",
-										color: "white",
-										fontWeight: "500",
-									}
-								: {
-										display: "flex",
-										alignItems: "center",
-										gap: "8px",
-										padding: "8px 12px",
-									}
-						}
-						title={`Switch to ${mapMode === "grid" ? "NUTS" : "Grid"} mode`}
-					>
-						<MapIcon size={styleMode !== "unchanged" ? 20 : 16} />
-						{mapMode === "grid" ? "Grid" : "NUTS"}
-					</button>
-					{!isMobile && (
-						<div
-							className={styleMode !== "unchanged" ? "glass-button" : ""}
-							style={
-								styleMode !== "unchanged"
-									? {
-											display: "flex",
-											alignItems: "center",
-											gap: "10px",
-											padding: "12px 16px",
-											background: "rgba(255, 255, 255, 0.2)",
-											border: "1px solid rgba(255, 255, 255, 0.3)",
-											borderRadius: "12px",
-											backdropFilter: "blur(10px)",
-											transition: "all 0.3s ease",
-										}
-									: {
-											display: "flex",
-											alignItems: "center",
-											gap: "8px",
-										}
-							}
-						>
-							<Palette
-								size={styleMode !== "unchanged" ? 20 : 16}
-								color={styleMode !== "unchanged" ? "white" : "inherit"}
-							/>
-							<Select
-								value={styleMode}
-								onChange={onStyleModeChange}
-								style={{ minWidth: 140 }}
-								size="middle"
+					{!areControlsHidden && (
+						<>
+							<button
+								type="button"
+								onClick={() =>
+									onMapModeChange?.(mapMode === "grid" ? "nuts" : "grid")
+								}
+								className={styleMode !== "unchanged" ? "glass-button" : ""}
+								style={
+									styleMode !== "unchanged"
+										? {
+												display: "flex",
+												alignItems: "center",
+												gap: "10px",
+												padding: "12px 16px",
+												background: "rgba(255, 255, 255, 0.2)",
+												border: "1px solid rgba(255, 255, 255, 0.3)",
+												borderRadius: "12px",
+												backdropFilter: "blur(10px)",
+												transition: "all 0.3s ease",
+												color: "white",
+												fontWeight: "500",
+											}
+										: {
+												display: "flex",
+												alignItems: "center",
+												gap: "8px",
+												padding: "8px 12px",
+											}
+								}
+								title={`Switch to ${mapMode === "grid" ? "NUTS" : "Grid"} mode`}
 							>
-								<Option value="unchanged">Unchanged</Option>
-								<Option value="purple">Style Purple</Option>
-								<Option value="red">Style Red</Option>
-							</Select>
-						</div>
+								<MapIcon size={styleMode !== "unchanged" ? 20 : 16} />
+								{mapMode === "grid" ? "Grid" : "NUTS"}
+							</button>
+							{!isMobile && (
+								<div
+									className={styleMode !== "unchanged" ? "glass-button" : ""}
+									style={
+										styleMode !== "unchanged"
+											? {
+													display: "flex",
+													alignItems: "center",
+													gap: "10px",
+													padding: "12px 16px",
+													background: "rgba(255, 255, 255, 0.2)",
+													border: "1px solid rgba(255, 255, 255, 0.3)",
+													borderRadius: "12px",
+													backdropFilter: "blur(10px)",
+													transition: "all 0.3s ease",
+												}
+											: {
+													display: "flex",
+													alignItems: "center",
+													gap: "8px",
+												}
+									}
+								>
+									<Palette
+										size={styleMode !== "unchanged" ? 20 : 16}
+										color={styleMode !== "unchanged" ? "white" : "inherit"}
+									/>
+									<Select
+										value={styleMode}
+										onChange={onStyleModeChange}
+										style={{ minWidth: 140 }}
+										size="middle"
+									>
+										<Option value="unchanged">Unchanged</Option>
+										<Option value="purple">Style Purple</Option>
+										<Option value="red">Style Red</Option>
+									</Select>
+								</div>
+							)}
+							<button
+								type="button"
+								onClick={() => setAreControlsHidden(true)}
+								className={styleMode !== "unchanged" ? "glass-button" : ""}
+								style={
+									styleMode !== "unchanged"
+										? {
+												display: "flex",
+												alignItems: "center",
+												gap: "8px",
+												padding: "12px 16px",
+												background: "rgba(255, 255, 255, 0.2)",
+												border: "1px solid rgba(255, 255, 255, 0.3)",
+												borderRadius: "12px",
+												backdropFilter: "blur(10px)",
+												transition: "all 0.3s ease",
+												color: "white",
+												fontWeight: "500",
+											}
+										: {
+												display: "flex",
+												alignItems: "center",
+												gap: "8px",
+												padding: "8px 12px",
+											}
+								}
+								title="Hide controls (reload page to restore)"
+							>
+								<EyeOff size={styleMode !== "unchanged" ? 20 : 16} />
+								Hide
+							</button>
+						</>
 					)}
 					<small
 						className={
