@@ -95,7 +95,7 @@ test.describe("ControlBar Component", () => {
 		await expect(locationButton).toBeEnabled();
 	});
 
-	test("Info button opens modal with about content", async ({ page }) => {
+	test("About button opens modal with about content", async ({ page }) => {
 		const userAgent = await page.evaluate(() => navigator.userAgent);
 		test.skip(
 			userAgent.includes("Mobile") ||
@@ -104,13 +104,13 @@ test.describe("ControlBar Component", () => {
 			"Skipping on mobile devices",
 		);
 
-		// Find and click the info button (Info icon)
-		const infoButton = page.locator("button").filter({
-			has: page.locator("svg.lucide-info"),
+		// Find and click the About button (contains "About" text)
+		const aboutButton = page.locator("button").filter({
+			hasText: "About",
 		});
 
-		await expect(infoButton).toBeVisible();
-		await infoButton.click();
+		await expect(aboutButton).toBeVisible();
+		await aboutButton.click();
 
 		// Verify the modal opens
 		await expect(page.locator(".ant-modal-content")).toBeVisible();
