@@ -1,3 +1,4 @@
+import { Modal } from "antd";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { GeoJSON, MapContainer, Marker, Pane, TileLayer } from "react-leaflet";
 import NutsMapperV5 from "./utilities/prepareNutsDataForDrawing";
@@ -6,16 +7,18 @@ import L from "leaflet";
 import ViewportMonitor from "./ViewportMonitor.tsx";
 import "./Map.css";
 import { Layers } from "lucide-react";
-import Footer from "../../static/Footer.tsx";
+import Footer, { AboutContent } from "../../static/Footer.tsx";
 import AdaptiveGridLayer from "./AdaptiveGridLayer.tsx";
 import ClippedGridLayer from "./ClippedGridLayer.tsx";
 import DebugStatsPanel from "./DebugStatsPanel.tsx";
 import ControlBar from "./InterfaceInputs/ControlBar.tsx";
+import ModelDetailsModal from "./InterfaceInputs/ModelDetailsModal";
 import MapHeader from "./MapHeader.tsx";
 import "leaflet-simple-map-screenshoter";
 import { isMobile } from "react-device-detect";
 import { errorStore } from "../../stores/ErrorStore";
 import { loadingStore } from "../../stores/LoadingStore";
+import AdvancedTimelineSelector from "./InterfaceInputs/AdvancedTimelineSelector.tsx";
 import TimelineSelector from "./InterfaceInputs/TimelineSelector.tsx";
 import type {
 	DataExtremes,
@@ -27,7 +30,7 @@ import type {
 import { getColorFromGradient } from "./utilities/gradientUtilities";
 import { gridToNutsConverter } from "./utilities/gridToNutsConverter";
 import {
-	BottomLegend,
+	Legend,
 	MAX_ZOOM,
 	MIN_ZOOM,
 	loadTemperatureData,
@@ -84,6 +87,26 @@ const ClimateMap = ({ onMount = () => true }) => {
 		useState<L.Layer | null>(null);
 	const [showTileLayer, setShowTileLayer] = useState<boolean>(false);
 
+	// Style mode state
+	const [styleMode, setStyleMode] = useState<"unchanged" | "purple" | "red">(
+		"unchanged",
+	);
+
+	// Models for ModelDetailsModal
+	const [models, setModels] = useState<
+		Array<{
+			id: string;
+			virusType: string;
+			modelName: string;
+			title: string;
+			description: string;
+			emoji: string;
+			icon: string;
+			color: string;
+			details: string;
+		}>
+	>([]);
+
 	// Load cities data from JSON file
 	useEffect(() => {
 		const loadCities = async () => {
@@ -123,7 +146,75 @@ const ClimateMap = ({ onMount = () => true }) => {
 		};
 
 		onMount();
-	});
+		loadCities();
+	}, [onMount]);
+
+	// Load models for ModelDetailsModal
+	useEffect(() => {
+		const loadModels = async () => {
+			const modelFiles = [
+				"westNileModel1.yaml",
+				"westNileModel2.yaml",
+				"dengueModel1.yaml",
+				"malariaModel1.yaml",
+				"covidModel1.yaml",
+				"zikaModel1.yaml",
+			];
+
+			const loadedModels = [];
+
+			for (const filename of modelFiles) {
+				try {
+					const response = await fetch(`/modelsyaml/${filename}`);
+					if (!response.ok) continue;
+
+					const yamlText = await response.text();
+					const lines = yamlText.split("\n");
+					const result: Record<string, string> = {};
+
+					for (const line of lines) {
+						const trimmed = line.trim();
+						if (trimmed && !trimmed.startsWith("#")) {
+							const colonIndex = trimmed.indexOf(":");
+							if (colonIndex > 0) {
+								const key = trimmed.substring(0, colonIndex).trim();
+								let value = trimmed.substring(colonIndex + 1).trim();
+								if (
+									(value.startsWith("'") && value.endsWith("'")) ||
+									(value.startsWith('"') && value.endsWith('"'))
+								) {
+									value = value.slice(1, -1);
+								}
+								result[key] = value;
+							}
+						}
+					}
+
+					const model = {
+						id: result.id || "",
+						virusType: result.virusType || "",
+						modelName: result.modelName || "",
+						title: result.title || "",
+						description: result.description || "",
+						emoji: result.emoji || "",
+						icon: result.icon || "",
+						color: result.color || "",
+						details: result.details || "",
+					};
+
+					if (model.id) {
+						loadedModels.push(model);
+					}
+				} catch (error) {
+					console.error(`Error loading ${filename}:`, error);
+				}
+			}
+
+			setModels(loadedModels);
+		};
+
+		loadModels();
+	}, []);
 
 	// Load world GeoJSON data
 	useEffect(() => {
@@ -420,6 +511,85 @@ const ClimateMap = ({ onMount = () => true }) => {
 		setSelectedModel(modelId);
 	};
 
+	// Control functions for advanced timeline
+	const handleZoomIn = () => {
+		if (map) {
+			map.zoomIn();
+		}
+	};
+
+	const handleZoomOut = () => {
+		if (map) {
+			map.zoomOut();
+		}
+	};
+
+	const handleResetZoom = () => {
+		if (map) {
+			map.setView([10, 12], 3);
+		}
+	};
+
+	const handleLocationFind = () => {
+		if (navigator.geolocation) {
+			navigator.geolocation.getCurrentPosition(
+				(position) => {
+					if (map) {
+						map.setView(
+							[position.coords.latitude, position.coords.longitude],
+							6,
+						);
+					}
+				},
+				(error) => {
+					console.error("Error getting location:", error);
+					errorStore.showError("Location Error", "Unable to get your location");
+				},
+			);
+		} else {
+			errorStore.showError(
+				"Location Error",
+				"Geolocation is not supported by this browser",
+			);
+		}
+	};
+
+	const handleScreenshot = () => {
+		if (map && (map as any).simpleMapScreenshoter) {
+			try {
+				(map as any).simpleMapScreenshoter
+					.takeScreen("blob")
+					.then((blob: Blob) => {
+						const url = URL.createObjectURL(blob);
+						const a = document.createElement("a");
+						a.href = url;
+						a.download = `climate-map-${new Date().toISOString().split("T")[0]}.png`;
+						document.body.appendChild(a);
+						a.click();
+						document.body.removeChild(a);
+						URL.revokeObjectURL(url);
+					});
+			} catch (error) {
+				console.error("Screenshot error:", error);
+				errorStore.showError(
+					"Screenshot Error",
+					"Failed to capture screenshot",
+				);
+			}
+		}
+	};
+
+	const [isModelInfoOpen, setIsModelInfoOpen] = useState(false);
+	const [isAboutOpen, setIsAboutOpen] = useState(false);
+
+	const handleModelInfo = () => {
+		setIsModelInfoOpen(true);
+	};
+
+	const handleAbout = () => {
+		setIsAboutOpen(true);
+	};
+
 	const style = (feature: GeoJSON.Feature) => {
 		if (!feature || !feature.properties) return {};
 
@@ -643,6 +813,8 @@ const ClimateMap = ({ onMount = () => true }) => {
 					getOptimismLevels={getOptimismLevels}
 					mapMode={mapMode}
 					onMapModeChange={setMapMode}
+					styleMode={styleMode}
+					onStyleModeChange={setStyleMode}
 				/>
 
 				<div className="map-content-wrapper">
@@ -731,50 +903,82 @@ const ClimateMap = ({ onMount = () => true }) => {
 						</MapContainer>
 
 						{/* Bottom UI Container - TimelineSelector and ControlBar */}
-						<div
-							style={
-								isMobile
-									? {}
-									: {
-											position: "fixed",
-											bottom: "10px",
-											left: "50%",
-											transform: "translateX(-50%)",
-											zIndex: 1000,
-											pointerEvents: "auto",
-											display: "flex",
-											flexDirection: "column",
-											alignItems: "center",
-											gap: "12px",
-										}
-							}
-						>
-							{!isMobile && (
-								<ControlBar
-									map={map}
-									selectedModel={selectedModel}
-									onModelSelect={handleModelSelect}
-								/>
-							)}
+						{styleMode === "unchanged" && (
+							<div
+								style={
+									isMobile
+										? {}
+										: {
+												position: "fixed",
+												bottom: "10px",
+												left: "50%",
+												transform: "translateX(-50%)",
+												zIndex: 1000,
+												pointerEvents: "auto",
+												display: "flex",
+												flexDirection: "column",
+												alignItems: "center",
+												gap: "12px",
+											}
+								}
+							>
+								{!isMobile && (
+									<ControlBar
+										map={map}
+										selectedModel={selectedModel}
+										onModelSelect={handleModelSelect}
+									/>
+								)}
 
-							<TimelineSelector
+								<TimelineSelector
+									year={currentYear}
+									month={currentMonth}
+									onYearChange={setCurrentYear}
+									onMonthChange={setCurrentMonth}
+									styleMode={styleMode}
+									legend={
+										dataExtremes ? (
+											<Legend
+												extremes={dataExtremes}
+												unit="°C"
+												isMobile={isMobile}
+											/>
+										) : (
+											<div />
+										)
+									}
+								/>
+							</div>
+						)}
+
+						{/* Advanced Timeline Selector - Desktop Only */}
+						{!isMobile && styleMode !== "unchanged" && (
+							<AdvancedTimelineSelector
 								year={currentYear}
 								month={currentMonth}
 								onYearChange={setCurrentYear}
 								onMonthChange={setCurrentMonth}
+								onZoomIn={handleZoomIn}
+								onZoomOut={handleZoomOut}
+								onResetZoom={handleResetZoom}
+								onLocationFind={handleLocationFind}
+								onScreenshot={handleScreenshot}
+								onModelInfo={handleModelInfo}
+								onAbout={handleAbout}
+								colorScheme={styleMode === "purple" ? "purple" : "red"}
 								legend={
 									dataExtremes ? (
-										<BottomLegend
+										<Legend
 											extremes={dataExtremes}
 											unit="°C"
-											isMobile={isMobile}
+											isMobile={false}
 										/>
 									) : (
 										<div />
 									)
 								}
 							/>
-						</div>
+						)}
 
 						{/* Mobile ControlBar stays in original position */}
 						{isMobile && (
@@ -789,7 +993,7 @@ const ClimateMap = ({ onMount = () => true }) => {
 
 				{/* Desktop-only legend positioned over the map */}
 				{!isMobile && dataExtremes && (
-					<BottomLegend extremes={dataExtremes} unit="°C" isMobile={false} />
+					<Legend extremes={dataExtremes} unit="°C" isMobile={false} />
 				)}
 
 				<div className="map-bottom-bar">
@@ -849,6 +1053,26 @@ const ClimateMap = ({ onMount = () => true }) => {
 					)}
 				</div>
 			</div>
+
+			{/* Modals for Advanced Timeline */}
+			<ModelDetailsModal
+				isOpen={isModelInfoOpen}
+				onClose={() => setIsModelInfoOpen(false)}
+				models={models}
+				selectedModelId={selectedModel}
+				onModelSelect={handleModelSelect}
+			/>
+
+			<Modal
+				title="About OneHealth Platform"
+				open={isAboutOpen}
+				onCancel={() => setIsAboutOpen(false)}
+				footer={null}
+				width={600}
+			>
+				<AboutContent />
+			</Modal>
+
 			<Footer />
 		</div>
 	);

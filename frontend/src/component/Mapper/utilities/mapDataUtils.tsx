@@ -50,7 +50,7 @@ const generateIntervals = (
 	return intervals;
 };
 
-export const BottomLegend = ({
+export const Legend = ({
 	extremes,
 	unit = "°C",
 	isMobile = false,
@@ -73,10 +73,10 @@ export const BottomLegend = ({
 			}
 		: {
 				position: "fixed",
-				top: "120px",
+				top: "10%",
+				bottom: "10%",
 				left: "32px",
 				zIndex: 700,
-				minHeight: "100%",
 			};
 
 	// Container styles
@@ -89,6 +89,7 @@ export const BottomLegend = ({
 		flexDirection: isVertical ? "row" : "column",
 		alignItems: "center",
 		gap: isVertical ? "15px" : "12px",
+		height: isVertical ? "100%" : "auto",
 	};
 
 	const barStyle: React.CSSProperties = {
@@ -97,7 +98,7 @@ export const BottomLegend = ({
 		display: "flex",
 		flexDirection: isVertical ? "column" : "row",
 		...(isVertical
-			? { width: "40px", height: "70vh" }
+			? { width: "40px", height: "100%" }
 			: { width: "100%", height: "30px" }),
 	};
 
@@ -107,7 +108,7 @@ export const BottomLegend = ({
 		justifyContent: "space-between",
 		alignItems: isVertical ? "flex-start" : "center",
 		position: "relative",
-		...(isVertical ? { height: "70vh" } : { width: "100%" }),
+		...(isVertical ? { height: "100%" } : { width: "100%" }),
 	};
 
 	// Color blocks with proper orientation

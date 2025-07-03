@@ -1,7 +1,9 @@
 import { SettingOutlined } from "@ant-design/icons";
-import { Button, Modal } from "antd";
-import { Map as MapIcon } from "lucide-react";
-import { useState } from "react";
+import { Button, Modal, Select } from "antd";
+import { Map as MapIcon, Palette } from "lucide-react";
+
+const { Option } = Select;
+import React, { useState } from "react";
 import { isMobile } from "react-device-detect";
 import { viewingMode } from "../../stores/ViewingModeStore.ts";
 import GeneralCard from "../General/GeneralCard.tsx";
@@ -16,6 +18,8 @@ interface MapHeaderProps {
 	getOptimismLevels: () => string[];
 	mapMode?: "grid" | "nuts";
 	onMapModeChange?: (mode: "grid" | "nuts") => void;
+	styleMode?: "unchanged" | "purple" | "red";
+	onStyleModeChange?: (mode: "unchanged" | "purple" | "red") => void;
 }
 
 export default ({
@@ -26,8 +30,16 @@ export default ({
 	getOptimismLevels,
 	mapMode = "grid",
 	onMapModeChange,
+	styleMode = "unchanged",
+	onStyleModeChange,
 }: MapHeaderProps) => {
 	const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+
+	// Color schemes for styling
+	const colorSchemes = {
+		purple: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+		red: "linear-gradient(135deg, #ff6b6b 0%, #ffa726 100%)",
+	};
 
 	return isMobile ? (
 		<div className="map-header">
@@ -121,10 +133,54 @@ export default ({
 			</Modal>
 		</div>
 	) : (
-		<div className="map-header header-section center min-w-100">
+		<div
+			className="map-header header-section center min-w-100"
+			style={
+				styleMode !== "unchanged"
+					? {
+							position: "fixed",
+							top: 0,
+							left: 0,
+							right: 0,
+							background: colorSchemes[styleMode],
+							boxShadow: "0 8px 32px rgba(0, 0, 0, 0.25)",
+							zIndex: 1000,
+							backdropFilter: "blur(20px)",
+							borderBottom: "1px solid rgba(255, 255, 255, 0.2)",
+							margin: 0,
+						}
+					: {}
+			}
+		>
+			{/* Glass morphism overlay for styled modes */}
+			{styleMode !== "unchanged" && (
+				<div
+					style={{
+						position: "absolute",
+						top: 0,
+						left: 0,
+						right: 0,
+						bottom: 0,
+						background: "rgba(255, 255, 255, 0.1)",
+						backdropFilter: "blur(10px)",
+						pointerEvents: "none",
+					}}
+				/>
+			)}
+
 			<GeneralCard
-				style={{ border: "0px solid", marginBottom: "0px", marginTop: "10px" }}
-				bodyStyle={{ paddingTop: "20px", paddingBottom: "20px" }}
+				style={{
+					border: "0px solid",
+					marginBottom: "0px",
+					marginTop: styleMode !== "unchanged" ? "0px" : "10px",
+					background: styleMode !== "unchanged" ? "transparent" : undefined,
+					position: "relative",
+					zIndex: 1,
+				}}
+				bodyStyle={{
+					paddingTop: styleMode !== "unchanged" ? "16px" : "20px",
+					paddingBottom: styleMode !== "unchanged" ? "16px" : "20px",
+				}}
 			>
 				<div className="logo-section">
 					<h1 hidden className="map-title">
@@ -147,20 +203,70 @@ export default ({
 					}}
 				>
 					<img
-						style={{ height: "48px", marginRight: "10px" }}
+						style={{
+							height: "48px",
+							marginRight: "10px",
+						}}
 						alt="OneHealth Logo - two objects on either side that appear to be holding a circular shape inbetween the them"
-						src="/images/oneHealthLogoFullLight.png"
+						src={
+							styleMode !== "unchanged"
+								? "/images/oneHealthWhite.png"
+								: "/images/oneHealthLogoFullLight.png"
+						}
 					/>
-					<ModelSelector
-						selectedModel={selectedModel}
-						onModelSelect={handleModelSelect}
-					/>
-					<span>with</span>
-					<OptimismLevelSelector
-						availableOptimismLevels={getOptimismLevels()}
-						selectedOptimism={selectedOptimism}
-						setOptimism={setSelectedOptimism}
-					/>
+					<div
+						style={
+							styleMode !== "unchanged"
+								? {
+										background: "rgba(255, 255, 255, 0.2)",
+										border: "1px solid rgba(255, 255, 255, 0.3)",
+										borderRadius: "8px",
+										padding: "8px 12px",
+										backdropFilter: "blur(10px)",
+										transition: "all 0.3s ease",
+									}
+								: {}
+						}
+						className={styleMode !== "unchanged" ? "glass-button" : ""}
+					>
+						<ModelSelector
+							selectedModel={selectedModel}
+							onModelSelect={handleModelSelect}
+						/>
+					</div>
+					<span
+						style={{
+							color: styleMode !== "unchanged" ? "white" : "inherit",
+							fontWeight: styleMode !== "unchanged" ? "500" : "normal",
+							textShadow:
+								styleMode !== "unchanged"
+									? "0 2px 4px rgba(0, 0, 0, 0.2)"
+									: "none",
+						}}
+					>
+						with
+					</span>
+					<div
+						style={
+							styleMode !== "unchanged"
+								? {
+										background: "rgba(255, 255, 255, 0.2)",
+										border: "1px solid rgba(255, 255, 255, 0.3)",
+										borderRadius: "8px",
+										padding: "8px 12px",
+										backdropFilter: "blur(10px)",
+										transition: "all 0.3s ease",
+									}
+								: {}
+						}
+						className={styleMode !== "unchanged" ? "glass-button" : ""}
+					>
+						<OptimismLevelSelector
+							availableOptimismLevels={getOptimismLevels()}
+							selectedOptimism={selectedOptimism}
+							setOptimism={setSelectedOptimism}
+						/>
+					</div>
 					<button
 						type="button"
 						onClick={() =>
@@ -178,6 +284,21 @@ export default ({
 						<MapIcon size={16} />
 						{mapMode === "grid" ? "Grid" : "NUTS"}
 					</button>
+					{!isMobile && (
+						<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+							<Palette size={16} />
+							<Select
+								value={styleMode}
+								onChange={onStyleModeChange}
+								style={{ minWidth: 140 }}
+								size="middle"
+							>
+								<Option value="unchanged">Unchanged</Option>
+								<Option value="purple">Style Purple</Option>
+								<Option value="red">Style Red</Option>
+							</Select>
+						</div>
+					)}
 					<small
 						className="tertiary"
 						style={{
@@ -190,6 +311,37 @@ export default ({
 						Expert Mode
 					</small>
 				</div>
+
+				{/* Custom CSS for styled modes */}
+				{styleMode !== "unchanged" && (
+					<style>
+						{`
+							.glass-button:hover {
+								background: rgba(255, 255, 255, 0.3) !important;
+								border-color: rgba(255, 255, 255, 0.5) !important;
+								transform: translateY(-1px);
+								box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+							}
+
+							.glass-button .ant-select-selector,
+							.glass-button .ant-select-selection-item,
+							.glass-button .ant-select-arrow,
+							.glass-button .anticon {
+								color: white !important;
+							}
+
+							.glass-button button {
+								background: transparent !important;
+								border: none !important;
+								color: white !important;
+							}
+
+							.glass-button button:hover {
+								background: rgba(255, 255, 255, 0.1) !important;
+							}
+						`}
+					</style>
+				)}
 			</GeneralCard>
 		</div>
 	);

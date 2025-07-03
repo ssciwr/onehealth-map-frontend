@@ -4,11 +4,16 @@ import {
 	Camera,
 	ChevronDown,
 	ChevronUp,
+	Database,
 	FileText,
+	HelpCircle,
 	Info,
 	MapPin,
 	Minus,
 	Plus,
+	RotateCcw,
+	ZoomIn,
+	ZoomOut,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { isMobile } from "react-device-detect";
@@ -450,32 +455,102 @@ const ControlBar = ({
 					<button
 						type="button"
 						onClick={() => setShowModelDetails(true)}
-						className="desktop-control-btn desktop-zoom-btn desktop-zoom-left"
 						disabled={!selectedModel || models.length === 0}
-						title="Model Info"
+						style={{
+							gap: "8px",
+							padding: "8px 16px",
+							backgroundColor: "#db3c1c",
+							border: "1px solid #db3c1c",
+							borderRadius: "0.5rem",
+							cursor: "pointer",
+							fontSize: "14px",
+							fontWeight: "500",
+							color: "white",
+							transition: "all 0.2s ease",
+							opacity: !selectedModel || models.length === 0 ? 0.5 : 1,
+						}}
+						onMouseEnter={(e) => {
+							if (selectedModel && models.length > 0) {
+								e.currentTarget.style.backgroundColor = "#8a0000";
+								e.currentTarget.style.borderColor = "#8a0000";
+							}
+						}}
+						onMouseLeave={(e) => {
+							e.currentTarget.style.backgroundColor = "#db3c1c";
+							e.currentTarget.style.borderColor = "#db3c1c";
+						}}
+						title="View detailed information about disease models"
 					>
-						<FileText size={20} />
+						<Database size={16} />
+						Model Info
 					</button>
 
 					<button
 						type="button"
 						onClick={handleSaveScreenshot}
 						disabled={isSaving || !screenshoter}
-						className="desktop-control-btn desktop-zoom-btn desktop-zoom-center"
+						style={{
+							alignItems: "center",
+							gap: "8px",
+							padding: "8px 16px",
+							backgroundColor: "#db3c1c",
+							border: "1px solid #db3c1c",
+							borderRadius: "0.5rem",
+							cursor: "pointer",
+							fontSize: "14px",
+							fontWeight: "500",
+							color: "white",
+							transition: "all 0.2s ease",
+							opacity: isSaving || !screenshoter ? 0.5 : 1,
+						}}
+						onMouseEnter={(e) => {
+							if (!isSaving && screenshoter) {
+								e.currentTarget.style.backgroundColor = "#8a0000";
+								e.currentTarget.style.borderColor = "#8a0000";
+							}
+						}}
+						onMouseLeave={(e) => {
+							e.currentTarget.style.backgroundColor = "#db3c1c";
+							e.currentTarget.style.borderColor = "#db3c1c";
+						}}
 						title={
-							!screenshoter ? "Screenshot plugin not loaded" : "Take screenshot"
+							!screenshoter
+								? "Screenshot plugin not loaded"
+								: "Capture map as image"
 						}
 					>
-						<Camera size={20} />
+						<Camera size={16} />
+						{isSaving ? "Saving..." : "Screenshot"}
 					</button>
 
 					<button
 						type="button"
 						onClick={() => setShowInfo(true)}
-						className="desktop-control-btn desktop-zoom-btn desktop-zoom-right"
-						title="About"
+						style={{
+							alignItems: "center",
+							gap: "8px",
+							padding: "8px 16px",
+							backgroundColor: "#db3c1c",
+							border: "1px solid #db3c1c",
+							borderRadius: "0.5rem",
+							cursor: "pointer",
+							fontSize: "14px",
+							fontWeight: "500",
+							color: "white",
+							transition: "all 0.2s ease",
+						}}
+						onMouseEnter={(e) => {
+							e.currentTarget.style.backgroundColor = "#8a0000";
+							e.currentTarget.style.borderColor = "#8a0000";
+						}}
+						onMouseLeave={(e) => {
+							e.currentTarget.style.backgroundColor = "#db3c1c";
+							e.currentTarget.style.borderColor = "#db3c1c";
+						}}
+						title="About this application and team"
 					>
-						<Info size={20} />
+						<HelpCircle size={16} />
+						About
 					</button>
 				</div>
 
