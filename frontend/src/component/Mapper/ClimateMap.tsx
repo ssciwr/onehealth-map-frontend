@@ -92,6 +92,52 @@ const ClimateMap = ({ onMount = () => true }) => {
 		"unchanged",
 	);
 
+	// Screenshoter state
+	const [screenshoter, setScreenshoter] =
+		useState<L.SimpleMapScreenshoter | null>(null);
+
+	// Initialize screenshoter when map is ready
+	useEffect(() => {
+		if (map && !screenshoter) {
+			if (typeof L.simpleMapScreenshoter === "function") {
+				const initializeScreenshoter = () => {
+					try {
+						const screenshotPlugin = L.simpleMapScreenshoter({
+							hidden: true,
+							preventDownload: true,
+							cropImageByInnerWH: true,
+							hideElementsWithSelectors: [],
+							mimeType: "image/png",
+							screenName: () => `map-screenshot-${Date.now()}`,
+						});
+
+						screenshotPlugin.addTo(map);
+						setScreenshoter(screenshotPlugin);
+					} catch (error) {
+						console.error("Error initializing screenshoter:", error);
+					}
+				};
+
+				if (map.getContainer() && map.getSize().x > 0 && map.getSize().y > 0) {
+					initializeScreenshoter();
+				} else {
+					map.once("load", initializeScreenshoter);
+					map.once("resize", initializeScreenshoter);
+				}
+
+				return () => {
+					if (screenshoter) {
+						try {
+							map.removeControl(screenshoter);
+						} catch (error) {
+							console.error("Error removing screenshoter:", error);
+						}
+					}
+				};
+			}
+		}
+	}, [map, screenshoter]);
+
 	// Models for ModelDetailsModal
 	const [models, setModels] = useState<
 		Array<{
@@ -975,6 +1021,8 @@ const ClimateMap = ({ onMount = () => true }) => {
 								onModelInfo={handleModelInfo}
 								onAbout={handleAbout}
 								colorScheme={styleMode === "purple" ? "purple" : "red"}
+								map={map}
+								screenshoter={screenshoter}
 								legend={
 									dataExtremes ? (
 										<Legend

@@ -5,9 +5,11 @@ import {
 	SettingOutlined,
 } from "@ant-design/icons";
 import { Button, Select, Slider, Tooltip } from "antd";
+import type L from "leaflet";
 import {
 	Camera,
 	Database,
+	ExternalLink,
 	HelpCircle,
 	MapPin,
 	RotateCcw,
@@ -15,6 +17,7 @@ import {
 	ZoomOut,
 } from "lucide-react";
 import type { ReactNode } from "react";
+import { useState } from "react";
 import { isMobile } from "react-device-detect";
 
 const { Option } = Select;
@@ -33,6 +36,8 @@ interface AdvancedTimelineSelectorProps {
 	onAbout: () => void;
 	colorScheme: "purple" | "red";
 	legend?: ReactNode;
+	map?: L.Map | null;
+	screenshoter?: L.SimpleMapScreenshoter | null;
 }
 
 const AdvancedTimelineSelector: React.FC<AdvancedTimelineSelectorProps> = ({
@@ -49,7 +54,42 @@ const AdvancedTimelineSelector: React.FC<AdvancedTimelineSelectorProps> = ({
 	onAbout,
 	colorScheme,
 	legend,
+	map,
+	screenshoter,
 }) => {
+	const [isSaving, setIsSaving] = useState(false);
+
+	const handleSaveScreenshot = async () => {
+		if (!map || !screenshoter) {
+			console.error("Map or screenshoter not initialized");
+			return;
+		}
+
+		setIsSaving(true);
+
+		try {
+			// Ensure the map has rendered before taking screenshot
+			await new Promise((resolve) => setTimeout(resolve, 100));
+
+			const blob = (await screenshoter.takeScreen("blob", {
+				mimeType: "image/png",
+			})) as Blob;
+			const url = URL.createObjectURL(blob);
+			const link = document.createElement("a");
+			link.href = url;
+			link.download = `map-screenshot-${Date.now()}.png`;
+			link.click();
+
+			URL.revokeObjectURL(url);
+
+			console.log("Screenshot saved successfully");
+		} catch (error) {
+			console.error("Screenshot failed:", error);
+		} finally {
+			setIsSaving(false);
+		}
+	};
+
 	const months = [
 		"January",
 		"February",
@@ -211,7 +251,8 @@ const AdvancedTimelineSelector: React.FC<AdvancedTimelineSelectorProps> = ({
 				<div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
 					<button
 						type="button"
-						onClick={onScreenshot}
+						onClick={handleSaveScreenshot}
+						disabled={isSaving || !screenshoter}
 						style={{
 							color: "white",
 							border: "1px solid rgba(255, 255, 255, 0.3)",
@@ -224,10 +265,17 @@ const AdvancedTimelineSelector: React.FC<AdvancedTimelineSelectorProps> = ({
 							cursor: "pointer",
 							fontSize: "14px",
 							fontWeight: "500",
+							opacity: isSaving || !screenshoter ? 0.5 : 1,
 						}}
+						title={
+							!screenshoter
+								? "Screenshot plugin not loaded"
+								: "Capture map as image"
+						}
 					>
 						<Camera size={20} />
-						Screenshot
+						{isSaving ? "Saving..." : "Screenshot"}
+						<ExternalLink size={20} />
 					</button>
 					<button
 						type="button"

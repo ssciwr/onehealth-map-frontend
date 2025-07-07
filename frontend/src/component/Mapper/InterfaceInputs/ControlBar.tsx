@@ -354,37 +354,6 @@ const ControlBar = ({
 		setCurrentTheme(newTheme);
 	};
 
-	const handleShare = async () => {
-		const currentUrl = window.location.href;
-
-		if (navigator.share) {
-			try {
-				await navigator.share({
-					title: "Climate Map Visualization",
-					text: "Check out this climate data visualization",
-					url: currentUrl,
-				});
-			} catch (error) {
-				if (error.name !== "AbortError") {
-					console.error("Error sharing:", error);
-					// Fallback to clipboard
-					await navigator.clipboard.writeText(currentUrl);
-					alert("Link copied to clipboard!");
-				}
-			}
-		} else {
-			// Fallback for browsers without Web Share API
-			try {
-				await navigator.clipboard.writeText(currentUrl);
-				alert("Link copied to clipboard!");
-			} catch (error) {
-				console.error("Failed to copy to clipboard:", error);
-				// Final fallback - show URL in prompt
-				prompt("Copy this link:", currentUrl);
-			}
-		}
-	};
-
 	const handleToggleMinimize = () => {
 		setIsMinimized(!isMinimized);
 	};
@@ -560,39 +529,7 @@ const ControlBar = ({
 					>
 						<Camera size={16} />
 						{isSaving ? "Saving..." : "Screenshot"}
-					</button>
-
-					<button
-						type="button"
-						onClick={handleShare}
-						style={{
-							display: "flex",
-							alignItems: "center",
-							gap: "8px",
-							padding: "8px 20px",
-							backgroundColor: "#db3c1c",
-							border: "1px solid #db3c1c",
-							borderRadius: "0.5rem",
-							cursor: "pointer",
-							fontSize: "18px",
-							fontWeight: "500",
-							color: "white",
-							transition: "all 0.2s ease",
-							whiteSpace: "nowrap",
-							minWidth: "fit-content",
-						}}
-						onMouseEnter={(e) => {
-							e.currentTarget.style.backgroundColor = "#8a0000";
-							e.currentTarget.style.borderColor = "#8a0000";
-						}}
-						onMouseLeave={(e) => {
-							e.currentTarget.style.backgroundColor = "#db3c1c";
-							e.currentTarget.style.borderColor = "#db3c1c";
-						}}
-						title="Share current view"
-					>
-						<Share size={16} />
-						Share
+						<ExternalLink size={16} />
 					</button>
 
 					<button
