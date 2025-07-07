@@ -138,7 +138,6 @@ const TimelineSelector: React.FC<AntdTimelineSelectorProps> = ({
 											boxShadow: "0 8px 32px rgba(0, 0, 0, 0.12)",
 											background:
 												"linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)",
-											transition: "all 0.3s ease",
 										}}
 										placeholder="Select Year"
 										className={isMobile ? "light-box-shadow" : ""}
