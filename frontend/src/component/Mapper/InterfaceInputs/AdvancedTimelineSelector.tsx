@@ -234,7 +234,7 @@ const AdvancedTimelineSelector: React.FC<AdvancedTimelineSelectorProps> = ({
 							}}
 							size="large"
 							dropdownStyle={{
-								background: "rgba(0, 0, 0, 0.8)",
+								background: "white",
 								backdropFilter: "blur(10px)",
 							}}
 						>
@@ -435,6 +435,24 @@ const AdvancedTimelineSelector: React.FC<AdvancedTimelineSelectorProps> = ({
 					.ant-btn:hover {
 						background: rgba(255, 255, 255, 0.2) !important;
 						border-color: rgba(255, 255, 255, 0.5) !important;
+					}
+
+					.ant-select-dropdown {
+						background: white !important;
+					}
+
+					.ant-select-dropdown .ant-select-item {
+						color: black !important;
+					}
+
+					.ant-select-dropdown .ant-select-item-option-selected {
+						background-color: #1890ff !important;
+						color: white !important;
+					}
+
+					.ant-select-dropdown .ant-select-item:hover {
+						background-color: #f5f5f5 !important;
+						color: black !important;
 					}
 				`}
 			</style>
