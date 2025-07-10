@@ -139,7 +139,7 @@ export class GridToNutsConverter {
 		return index;
 	}
 
-	private getPolygonBounds(polygon: turf.Feature<Polygon | MultiPolygon>): {
+	private getPolygonBounds(polygon: Feature<Polygon | MultiPolygon>): {
 		minLat: number;
 		maxLat: number;
 		minLng: number;
@@ -255,6 +255,7 @@ export class GridToNutsConverter {
 	}
 
 	private getCountryIdentifier(feature: Feature): string | null {
+		if (!feature.properties) return null;
 		const countryCode =
 			feature.properties["ISO3166-1-Alpha-3"] ||
 			feature.properties["ISO3166-1-Alpha-2"] ||
@@ -281,7 +282,7 @@ export class GridToNutsConverter {
 
 	private createPolygonFromFeature(
 		feature: Feature,
-	): turf.Feature<Polygon | MultiPolygon> | null {
+	): Feature<Polygon | MultiPolygon> | null {
 		try {
 			if (feature.geometry?.type === "Polygon") {
 				return turf.polygon((feature.geometry as Polygon).coordinates);
@@ -411,7 +412,7 @@ export class GridToNutsConverter {
 								pointCount: pointsInRegion.length,
 								nutsLevel: 2,
 							},
-							geometry: nutsFeature.geometry,
+							geometry: nutsFeature.geometry as Polygon | MultiPolygon,
 						};
 
 						nutsFeatures.push(nutsFeatureResult);
@@ -444,7 +445,7 @@ export class GridToNutsConverter {
 									nutsLevel: 2,
 									isFallback: true,
 								},
-								geometry: nutsFeature.geometry,
+								geometry: nutsFeature.geometry as Polygon | MultiPolygon,
 							};
 
 							nutsFeatures.push(nutsFeatureResult);
@@ -579,8 +580,16 @@ export class GridToNutsConverter {
 						nutsLevel: 0,
 					},
 					geometry: {
-						type: feature.geometry?.type || "Polygon",
-						coordinates: feature.geometry?.coordinates || [],
+						type:
+							feature.geometry?.type === "Polygon" ||
+							feature.geometry?.type === "MultiPolygon"
+								? feature.geometry.type
+								: "Polygon",
+						coordinates:
+							feature.geometry?.type === "Polygon" ||
+							feature.geometry?.type === "MultiPolygon"
+								? (feature.geometry as Polygon | MultiPolygon).coordinates
+								: [],
 					},
 				};
 
@@ -768,6 +777,7 @@ export class GridToNutsConverter {
 
 		// Update features with model data where available
 		for (const feature of this.nutsGeoJSON.features) {
+			if (!feature.properties) continue;
 			const nutsId = feature.properties.NUTS_ID;
 			const modelTemperature = modelData[nutsId];
 
@@ -778,20 +788,25 @@ export class GridToNutsConverter {
 					...feature,
 					properties: {
 						...feature.properties,
+						NUTS_ID: nutsId,
 						intensity: modelTemperature,
 						isModelData: true,
 					},
+					geometry: feature.geometry as Polygon | MultiPolygon,
 				});
 			} else {
 				// Keep calculated data
-				if (feature.properties.intensity !== undefined) {
+				if (feature.properties && feature.properties.intensity !== undefined) {
 					temperatures.push(feature.properties.intensity);
 					updatedFeatures.push({
 						...feature,
 						properties: {
 							...feature.properties,
+							NUTS_ID: feature.properties?.NUTS_ID || "",
+							intensity: feature.properties?.intensity || 0,
 							isModelData: false,
 						},
+						geometry: feature.geometry as Polygon | MultiPolygon,
 					});
 				}
 			}

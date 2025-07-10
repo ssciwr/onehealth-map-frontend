@@ -1,5 +1,6 @@
+import L from "leaflet";
 import React from "react";
-import { GeoJSON, MapContainer, TileLayer } from "react-leaflet";
+import { MapContainer, TileLayer } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 
 /** Although this has been added, the current NUTs equivalent version,hich parses NUTs/country regions from Lat/lon
@@ -10,6 +11,7 @@ import "leaflet/dist/leaflet.css";
 const LandOnlyMap = () => {
 	// Fix for default markers in react-leaflet
 	React.useEffect(() => {
+		// @ts-ignore - Leaflet internal property
 		L.Icon.Default.prototype._getIconUrl = undefined;
 		L.Icon.Default.mergeOptions({
 			iconRetinaUrl:
@@ -22,38 +24,8 @@ const LandOnlyMap = () => {
 	}, []);
 
 	// Center on Europe/Africa region
-	const center = [20, 15];
+	const center: [number, number] = [20, 15];
 	const zoom = 3;
-
-	// Create a simple world outline (very rough approximation)
-	const worldOutline = {
-		type: "FeatureCollection",
-		features: [
-			{
-				type: "Feature",
-				properties: { name: "Europe-Africa-Asia landmass" },
-				geometry: {
-					type: "Polygon",
-					coordinates: [
-						[
-							[-10, 35],
-							[40, 35],
-							[40, 70],
-							[180, 70],
-							[180, -35],
-							[40, -35],
-							[20, -35],
-							[20, -20],
-							[10, -20],
-							[10, 0],
-							[-10, 0],
-							[-10, 35],
-						],
-					],
-				},
-			},
-		],
-	};
 
 	return (
 		<div style={{ height: "600px", width: "100%", backgroundColor: "white" }}>

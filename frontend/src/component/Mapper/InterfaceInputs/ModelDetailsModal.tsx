@@ -83,7 +83,7 @@ const ModelDetailsModal: React.FC<ModelDetailsModalProps> = React.memo(
 			loadingStore.start();
 
 			try {
-				const data = await fetchModelChartData(modelId);
+				const data = await fetchModelChartData();
 				modelDataCache.current.set(modelId, data);
 				setCurrentChartData(data);
 			} catch (error) {

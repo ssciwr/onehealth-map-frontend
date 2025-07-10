@@ -12,9 +12,6 @@ import {
 	MapPin,
 	Minus,
 	Plus,
-	RotateCcw,
-	ZoomIn,
-	ZoomOut,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { isMobile } from "react-device-detect";

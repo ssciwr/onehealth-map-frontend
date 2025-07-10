@@ -9,16 +9,24 @@ import {
 	SkipForward,
 	Sliders,
 } from "lucide-react";
-import React, { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { GeoJSON, MapContainer, TileLayer, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
+import type { Feature, FeatureCollection, Geometry } from "geojson";
+import type { Layer } from "leaflet";
+
+type CountryId = "france" | "germany" | "uk";
+
+type CountryFeature = Feature<Geometry, { name: string; id: CountryId }>;
 
 const CinematicClimateViz = () => {
 	const [isPlaying, setIsPlaying] = useState(false);
 	const [currentYear, setCurrentYear] = useState(2020);
 	const [showTemperature, setShowTemperature] = useState(true);
-	const [selectedCountry, setSelectedCountry] = useState(null);
-	const [hoveredCountry, setHoveredCountry] = useState(null);
+	const [selectedCountry, setSelectedCountry] = useState<CountryId | null>(
+		null,
+	);
+	const [hoveredCountry, setHoveredCountry] = useState<CountryId | null>(null);
 
 	// Fake climate data for each country
 	const climateData = {
@@ -49,7 +57,10 @@ const CinematicClimateViz = () => {
 	};
 
 	// Simplified country boundaries (in real app, load from GeoJSON)
-	const countryFeatures = {
+	const countryFeatures: FeatureCollection<
+		Geometry,
+		{ name: string; id: CountryId }
+	> = {
 		type: "FeatureCollection",
 		features: [
 			{
@@ -113,14 +124,14 @@ const CinematicClimateViz = () => {
 	};
 
 	// Calculate interpolated temperature for current year
-	const getTemperatureForYear = (country, year) => {
+	const getTemperatureForYear = (country: CountryId, year: number) => {
 		const data = climateData[country];
 		const progress = (year - 2020) / 80; // 0 to 1 over 80 years
 		return data.temp2020 + (data.temp2100 - data.temp2020) * progress;
 	};
 
 	// Get color based on temperature
-	const getTemperatureColor = (countryId) => {
+	const getTemperatureColor = (countryId: CountryId) => {
 		const temp = getTemperatureForYear(countryId, currentYear);
 		const normalized = (temp - 8) / 10; // Normalize between 8°C and 18°C
 
@@ -131,9 +142,10 @@ const CinematicClimateViz = () => {
 	};
 
 	// Style for each country
-	const countryStyle = (feature) => {
-		const isHovered = hoveredCountry === feature.properties.id;
-		const isSelected = selectedCountry === feature.properties.id;
+	const countryStyle = (feature: CountryFeature | undefined) => {
+		if (!feature) return {};
+		const isHovered = hoveredCountry === feature?.properties?.id;
+		const isSelected = selectedCountry === feature?.properties?.id;
 
 		return {
 			fillColor: showTemperature
@@ -150,7 +162,7 @@ const CinematicClimateViz = () => {
 	};
 
 	// Handle country interactions
-	const onEachCountry = (feature, layer) => {
+	const onEachCountry = (feature: CountryFeature, layer: Layer) => {
 		layer.on({
 			mouseover: () => setHoveredCountry(feature.properties.id),
 			mouseout: () => setHoveredCountry(null),

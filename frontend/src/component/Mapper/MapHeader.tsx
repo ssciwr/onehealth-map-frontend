@@ -1,9 +1,9 @@
 import { SettingOutlined } from "@ant-design/icons";
 import { Button, Modal, Select } from "antd";
-import { Eye, EyeOff, Map as MapIcon, Palette } from "lucide-react";
+import { EyeOff, Map as MapIcon, Palette } from "lucide-react";
 
 const { Option } = Select;
-import React, { useState } from "react";
+import { useState } from "react";
 import { isMobile } from "react-device-detect";
 import { viewingMode } from "../../stores/ViewingModeStore.ts";
 import GeneralCard from "../General/GeneralCard.tsx";

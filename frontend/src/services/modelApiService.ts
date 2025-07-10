@@ -1,13 +1,11 @@
 // Fake API service for fetching model chart data
-export interface ModelChartData {
+export interface ModelChartData extends Record<string | number, number> {
 	[year: number]: number;
 }
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-export async function fetchModelChartData(
-	modelId: string,
-): Promise<ModelChartData> {
+export async function fetchModelChartData(): Promise<ModelChartData> {
 	// Simulate network delay
 	await delay(200 + Math.random() * 1000);
 

@@ -8,7 +8,6 @@ import ViewportMonitor from "./ViewportMonitor.tsx";
 import "./Map.css";
 import { Layers } from "lucide-react";
 import Footer, { AboutContent } from "../../static/Footer.tsx";
-import AdaptiveGridLayer from "./AdaptiveGridLayer.tsx";
 import ClippedGridLayer from "./ClippedGridLayer.tsx";
 import DebugStatsPanel from "./DebugStatsPanel.tsx";
 import ControlBar from "./InterfaceInputs/ControlBar.tsx";

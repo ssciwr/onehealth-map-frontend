@@ -2,7 +2,12 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Polygon, Popup } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import * as turf from "@turf/turf";
-import type { Feature, FeatureCollection } from "geojson";
+import type {
+	Feature,
+	FeatureCollection,
+	MultiPolygon as GeoMultiPolygon,
+	Polygon as GeoPolygon,
+} from "geojson";
 import type L from "leaflet";
 import type { DataExtremes, ViewportBounds } from "./types";
 import { getColorFromGradient } from "./utilities/gradientUtilities";
@@ -232,10 +237,17 @@ const ClippedGridLayer = ({
 		if (cellMap.size > 0 && countriesGeoJSON.features.length > 0) {
 			const firstCell = cellMap.entries().next().value;
 			const firstCountry = countriesGeoJSON.features[0];
-			console.log("DEBUG: First cell bounds:", firstCell[1].bounds);
+			if (firstCell) {
+				console.log("DEBUG: First cell bounds:", firstCell[1].bounds);
+			}
 			console.log("DEBUG: First country feature:", {
 				type: firstCountry.geometry?.type,
-				coordinates: firstCountry.geometry?.coordinates?.length,
+				coordinates:
+					firstCountry.geometry?.type === "Polygon" ||
+					firstCountry.geometry?.type === "MultiPolygon"
+						? (firstCountry.geometry as GeoPolygon | GeoMultiPolygon)
+								.coordinates?.length
+						: undefined,
 				properties: firstCountry.properties,
 			});
 		}
@@ -244,7 +256,7 @@ const ClippedGridLayer = ({
 			processedCells++;
 			// Create a proper cell feature
 			const cellFeature = turf.polygon([cell.bounds]);
-			let clippedGeometry: Feature<turf.Polygon> | null = null;
+			let clippedGeometry: Feature<GeoPolygon> | null = null;
 			let intersectedWithCountry = false;
 
 			// Check intersection with all countries and clip accordingly
@@ -253,7 +265,10 @@ const ClippedGridLayer = ({
 					// Skip invalid features
 					if (
 						!countryFeature.geometry ||
-						!countryFeature.geometry.coordinates
+						(countryFeature.geometry.type !== "Polygon" &&
+							countryFeature.geometry.type !== "MultiPolygon") ||
+						!(countryFeature.geometry as GeoPolygon | GeoMultiPolygon)
+							.coordinates
 					) {
 						continue;
 					}
@@ -268,7 +283,12 @@ const ClippedGridLayer = ({
 
 					// Check if cell intersects with this country
 					try {
-						if (turf.booleanIntersects(cellFeature, countryFeature)) {
+						if (
+							turf.booleanIntersects(
+								cellFeature,
+								countryFeature as Feature<GeoPolygon | GeoMultiPolygon>,
+							)
+						) {
 							intersectedWithCountry = true;
 
 							// Skip turf.intersect entirely - use manual polygon analysis
@@ -280,7 +300,7 @@ const ClippedGridLayer = ({
 								const cornersInside = corners.map((corner) =>
 									turf.booleanPointInPolygon(
 										turf.point([corner[0], corner[1]]),
-										countryFeature,
+										countryFeature as Feature<GeoPolygon | GeoMultiPolygon>,
 									),
 								);
 
@@ -331,7 +351,9 @@ const ClippedGridLayer = ({
 										"DEBUG: Manual clipping failed for cell",
 										id,
 										":",
-										clipError.message,
+										clipError instanceof Error
+											? clipError.message
+											: String(clipError),
 									);
 								}
 
@@ -381,7 +403,9 @@ const ClippedGridLayer = ({
 					});
 				} else if (clippedGeometry.geometry.type === "MultiPolygon") {
 					// For MultiPolygon, create separate cells for each polygon
-					clippedGeometry.geometry.coordinates.forEach(
+					const multiPolygon =
+						clippedGeometry.geometry as unknown as GeoMultiPolygon;
+					multiPolygon.coordinates.forEach(
 						(polygonCoords: number[][][], index: number) => {
 							newClippedCells.push({
 								coordinates: polygonCoords,

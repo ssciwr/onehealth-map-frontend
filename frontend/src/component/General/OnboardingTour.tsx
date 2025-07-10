@@ -9,7 +9,6 @@ interface TourStep {
 		body: string;
 	};
 	position?: [number, number];
-	action?: (setCurrentStep: (step: number) => void) => void;
 }
 
 const steps: TourStep[] = [
@@ -30,8 +29,8 @@ const steps: TourStep[] = [
 ];
 
 const TourComponent = () => {
-	const { setIsOpen, setCurrentStep, currentStep, isOpen } = useTour();
-	const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
+	const { setIsOpen } = useTour();
+	const [hasCompletedOnboarding] = useState(false);
 
 	useEffect(() => {
 		// Check if tour is disabled via URL parameter
@@ -68,16 +67,6 @@ const TourComponent = () => {
 		return () =>
 			window.removeEventListener("modalChoiceMade", handleModalChoice);
 	}, [setIsOpen, hasCompletedOnboarding]);
-
-	const handleTourComplete = () => {
-		localStorage.setItem("onehealth-tour-completed", "true");
-		setHasCompletedOnboarding(true);
-		setIsOpen(false);
-	};
-
-	const handleSkipTour = () => {
-		handleTourComplete();
-	};
 
 	return null; // This component doesn't render anything itself
 };
@@ -119,13 +108,7 @@ const OnboardingTour = ({ children }: { children: React.ReactNode }) => {
 								<button
 									type="button"
 									className="tour-button tour-button-primary"
-									onClick={() => {
-										if (step.action) {
-											step.action(setCurrentStep);
-										} else {
-											setCurrentStep(index + 1);
-										}
-									}}
+									onClick={() => setCurrentStep(index + 1)}
 								>
 									Next
 								</button>
@@ -145,11 +128,7 @@ const OnboardingTour = ({ children }: { children: React.ReactNode }) => {
 					</div>
 				),
 				position: step.position,
-				action: step.action,
 			}))}
-			onRequestClose={() => {
-				localStorage.setItem("onehealth-tour-completed", "true");
-			}}
 			styles={{
 				popover: (base) => ({
 					...base,

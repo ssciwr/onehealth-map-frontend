@@ -1,9 +1,3 @@
-import {
-	CalendarOutlined,
-	LeftOutlined,
-	RightOutlined,
-	SettingOutlined,
-} from "@ant-design/icons";
 import { Button, Select, Slider, Tooltip } from "antd";
 import type L from "leaflet";
 import {
@@ -49,7 +43,6 @@ const AdvancedTimelineSelector: React.FC<AdvancedTimelineSelectorProps> = ({
 	onZoomOut,
 	onResetZoom,
 	onLocationFind,
-	onScreenshot,
 	onModelInfo,
 	onAbout,
 	colorScheme,

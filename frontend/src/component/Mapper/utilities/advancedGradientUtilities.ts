@@ -1,5 +1,5 @@
 import type { DataExtremes } from "../types";
-import { getRiskLevelColor } from "./AdvancedMapDataUtils.tsx";
+import { getColorFromGradient as getGradientColor } from "./gradientUtilities";
 
 export const getColorFromGradient = (
 	value: number,
@@ -16,5 +16,5 @@ export const getColorFromGradient = (
 	}
 
 	// Use the discrete risk level colors instead of continuous gradient
-	return getRiskLevelColor(value, extremes);
+	return getGradientColor(value, { min: extremes.min, max: extremes.max });
 };
