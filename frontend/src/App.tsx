@@ -1,10 +1,13 @@
 import { observer } from "mobx-react-lite";
 import { Route, Routes } from "react-router-dom";
 import "./App.css";
+import GlobalErrorModal from "./component/General/GlobalErrorModal";
+import GlobalLoadingBar from "./component/General/GlobalLoadingBar";
+import LandOnlyMap from "./component/General/LandOnlyMap.tsx";
+import OnboardingTour from "./component/General/OnboardingTour";
 import ClimateMap from "./component/Mapper/ClimateMap.tsx";
 import MapWithExpertiseModal from "./component/Mapper/InterfaceInputs/MapWithExpertiseModal.tsx";
 import NotFound from "./pages/NotFound.tsx";
-import Overview from "./pages/Overview";
 import { viewingMode } from "./stores/ViewingModeStore";
 
 const App = observer(() => {
@@ -15,7 +18,9 @@ const App = observer(() => {
 
      */
 	return (
-		<>
+		<OnboardingTour>
+			<GlobalLoadingBar />
+			<GlobalErrorModal />
 			<Routes>
 				<Route
 					path="/map/citizen"
@@ -42,11 +47,11 @@ const App = observer(() => {
 					}
 				/>
 				<Route path="/map" element={<MapWithExpertiseModal />} />
-				<Route path="/OldOverview" element={<Overview />} />
+				<Route path="/Fake" element={<LandOnlyMap />} />
 				<Route path="/" element={<ClimateMap />} />
 				<Route path="*" element={<NotFound />} />
 			</Routes>
-		</>
+		</OnboardingTour>
 	);
 });
 
