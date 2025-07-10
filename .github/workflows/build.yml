@@ -2,9 +2,9 @@ name: Build
 
 on:
   push:
-    branches: [main]
+    branches: [main, add_npm_build_to_ci]
   pull_request:
-    branches: [main]
+    branches: [main, add_npm_build_to_ci]
 
 jobs:
   build:
