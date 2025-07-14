@@ -73,10 +73,3 @@ export interface TemperatureDataPoint {
 	date?: string;
 	id?: string;
 }
-
-export const COLOR_SCHEMES = {
-	default: {
-		low: "#2656ac",
-		high: "#ef4444",
-	},
-} as const; // preserve literal types

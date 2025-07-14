@@ -1,11 +1,40 @@
 import type React from "react";
 import { useEffect, useState } from "react";
 
+interface GeoJSONFeature {
+	geometry: {
+		type: "Polygon" | "MultiPolygon";
+		coordinates: number[][][] | number[][][][];
+	};
+	properties: {
+		name?: string;
+		name_en?: string;
+		admin?: string;
+		[key: string]: string | number | boolean | null | undefined;
+	};
+}
+
+interface GeoJSONData {
+	type: "FeatureCollection";
+	features: GeoJSONFeature[];
+}
+
+interface TestResult {
+	country: string;
+	features: number;
+	polygons: number;
+	hasData: boolean;
+	data: GeoJSONData;
+	names: string[];
+}
+
 const GeoJSONTester: React.FC = () => {
-	const [globalData, setGlobalData] = useState<any>(null);
+	const [globalData, setGlobalData] = useState<GeoJSONData | null>(null);
 	const [loading, setLoading] = useState<boolean>(false);
-	const [results, setResults] = useState<any[]>([]);
-	const [selectedCountry, setSelectedCountry] = useState<any>(null);
+	const [results, setResults] = useState<TestResult[]>([]);
+	const [selectedCountry, setSelectedCountry] = useState<TestResult | null>(
+		null,
+	);
 
 	const NATURAL_EARTH_URL =
 		"https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_10m_admin_1_states_provinces.geojson";
@@ -36,7 +65,7 @@ const GeoJSONTester: React.FC = () => {
 
 	useEffect(() => {
 		loadAndTest();
-	}, []);
+	}, []); // eslint-disable-line react-hooks/exhaustive-deps
 
 	const loadAndTest = async () => {
 		setLoading(true);
@@ -51,7 +80,7 @@ const GeoJSONTester: React.FC = () => {
 			// Test African countries
 			const testResults = [];
 			for (const country of africanCountries) {
-				const features = data.features.filter((f: any) => {
+				const features = data.features.filter((f: GeoJSONFeature) => {
 					const props = f.properties;
 					return (
 						props.admin === country ||
@@ -61,7 +90,7 @@ const GeoJSONTester: React.FC = () => {
 				});
 
 				const polygons = features.filter(
-					(f: any) =>
+					(f: GeoJSONFeature) =>
 						f.geometry?.type === "Polygon" ||
 						f.geometry?.type === "MultiPolygon",
 				);
@@ -71,10 +100,12 @@ const GeoJSONTester: React.FC = () => {
 					features: features.length,
 					polygons: polygons.length,
 					hasData: polygons.length > 0,
-					data: { type: "FeatureCollection", features: polygons },
+					data: { type: "FeatureCollection" as const, features: polygons },
 					names: features
 						.slice(0, 3)
-						.map((f: any) => f.properties.name || f.properties.name_en)
+						.map(
+							(f: GeoJSONFeature) => f.properties.name || f.properties.name_en,
+						)
 						.filter(Boolean),
 				});
 			}
@@ -87,33 +118,41 @@ const GeoJSONTester: React.FC = () => {
 		}
 	};
 
-	const showCountry = (countryData: any) => {
+	const showCountry = (countryData: TestResult) => {
 		setSelectedCountry(countryData);
 	};
 
-	const renderMap = (data: any) => {
+	const renderMap = (data: GeoJSONData) => {
 		if (!data?.features?.length) return null;
 
 		const features = data.features;
 		const bounds = { minLat: 90, maxLat: -90, minLng: 180, maxLng: -180 };
 
-		features.forEach((feature: any) => {
+		for (const feature of features) {
 			const coords = feature.geometry?.coordinates;
-			const processCoords = (coordArray: any): void => {
+			const processCoords = (
+				coordArray: number[] | number[][] | number[][][] | number[][][][],
+			): void => {
 				if (Array.isArray(coordArray)) {
 					if (typeof coordArray[0] === "number") {
-						const [lng, lat] = coordArray;
+						const [lng, lat] = coordArray as number[];
 						bounds.minLat = Math.min(bounds.minLat, lat);
 						bounds.maxLat = Math.max(bounds.maxLat, lat);
 						bounds.minLng = Math.min(bounds.minLng, lng);
 						bounds.maxLng = Math.max(bounds.maxLng, lng);
 					} else {
-						coordArray.forEach(processCoords);
+						for (const subArray of coordArray as (
+							| number[]
+							| number[][]
+							| number[][][]
+						)[]) {
+							processCoords(subArray);
+						}
 					}
 				}
 			};
 			if (coords) processCoords(coords);
-		});
+		}
 
 		const width = 500;
 		const height = 400;
@@ -132,46 +171,69 @@ const GeoJSONTester: React.FC = () => {
 		return (
 			<div style={{ margin: "20px 0" }}>
 				<h3>
-					{selectedCountry.country} - {features.length} Administrative Regions
+					{selectedCountry?.country} - {features.length} Administrative Regions
 				</h3>
 				<svg width={width} height={height} style={{ border: "1px solid #ccc" }}>
-					{features.map((feature: any, index: number) => {
+					<title>
+						Map of {selectedCountry?.country} administrative regions
+					</title>
+					{features.map((feature: GeoJSONFeature, index: number) => {
 						const { type, coordinates } = feature.geometry;
 						const color = `hsl(${(index * 137.5) % 360}, 70%, 60%)`;
+						const featureId =
+							feature.properties.name ||
+							feature.properties.name_en ||
+							`feature-${index}`;
 
 						if (type === "Polygon") {
-							return coordinates.map((ring: any, ringIndex: number) => (
-								<polygon
-									key={`${index}-${ringIndex}`}
-									points={ring
-										.map(
-											(coord: number[]) =>
-												`${scaleX(coord[0])},${scaleY(coord[1])}`,
-										)
-										.join(" ")}
-									fill={color}
-									fillOpacity={0.6}
-									stroke="#333"
-									strokeWidth={0.5}
-								/>
-							));
-						} else if (type === "MultiPolygon") {
-							return coordinates.map((polygon: any, polyIndex: number) =>
-								polygon.map((ring: any, ringIndex: number) => (
-									<polygon
-										key={`${index}-${polyIndex}-${ringIndex}`}
-										points={ring
-											.map(
-												(coord: number[]) =>
-													`${scaleX(coord[0])},${scaleY(coord[1])}`,
-											)
-											.join(" ")}
-										fill={color}
-										fillOpacity={0.6}
-										stroke="#333"
-										strokeWidth={0.5}
-									/>
-								)),
+							return (coordinates as number[][][]).map(
+								(ring: number[][], ringIndex: number) => {
+									const ringHash =
+										ring.length > 0
+											? `${ring[0][0]}-${ring[0][1]}`
+											: String(ringIndex);
+									return (
+										<polygon
+											key={`${featureId}-polygon-${ringHash}`}
+											points={ring
+												.map(
+													(coord: number[]) =>
+														`${scaleX(coord[0])},${scaleY(coord[1])}`,
+												)
+												.join(" ")}
+											fill={color}
+											fillOpacity={0.6}
+											stroke="#333"
+											strokeWidth={0.5}
+										/>
+									);
+								},
+							);
+						}
+						if (type === "MultiPolygon") {
+							return (coordinates as number[][][][]).flatMap(
+								(polygon: number[][][], polyIndex: number) =>
+									polygon.map((ring: number[][], ringIndex: number) => {
+										const ringHash =
+											ring.length > 0
+												? `${ring[0][0]}-${ring[0][1]}`
+												: String(ringIndex);
+										return (
+											<polygon
+												key={`${featureId}-multipolygon-${polyIndex}-${ringHash}`}
+												points={ring
+													.map(
+														(coord: number[]) =>
+															`${scaleX(coord[0])},${scaleY(coord[1])}`,
+													)
+													.join(" ")}
+												fill={color}
+												fillOpacity={0.6}
+												stroke="#333"
+												strokeWidth={0.5}
+											/>
+										);
+									}),
 							);
 						}
 						return null;
@@ -180,7 +242,9 @@ const GeoJSONTester: React.FC = () => {
 				<div style={{ fontSize: "12px", marginTop: "10px" }}>
 					<strong>Regions:</strong>{" "}
 					{features
-						.map((f: any) => f.properties.name || f.properties.name_en)
+						.map(
+							(f: GeoJSONFeature) => f.properties.name || f.properties.name_en,
+						)
 						.filter(Boolean)
 						.join(", ")}
 				</div>
@@ -211,14 +275,17 @@ const GeoJSONTester: React.FC = () => {
 					>
 						{results
 							.filter((r) => r.hasData)
-							.map((result, index) => (
-								<div
-									key={index}
+							.map((result) => (
+								<button
+									key={result.country}
+									type="button"
 									style={{
 										padding: "10px",
 										border: "1px solid #ddd",
 										backgroundColor: "#f9f9f9",
 										cursor: "pointer",
+										width: "100%",
+										textAlign: "left",
 									}}
 									onClick={() => showCountry(result)}
 								>
@@ -230,11 +297,12 @@ const GeoJSONTester: React.FC = () => {
 										{result.names.slice(0, 2).join(", ")}
 										{result.names.length > 2 ? "..." : ""}
 									</small>
-								</div>
+								</button>
 							))}
 					</div>
 
 					<button
+						type="button"
 						onClick={() => setSelectedCountry(null)}
 						style={{ margin: "20px 0", padding: "10px" }}
 					>
