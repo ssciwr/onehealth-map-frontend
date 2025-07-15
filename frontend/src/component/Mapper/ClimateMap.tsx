@@ -18,6 +18,7 @@ import { errorStore } from "../../stores/ErrorStore";
 import { loadingStore } from "../../stores/LoadingStore";
 import AdvancedTimelineSelector from "./InterfaceInputs/AdvancedTimelineSelector.tsx";
 import TimelineSelector from "./InterfaceInputs/TimelineSelector.tsx";
+import NoDataModal from "./NoDataModal.tsx";
 import type {
 	DataExtremes,
 	NutsGeoJSON,
@@ -48,7 +49,7 @@ const ClimateMap = ({ onMount = () => true }) => {
 	const [selectedModel, setSelectedModel] = useState<string>("");
 	const [selectedOptimism, setSelectedOptimism] =
 		useState<string>("optimistic");
-	const [currentYear, setCurrentYear] = useState<number>(2025);
+	const [currentYear, setCurrentYear] = useState<number>(2016);
 	const [currentMonth, setCurrentMonth] = useState<number>(1);
 	const [map, setMap] = useState<L.Map | null>(null);
 	const [dataExtremes, setDataExtremes] = useState<DataExtremes | null>(null);
@@ -78,6 +79,11 @@ const ClimateMap = ({ onMount = () => true }) => {
 	// Screenshoter state
 	const [screenshoter, setScreenshoter] =
 		useState<L.SimpleMapScreenshoter | null>(null);
+
+	// No data modal state
+	const [lackOfDataModalVisible, setLackOfDataModalVisible] = useState(false);
+	const [requestedYear, setRequestedYear] = useState<number>(2016);
+	const [apiErrorMessage, setApiErrorMessage] = useState<string>("");
 
 	// Initialize screenshoter when map is ready
 	useEffect(() => {
@@ -321,6 +327,7 @@ const ClimateMap = ({ onMount = () => true }) => {
 			try {
 				loadingStore.start();
 				console.log("Started loading of store...");
+				setRequestedYear(year);
 
 				// Get the selected model's output value
 				const selectedModelData = models.find((m) => m.id === selectedModel);
@@ -342,11 +349,19 @@ const ClimateMap = ({ onMount = () => true }) => {
 			} catch (err: unknown) {
 				const error = err as Error;
 				loadingStore.complete();
-				errorStore.showError(
-					"Temperature Data Error",
-					`Failed to load temperature data: ${error.message}`,
-				);
-				setError(`Failed to load temperature data: ${error.message}`);
+
+				// Check if this is an API error indicating missing data
+				if (error.message.includes("API_ERROR:")) {
+					const errorMsg = error.message.replace("API_ERROR: ", "");
+					setApiErrorMessage(errorMsg);
+					setLackOfDataModalVisible(true);
+				} else {
+					errorStore.showError(
+						"Temperature Data Error",
+						`Failed to load temperature data: ${error.message}`,
+					);
+					setError(`Failed to load temperature data: ${error.message}`);
+				}
 			}
 		},
 		[models, selectedModel],
@@ -937,6 +952,12 @@ const ClimateMap = ({ onMount = () => true }) => {
 		setIsAboutOpen(true);
 	};
 
+	const handleLoadCurrentYear = () => {
+		const currentYear = new Date().getFullYear();
+		setCurrentYear(currentYear);
+		setLackOfDataModalVisible(false);
+	};
+
 	const nutsStyle = (feature: GeoJSON.Feature) => {
 		if (!feature || !feature.properties) return {};
 
@@ -1301,6 +1322,14 @@ const ClimateMap = ({ onMount = () => true }) => {
 			>
 				<AboutContent />
 			</Modal>
+
+			<NoDataModal
+				isOpen={lackOfDataModalVisible}
+				onClose={() => setLackOfDataModalVisible(false)}
+				onLoadCurrentYear={handleLoadCurrentYear}
+				requestedYear={requestedYear}
+				errorMessage={apiErrorMessage}
+			/>
 
 			<Footer />
 		</div>
