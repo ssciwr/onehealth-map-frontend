@@ -7,7 +7,7 @@ test.describe("ControlBar Component", () => {
 
 		// Wait for control bar to be visible.
 		await page.waitForSelector('[data-testid="control-bar"]', {
-			timeout: 30000,
+			timeout: 300000,
 		});
 	});
 

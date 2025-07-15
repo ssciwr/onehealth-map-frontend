@@ -224,6 +224,7 @@ const AdvancedTimelineSelector: React.FC<AdvancedTimelineSelectorProps> = ({
 				<div>
 					{/* Top row with controls */}
 					<div
+						data-testid="control-bar"
 						style={{
 							display: "flex",
 							justifyContent: "space-between",
