@@ -133,6 +133,7 @@ const ClimateMap = ({ onMount = () => true }) => {
 			icon: string;
 			color: string;
 			details: string;
+			output: string[];
 		}>
 	>([]);
 
@@ -161,36 +162,63 @@ const ClimateMap = ({ onMount = () => true }) => {
 
 					const yamlText = await response.text();
 					const lines = yamlText.split("\n");
-					const result: Record<string, string> = {};
+					const result: Record<string, any> = {};
+					let currentKey = "";
+					let isInArray = false;
+					let arrayItems: string[] = [];
 
 					for (const line of lines) {
 						const trimmed = line.trim();
 						if (trimmed && !trimmed.startsWith("#")) {
 							const colonIndex = trimmed.indexOf(":");
 							if (colonIndex > 0) {
+								// If we were in an array, save it
+								if (isInArray && currentKey) {
+									result[currentKey] = arrayItems;
+									arrayItems = [];
+									isInArray = false;
+								}
+
 								const key = trimmed.substring(0, colonIndex).trim();
 								let value = trimmed.substring(colonIndex + 1).trim();
+
 								if (
 									(value.startsWith("'") && value.endsWith("'")) ||
 									(value.startsWith('"') && value.endsWith('"'))
 								) {
 									value = value.slice(1, -1);
 								}
-								result[key] = value;
+
+								if (value === "") {
+									// This might be the start of an array
+									currentKey = key;
+									isInArray = true;
+								} else {
+									result[key] = value;
+								}
+							} else if (trimmed.startsWith("- ") && isInArray) {
+								// This is an array item
+								arrayItems.push(trimmed.substring(2).trim());
 							}
 						}
 					}
 
+					// Handle any remaining array
+					if (isInArray && currentKey) {
+						result[currentKey] = arrayItems;
+					}
+
 					const model = {
 						id: result.id || "",
-						virusType: result.virusType || "",
-						modelName: result.modelName || "",
+						virusType: result["virus-type"] || "",
+						modelName: result["model-name"] || "",
 						title: result.title || "",
 						description: result.description || "",
 						emoji: result.emoji || "",
 						icon: result.icon || "",
 						color: result.color || "",
 						details: result.details || "",
+						output: result.output || ["t2m"],
 					};
 
 					if (model.id) {
@@ -288,28 +316,41 @@ const ClimateMap = ({ onMount = () => true }) => {
 
 	const getOptimismLevels = () => ["optimistic", "realistic", "pessimistic"];
 
-	const handleLoadTemperatureData = useCallback(async (year: number) => {
-		try {
-			loadingStore.start();
-			console.log("Started loading of store...");
-			const { dataPoints, extremes, bounds } = await loadTemperatureData(year);
-			setTemperatureData(dataPoints);
-			setDataExtremes(extremes);
-			if (bounds) {
-				setDataBounds(bounds);
+	const handleLoadTemperatureData = useCallback(
+		async (year: number) => {
+			try {
+				loadingStore.start();
+				console.log("Started loading of store...");
+
+				// Get the selected model's output value
+				const selectedModelData = models.find((m) => m.id === selectedModel);
+				const requestedVariableValue = selectedModelData?.output?.[0] || "t2m";
+				const outputFormat = selectedModelData?.output;
+
+				const { dataPoints, extremes, bounds } = await loadTemperatureData(
+					year,
+					requestedVariableValue,
+					outputFormat,
+				);
+				setTemperatureData(dataPoints);
+				setDataExtremes(extremes);
+				if (bounds) {
+					setDataBounds(bounds);
+				}
+				console.log("Finished loading of store...");
+				loadingStore.complete();
+			} catch (err: unknown) {
+				const error = err as Error;
+				loadingStore.complete();
+				errorStore.showError(
+					"Temperature Data Error",
+					`Failed to load temperature data: ${error.message}`,
+				);
+				setError(`Failed to load temperature data: ${error.message}`);
 			}
-			console.log("Finished loading of store...");
-			loadingStore.complete();
-		} catch (err: unknown) {
-			const error = err as Error;
-			loadingStore.complete();
-			errorStore.showError(
-				"Temperature Data Error",
-				`Failed to load temperature data: ${error.message}`,
-			);
-			setError(`Failed to load temperature data: ${error.message}`);
-		}
-	}, []);
+		},
+		[models, selectedModel],
+	);
 
 	useEffect(() => {
 		handleLoadTemperatureData(currentYear);

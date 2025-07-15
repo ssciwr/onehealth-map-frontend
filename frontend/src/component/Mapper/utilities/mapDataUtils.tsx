@@ -1,6 +1,7 @@
 import * as turf from "@turf/turf";
 import L from "leaflet";
 import { isMobile } from "react-device-detect";
+import { fetchClimateData } from "../../../services/climateDataService.ts";
 import type { DataExtremes, TemperatureDataPoint } from "../types.ts";
 
 export const MIN_ZOOM = 3.4;
@@ -331,62 +332,64 @@ export const calculateExtremes = (
 
 export const loadTemperatureData = async (
 	year: number,
+	requestedVariableValue = "t2m",
+	outputFormat?: string[],
 ): Promise<{
 	dataPoints: TemperatureDataPoint[];
 	extremes: DataExtremes;
 	bounds: L.LatLngBounds | null;
 }> => {
-	const dataPath = `${year.toString()}_data_january_05res.csv`;
-	console.log("DataPath:", dataPath);
-	const response = await fetch(`/${dataPath}`);
-	const text = await response.text();
-	const rows = text
-		.split("\n")
-		.slice(1)
-		.filter((row) => row.trim() !== "");
+	console.log(
+		"Loading climate data for year:",
+		year,
+		"variable:",
+		requestedVariableValue,
+	);
 
-	const sampleRate = 1;
-	const dataPoints: TemperatureDataPoint[] = [];
+	try {
+		const apiData = await fetchClimateData(
+			year,
+			requestedVariableValue,
+			outputFormat,
+		);
+		const dataPoints: TemperatureDataPoint[] = [];
 
-	for (let i = 0; i < rows.length; i++) {
-		if (i % Math.floor(1 / sampleRate) === 0) {
-			const row = rows[i];
-			const values = row.split(",");
-			if (values.length >= 4) {
-				const temperature = Number.parseFloat(values[3]) || 0;
-				const lat = Number.parseFloat(values[1]) || 0;
-				const lng = Number.parseFloat(values[2]) || 0;
-				if (i % 100000 === 0) {
-					console.log("Lat:", lat, "Long: ", lng, "Temp:", temperature);
-				}
+		for (let i = 0; i < apiData.length; i++) {
+			const { latitude: lat, longitude: lng, temperature } = apiData[i];
 
-				if (
-					!Number.isNaN(lat) &&
-					!Number.isNaN(lng) &&
-					!Number.isNaN(temperature)
-				) {
-					dataPoints.push({
-						point: turf.point([lng, lat]),
-						temperature: temperature,
-						lat: lat,
-						lng: lng,
-					});
-				}
+			if (i % 100000 === 0) {
+				console.log("Lat:", lat, "Long: ", lng, "Temp:", temperature);
+			}
+
+			if (
+				!Number.isNaN(lat) &&
+				!Number.isNaN(lng) &&
+				!Number.isNaN(temperature)
+			) {
+				dataPoints.push({
+					point: turf.point([lng, lat]),
+					temperature: temperature,
+					lat: lat,
+					lng: lng,
+				});
 			}
 		}
+
+		const extremes = calculateExtremes(dataPoints);
+
+		let bounds: L.LatLngBounds | null = null;
+		if (dataPoints.length > 0) {
+			const lats = dataPoints.map((p) => p.lat);
+			const lngs = dataPoints.map((p) => p.lng);
+			bounds = L.latLngBounds([
+				[Math.min(...lats), Math.min(...lngs)],
+				[Math.max(...lats), Math.max(...lngs)],
+			]);
+		}
+
+		return { dataPoints, extremes, bounds };
+	} catch (error) {
+		console.error("Failed to load temperature data:", error);
+		throw error;
 	}
-
-	const extremes = calculateExtremes(dataPoints);
-
-	let bounds: L.LatLngBounds | null = null;
-	if (dataPoints.length > 0) {
-		const lats = dataPoints.map((p) => p.lat);
-		const lngs = dataPoints.map((p) => p.lng);
-		bounds = L.latLngBounds([
-			[Math.min(...lats), Math.min(...lngs)],
-			[Math.max(...lats), Math.max(...lngs)],
-		]);
-	}
-
-	return { dataPoints, extremes, bounds };
 };

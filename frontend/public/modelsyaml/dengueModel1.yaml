@@ -14,3 +14,5 @@ authors: ["PT Sherman", "Indiana Jones"]
 paper:
   paperTitle: Analysis of multi-scale dengue transmission in European regions
   url: somedoilink.com
+output:
+  - t2m
