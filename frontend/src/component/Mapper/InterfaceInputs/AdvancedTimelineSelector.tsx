@@ -109,6 +109,11 @@ const AdvancedTimelineSelector: React.FC<AdvancedTimelineSelectorProps> = ({
 		2100: "2100",
 	};
 
+	const yearOptions = [];
+	for (let y = 1960; y <= 2100; y++) {
+		yearOptions.push(y);
+	}
+
 	const backgroundGradient =
 		colorScheme === "purple"
 			? "linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
@@ -123,249 +128,325 @@ const AdvancedTimelineSelector: React.FC<AdvancedTimelineSelectorProps> = ({
 				right: 0,
 				background: backgroundGradient,
 				zIndex: 1000,
-				padding: "16px 60px",
+				padding: isMobile ? "16px 20px" : "16px 60px",
 				backdropFilter: "blur(20px)",
 				borderTop: "1px solid rgba(255, 255, 255, 0.2)",
 			}}
 		>
-			{/* Top row with controls */}
-			<div
-				style={{
-					display: "flex",
-					justifyContent: "space-between",
-					alignItems: "center",
-					marginBottom: "16px",
-				}}
-			>
-				{/* Left controls */}
-				<div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
-					<Button
-						type="text"
-						icon={<ZoomIn size={27} />}
-						onClick={onZoomIn}
+			{isMobile ? (
+				/* Mobile Layout */
+				<div>
+					{/* Year and Month selectors */}
+					<div
 						style={{
-							color: "white",
-							border: "1px solid rgba(255, 255, 255, 0.3)",
-							background: "rgba(255, 255, 255, 0.1)",
-							borderRadius: "50%",
-							width: "56px",
-							height: "56px",
 							display: "flex",
 							alignItems: "center",
-							justifyContent: "center",
+							gap: "12px",
+							marginBottom: "16px",
 						}}
-					/>
-					<Button
-						type="text"
-						icon={<ZoomOut size={27} />}
-						onClick={onZoomOut}
-						style={{
-							color: "white",
-							border: "1px solid rgba(255, 255, 255, 0.3)",
-							background: "rgba(255, 255, 255, 0.1)",
-							borderRadius: "50%",
-							width: "56px",
-							height: "56px",
-							display: "flex",
-							alignItems: "center",
-							justifyContent: "center",
-						}}
-					/>
-					<Button
-						type="text"
-						icon={<RotateCcw size={27} />}
-						onClick={onResetZoom}
-						style={{
-							color: "white",
-							border: "1px solid rgba(255, 255, 255, 0.3)",
-							background: "rgba(255, 255, 255, 0.1)",
-							borderRadius: "50%",
-							width: "56px",
-							height: "56px",
-							display: "flex",
-							alignItems: "center",
-							justifyContent: "center",
-						}}
-					/>
-					<Button
-						type="text"
-						icon={<MapPin size={27} />}
-						onClick={onLocationFind}
-						style={{
-							color: "white",
-							border: "1px solid rgba(255, 255, 255, 0.3)",
-							background: "rgba(255, 255, 255, 0.1)",
-							borderRadius: "50%",
-							width: "56px",
-							height: "56px",
-							display: "flex",
-							alignItems: "center",
-							justifyContent: "center",
-						}}
-					/>
-				</div>
+					>
+						{/* Year selector - dropdown on mobile */}
+						<div style={{ flex: 1 }}>
+							<Select
+								value={year}
+								onChange={onYearChange}
+								style={{
+									width: "100%",
+									height: "50px",
+									fontSize: "18px",
+									fontWeight: "600",
+								}}
+								size="large"
+								placeholder="Select Year"
+								showSearch
+								filterOption={(input, option) =>
+									option?.children
+										?.toString()
+										.toLowerCase()
+										.includes(input.toLowerCase()) ?? false
+								}
+								dropdownStyle={{
+									background: "white",
+									backdropFilter: "blur(10px)",
+								}}
+							>
+								{yearOptions.map((yearOption) => (
+									<Option key={yearOption} value={yearOption}>
+										{yearOption}
+									</Option>
+								))}
+							</Select>
+						</div>
 
-				{/* Center - Year and Month display */}
-				<div
-					style={{
-						display: "flex",
-						alignItems: "center",
-						gap: "16px",
-						color: "white",
-						fontSize: "18px",
-						fontWeight: "600",
-					}}
-				>
-					<span style={{ fontSize: "48px" }}>{year}</span>
-					<div style={{ minWidth: "150px" }}>
-						<Select
-							value={month}
-							onChange={onMonthChange}
+						{/* Month selector */}
+						<div style={{ minWidth: "140px" }}>
+							<Select
+								value={month}
+								onChange={onMonthChange}
+								style={{
+									width: "100%",
+									height: "50px",
+									fontSize: "16px",
+									fontWeight: "600",
+								}}
+								size="large"
+								dropdownStyle={{
+									background: "white",
+									backdropFilter: "blur(10px)",
+								}}
+							>
+								{months.map((monthName, index) => (
+									<Option key={monthName} value={index + 1}>
+										{monthName}
+									</Option>
+								))}
+							</Select>
+						</div>
+					</div>
+
+					{/* Legend on mobile - horizontal with white background */}
+					{legend && (
+						<div
 							style={{
-								width: "100%",
-								color: "white",
-							}}
-							size="large"
-							dropdownStyle={{
 								background: "white",
-								backdropFilter: "blur(10px)",
+								borderRadius: "8px",
+								padding: "12px 16px",
+								marginTop: "12px",
+								boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
 							}}
 						>
-							{months.map((monthName, index) => (
-								<Option key={monthName} value={index + 1}>
-									{monthName}
-								</Option>
-							))}
-						</Select>
+							{legend}
+						</div>
+					)}
+				</div>
+			) : (
+				/* Desktop Layout */
+				<div>
+					{/* Top row with controls */}
+					<div
+						style={{
+							display: "flex",
+							justifyContent: "space-between",
+							alignItems: "center",
+							marginBottom: "16px",
+						}}
+					>
+						{/* Left controls */}
+						<div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
+							<Button
+								type="text"
+								icon={<ZoomIn size={27} />}
+								onClick={onZoomIn}
+								style={{
+									color: "white",
+									border: "1px solid rgba(255, 255, 255, 0.3)",
+									background: "rgba(255, 255, 255, 0.1)",
+									borderRadius: "50%",
+									width: "56px",
+									height: "56px",
+									display: "flex",
+									alignItems: "center",
+									justifyContent: "center",
+								}}
+							/>
+							<Button
+								type="text"
+								icon={<ZoomOut size={27} />}
+								onClick={onZoomOut}
+								style={{
+									color: "white",
+									border: "1px solid rgba(255, 255, 255, 0.3)",
+									background: "rgba(255, 255, 255, 0.1)",
+									borderRadius: "50%",
+									width: "56px",
+									height: "56px",
+									display: "flex",
+									alignItems: "center",
+									justifyContent: "center",
+								}}
+							/>
+							<Button
+								type="text"
+								icon={<RotateCcw size={27} />}
+								onClick={onResetZoom}
+								style={{
+									color: "white",
+									border: "1px solid rgba(255, 255, 255, 0.3)",
+									background: "rgba(255, 255, 255, 0.1)",
+									borderRadius: "50%",
+									width: "56px",
+									height: "56px",
+									display: "flex",
+									alignItems: "center",
+									justifyContent: "center",
+								}}
+							/>
+							<Button
+								type="text"
+								icon={<MapPin size={27} />}
+								onClick={onLocationFind}
+								style={{
+									color: "white",
+									border: "1px solid rgba(255, 255, 255, 0.3)",
+									background: "rgba(255, 255, 255, 0.1)",
+									borderRadius: "50%",
+									width: "56px",
+									height: "56px",
+									display: "flex",
+									alignItems: "center",
+									justifyContent: "center",
+								}}
+							/>
+						</div>
+
+						{/* Center - Year and Month display */}
+						<div
+							style={{
+								display: "flex",
+								alignItems: "center",
+								gap: "16px",
+								color: "white",
+								fontSize: "18px",
+								fontWeight: "600",
+							}}
+						>
+							<span style={{ fontSize: "48px" }}>{year}</span>
+							<div style={{ minWidth: "150px" }}>
+								<Select
+									value={month}
+									onChange={onMonthChange}
+									style={{
+										width: "100%",
+										color: "white",
+									}}
+									size="large"
+									dropdownStyle={{
+										background: "white",
+										backdropFilter: "blur(10px)",
+									}}
+								>
+									{months.map((monthName, index) => (
+										<Option key={monthName} value={index + 1}>
+											{monthName}
+										</Option>
+									))}
+								</Select>
+							</div>
+						</div>
+
+						{/* Right controls */}
+						<div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
+							<button
+								type="button"
+								onClick={handleSaveScreenshot}
+								disabled={isSaving || !screenshoter}
+								style={{
+									color: "white",
+									border: "1px solid rgba(255, 255, 255, 0.3)",
+									background: "rgba(255, 255, 255, 0.1)",
+									borderRadius: "12px",
+									padding: "8px 16px",
+									display: "flex",
+									alignItems: "center",
+									gap: "8px",
+									cursor: "pointer",
+									fontSize: "14px",
+									fontWeight: "500",
+									opacity: isSaving || !screenshoter ? 0.5 : 1,
+								}}
+								title={
+									!screenshoter
+										? "Screenshot plugin not loaded"
+										: "Capture map as image"
+								}
+							>
+								<Camera size={20} />
+								{isSaving ? "Saving..." : "Screenshot"}
+								<ExternalLink size={20} />
+							</button>
+							<button
+								type="button"
+								onClick={onModelInfo}
+								style={{
+									color: "white",
+									border: "1px solid rgba(255, 255, 255, 0.3)",
+									background: "rgba(255, 255, 255, 0.1)",
+									borderRadius: "12px",
+									padding: "8px 16px",
+									display: "flex",
+									alignItems: "center",
+									gap: "8px",
+									cursor: "pointer",
+									fontSize: "14px",
+									fontWeight: "500",
+								}}
+							>
+								<Database size={20} />
+								Model Info
+							</button>
+							<button
+								type="button"
+								onClick={onAbout}
+								style={{
+									color: "white",
+									border: "1px solid rgba(255, 255, 255, 0.3)",
+									background: "rgba(255, 255, 255, 0.1)",
+									borderRadius: "12px",
+									padding: "8px 16px",
+									display: "flex",
+									alignItems: "center",
+									gap: "8px",
+									cursor: "pointer",
+									fontSize: "14px",
+									fontWeight: "500",
+								}}
+							>
+								<HelpCircle size={20} />
+								About
+							</button>
+						</div>
 					</div>
-				</div>
 
-				{/* Right controls */}
-				<div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
-					<button
-						type="button"
-						onClick={handleSaveScreenshot}
-						disabled={isSaving || !screenshoter}
+					{/* Bottom row with year/month selector */}
+					<div
 						style={{
-							color: "white",
-							border: "1px solid rgba(255, 255, 255, 0.3)",
-							background: "rgba(255, 255, 255, 0.1)",
-							borderRadius: "12px",
-							padding: "8px 16px",
 							display: "flex",
 							alignItems: "center",
-							gap: "8px",
-							cursor: "pointer",
-							fontSize: "14px",
-							fontWeight: "500",
-							opacity: isSaving || !screenshoter ? 0.5 : 1,
-						}}
-						title={
-							!screenshoter
-								? "Screenshot plugin not loaded"
-								: "Capture map as image"
-						}
-					>
-						<Camera size={20} />
-						{isSaving ? "Saving..." : "Screenshot"}
-						<ExternalLink size={20} />
-					</button>
-					<button
-						type="button"
-						onClick={onModelInfo}
-						style={{
-							color: "white",
-							border: "1px solid rgba(255, 255, 255, 0.3)",
-							background: "rgba(255, 255, 255, 0.1)",
-							borderRadius: "12px",
-							padding: "8px 16px",
-							display: "flex",
-							alignItems: "center",
-							gap: "8px",
-							cursor: "pointer",
-							fontSize: "14px",
-							fontWeight: "500",
+							gap: "20px",
+							marginLeft: "20px",
+							marginRight: "20px",
 						}}
 					>
-						<Database size={20} />
-						Model Info
-					</button>
-					<button
-						type="button"
-						onClick={onAbout}
-						style={{
-							color: "white",
-							border: "1px solid rgba(255, 255, 255, 0.3)",
-							background: "rgba(255, 255, 255, 0.1)",
-							borderRadius: "12px",
-							padding: "8px 16px",
-							display: "flex",
-							alignItems: "center",
-							gap: "8px",
-							cursor: "pointer",
-							fontSize: "14px",
-							fontWeight: "500",
-						}}
-					>
-						<HelpCircle size={20} />
-						About
-					</button>
-				</div>
-			</div>
-
-			{/* Bottom row with timeline and month selector */}
-			<div
-				style={{
-					display: "flex",
-					alignItems: "center",
-					gap: "20px",
-					marginLeft: "20px",
-					marginRight: "20px",
-				}}
-			>
-				{/* Year slider */}
-				<div style={{ flex: 1 }}>
-					<Tooltip title={year}>
-						<Slider
-							value={year}
-							min={1960}
-							max={2100}
-							marks={marks}
-							included={false}
-							onChange={onYearChange}
-							trackStyle={{ background: "transparent" }}
-							railStyle={{
-								background: "rgba(255, 255, 255, 0.7)",
-								height: "8px",
-								borderRadius: "4px",
-							}}
-							handleStyle={{
-								borderColor: "rgba(0, 0, 0, 0.2)",
-								backgroundColor: "white",
-								boxShadow:
-									"0 4px 16px rgba(0, 0, 0, 0.3), 0 0 0 2px rgba(0, 0, 0, 0.1)",
-								width: "28px",
-								height: "28px",
-								marginTop: "-10px",
-							}}
-							style={{ width: "100%" }}
-						/>
-					</Tooltip>
-				</div>
-			</div>
-
-			{/* Legend */}
-			{isMobile && legend && (
-				<div
-					style={{
-						position: "absolute",
-						left: "20px",
-						top: "50%",
-						transform: "translateY(-50%)",
-						zIndex: 1001,
-					}}
-				>
-					{legend}
+						{/* Year slider */}
+						<div style={{ flex: 1 }}>
+							<Tooltip title={year}>
+								<Slider
+									value={year}
+									min={1960}
+									max={2100}
+									marks={marks}
+									included={false}
+									onChange={onYearChange}
+									trackStyle={{ background: "transparent" }}
+									railStyle={{
+										background: "rgba(255, 255, 255, 0.7)",
+										height: "8px",
+										borderRadius: "4px",
+									}}
+									handleStyle={{
+										borderColor: "rgba(0, 0, 0, 0.2)",
+										backgroundColor: "white",
+										boxShadow:
+											"0 4px 16px rgba(0, 0, 0, 0.3), 0 0 0 2px rgba(0, 0, 0, 0.1)",
+										width: "28px",
+										height: "28px",
+										marginTop: "-10px",
+									}}
+									style={{ width: "100%" }}
+								/>
+							</Tooltip>
+						</div>
+					</div>
 				</div>
 			)}
 
@@ -446,6 +527,26 @@ const AdvancedTimelineSelector: React.FC<AdvancedTimelineSelectorProps> = ({
 					.ant-select-dropdown .ant-select-item:hover {
 						background-color: #f5f5f5 !important;
 						color: black !important;
+					}
+
+					/* Mobile Select styling */
+					.ant-select-single.ant-select-lg .ant-select-selector {
+						height: 50px !important;
+						padding: 0 16px !important;
+						background: rgba(255, 255, 255, 0.2) !important;
+						border: 1px solid rgba(255, 255, 255, 0.3) !important;
+						border-radius: 8px !important;
+					}
+
+					.ant-select-single.ant-select-lg .ant-select-selection-item {
+						line-height: 48px !important;
+						color: white !important;
+						font-weight: 600 !important;
+					}
+
+					.ant-select-single.ant-select-lg .ant-select-selection-placeholder {
+						line-height: 48px !important;
+						color: rgba(255, 255, 255, 0.7) !important;
 					}
 				`}
 			</style>

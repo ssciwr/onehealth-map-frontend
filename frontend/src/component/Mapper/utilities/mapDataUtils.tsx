@@ -1,22 +1,11 @@
 import * as turf from "@turf/turf";
 import L from "leaflet";
+import { isMobile } from "react-device-detect";
 import type { DataExtremes, TemperatureDataPoint } from "../types.ts";
 
 export const MIN_ZOOM = 3.4;
 export const MAX_ZOOM = 7;
 
-/* Blue-red-red:
-const TEMP_COLORS = [
-	"#2c7bd4",
-	"#5a9ee8",
-	"#87c1f2",
-	"#b8d8f5",
-	"#f0c45a",
-	"#e89c35",
-	"#d67220",
-	"#c44020",
-];
- */
 export const TEMP_COLORS = [
 	"#4c1d4b", // Deep purple
 	"#663399", // Purple
@@ -53,178 +42,262 @@ const generateIntervals = (
 export const Legend = ({
 	extremes,
 	unit = "°C",
-	isMobile = false,
-}: { extremes: DataExtremes; unit?: string; isMobile?: boolean }) => {
+}: { extremes: DataExtremes; unit?: string }) => {
 	if (!extremes) return null;
 
 	const intervals = generateIntervals(
 		extremes.min,
 		extremes.max,
-		isMobile ? 2.5 : 10,
+		isMobile ? 6 : 10,
 	);
 	const totalRange = extremes.max - extremes.min;
-	const isVertical = !isMobile;
 
-	// Wrapper styles for positioning
-	const wrapperStyle: React.CSSProperties = isMobile
-		? {
-				minWidth: "100%",
-				marginTop: "12px",
-			}
-		: {
-				position: "fixed",
-				top: "20%",
-				bottom: "20%",
-				left: "32px",
-				zIndex: 700,
+	// Mobile timeline styles - full width, integrated with timeline
+	if (isMobile) {
+		const containerStyle: React.CSSProperties = {
+			width: "100%",
+			padding: "12px 16px",
+			backgroundColor: "transparent",
+			display: "flex",
+			flexDirection: "column",
+			gap: "8px",
+			margin: 0,
+		};
+
+		const barStyle: React.CSSProperties = {
+			height: "24px",
+			width: "100%",
+			borderRadius: "12px",
+			position: "relative",
+			display: "flex",
+			flexDirection: "row",
+			overflow: "hidden",
+		};
+
+		const labelsStyle: React.CSSProperties = {
+			display: "flex",
+			justifyContent: "space-between",
+			alignItems: "center",
+			width: "100%",
+			position: "relative",
+			marginTop: "6px",
+		};
+
+		const renderMobileColorBlocks = () =>
+			TEMP_COLORS.map((color, i) => {
+				const isFirst = i === 0;
+				const isLast = i === TEMP_COLORS.length - 1;
+				const borderRadius = isFirst
+					? "12px 0 0 12px"
+					: isLast
+						? "0 12px 12px 0"
+						: "0";
+
+				return (
+					<div
+						key={color}
+						style={{
+							width: `${100 / TEMP_COLORS.length}%`,
+							height: "100%",
+							backgroundColor: color,
+							borderRadius,
+						}}
+					/>
+				);
+			});
+
+		const renderMobileLabels = () => {
+			const labelStyle = {
+				fontSize: "10px",
+				fontWeight: "600",
+				color: "rgb(60,60,60)",
 			};
 
-	// Container styles
-	const containerStyle: React.CSSProperties = {
-		backgroundColor: "white",
-		borderRadius: "12px",
-		padding: isMobile ? "12px" : "16px",
-		boxShadow: `0 ${isMobile ? 2 : 4}px ${isMobile ? 8 : 12}px rgba(0, 0, 0, ${isMobile ? 0.1 : 0.15})`,
-		display: "flex",
-		flexDirection: isVertical ? "row" : "column",
-		alignItems: "center",
-		gap: isVertical ? "15px" : "12px",
-		height: isVertical ? "100%" : "auto",
-	};
+			return (
+				<>
+					<span style={labelStyle}>
+						{Math.round(extremes.min)}
+						{unit}
+					</span>
+					{intervals.map((temp) => {
+						const position = ((temp - extremes.min) / totalRange) * 100;
+						return (
+							<span
+								key={temp}
+								style={{
+									position: "absolute",
+									left: `${position}%`,
+									transform: "translateX(-50%)",
+									...labelStyle,
+									fontSize: "9px",
+									fontWeight: "500",
+								}}
+							>
+								{temp}
+								{unit}
+							</span>
+						);
+					})}
+					<span style={labelStyle}>
+						{Math.round(extremes.max)}
+						{unit}
+					</span>
+				</>
+			);
+		};
 
-	const barStyle: React.CSSProperties = {
-		borderRadius: "8px",
-		position: "relative",
-		display: "flex",
-		flexDirection: isVertical ? "column" : "row",
-		...(isVertical
-			? { width: "40px", height: "100%" }
-			: { width: "100%", height: "30px" }),
-	};
+		return (
+			<div style={containerStyle}>
+				<div style={barStyle}>{renderMobileColorBlocks()}</div>
+				<div style={labelsStyle}>{renderMobileLabels()}</div>
+			</div>
+		);
+	}
 
-	const labelsStyle: React.CSSProperties = {
-		display: "flex",
-		flexDirection: isVertical ? "column" : "row",
-		justifyContent: "space-between",
-		alignItems: isVertical ? "flex-start" : "center",
-		position: "relative",
-		...(isVertical ? { height: "100%" } : { width: "100%" }),
-	};
+	// Desktop vertical legend styles (unchanged)
+	if (!isMobile) {
+		const wrapperStyle: React.CSSProperties = {
+			position: "fixed",
+			top: "20%",
+			bottom: "20%",
+			left: "32px",
+			zIndex: 700,
+		};
 
-	// Color blocks with proper orientation
-	const colors = isVertical ? [...TEMP_COLORS].reverse() : TEMP_COLORS;
-	const numBlocks = colors.length;
+		const containerStyle: React.CSSProperties = {
+			backgroundColor: "white",
+			borderRadius: "12px",
+			padding: "16px",
+			boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
+			display: "flex",
+			flexDirection: "row",
+			alignItems: "center",
+			gap: "15px",
+			height: "100%",
+		};
 
-	const renderColorBlocks = () =>
-		colors.map((color, i) => {
-			const isFirst = i === 0;
-			const isLast = i === numBlocks - 1;
-			const borderRadius = isVertical
-				? isFirst
+		const barStyle: React.CSSProperties = {
+			borderRadius: "8px",
+			position: "relative",
+			display: "flex",
+			flexDirection: "column",
+			width: "40px",
+			height: "100%",
+		};
+
+		const labelsStyle: React.CSSProperties = {
+			display: "flex",
+			flexDirection: "column",
+			justifyContent: "space-between",
+			alignItems: "flex-start",
+			position: "relative",
+			height: "100%",
+		};
+
+		const renderColorBlocks = () => {
+			const colors = [...TEMP_COLORS].reverse();
+			return colors.map((color, i) => {
+				const isFirst = i === 0;
+				const isLast = i === colors.length - 1;
+				const borderRadius = isFirst
 					? "8px 8px 0 0"
 					: isLast
 						? "0 0 8px 8px"
-						: "0"
-				: isFirst
-					? "8px 0 0 8px"
-					: isLast
-						? "0 8px 8px 0"
 						: "0";
 
+				return (
+					<div
+						key={color}
+						style={{
+							height: `${100 / colors.length}%`,
+							width: "100%",
+							backgroundColor: color,
+							borderRadius,
+						}}
+					/>
+				);
+			});
+		};
+
+		const renderIntervalMarkers = () =>
+			intervals.map((temp) => {
+				const position = ((temp - extremes.min) / totalRange) * 100;
+				return (
+					<div
+						key={temp}
+						style={{
+							position: "absolute",
+							bottom: `${position}%`,
+							right: "100%",
+							width: "12px",
+							height: "2px",
+							backgroundColor: "#f8f9fa",
+							transform: "translateY(50%)",
+						}}
+					/>
+				);
+			});
+
+		const renderLabels = () => {
+			const labelStyle = (size: "small" | "large") => ({
+				fontSize: size === "small" ? "11px" : "13px",
+				fontWeight: size === "small" ? "500" : "bold",
+				color: "rgb(80,80,80)",
+			});
+
+			const sortedIntervals = [...intervals].reverse();
+
 			return (
-				<div
-					key={`${color}`}
-					style={{
-						[isVertical ? "height" : "width"]: `${100 / numBlocks}%`,
-						[isVertical ? "width" : "height"]: "100%",
-						backgroundColor: color,
-						borderRadius,
-					}}
-				/>
+				<>
+					<span style={labelStyle("large")}>
+						{Math.round(extremes.max)}
+						{unit}
+					</span>
+
+					{sortedIntervals.map((temp) => {
+						const position = ((temp - extremes.min) / totalRange) * 100;
+						return (
+							<span
+								key={temp}
+								style={{
+									position: "absolute",
+									bottom: `${position}%`,
+									transform: "translateY(50%)",
+									...labelStyle("small"),
+								}}
+							>
+								{temp}
+								{unit}
+							</span>
+						);
+					})}
+
+					<span
+						style={{
+							...labelStyle("large"),
+							position: "absolute",
+							bottom: 0,
+						}}
+					>
+						{Math.round(extremes.min)}
+						{unit}
+					</span>
+				</>
 			);
-		});
-
-	const renderIntervalMarkers = () =>
-		intervals.map((temp) => {
-			const position = ((temp - extremes.min) / totalRange) * 100;
-			return (
-				<div
-					key={temp}
-					style={{
-						position: "absolute",
-						[isVertical ? "bottom" : "left"]: `${position}%`,
-						[isVertical ? "right" : "top"]: "100%",
-						[isVertical ? "width" : "height"]: isVertical ? "12px" : "8px",
-						[isVertical ? "height" : "width"]: "2px",
-						backgroundColor: "#f8f9fa",
-						transform: isVertical ? "translateY(50%)" : "translateX(-50%)",
-					}}
-				/>
-			);
-		});
-
-	const renderLabels = () => {
-		const labelStyle = (size: "small" | "large") => ({
-			fontSize: size === "small" ? "11px" : "13px",
-			fontWeight: size === "small" ? "500" : "bold",
-			color: "rgb(80,80,80)",
-		});
-
-		const sortedIntervals = isVertical ? [...intervals].reverse() : intervals;
+		};
 
 		return (
-			<>
-				{/* Min/Max extremes */}
-				<span style={labelStyle("large")}>
-					{isVertical ? Math.round(extremes.max) : Math.round(extremes.min)}
-					{unit}
-				</span>
-
-				{/* Interval labels */}
-				{sortedIntervals.map((temp) => {
-					const position = ((temp - extremes.min) / totalRange) * 100;
-					return (
-						<span
-							key={temp}
-							style={{
-								position: "absolute",
-								[isVertical ? "bottom" : "left"]: `${position}%`,
-								transform: isVertical ? "translateY(50%)" : "translateX(-50%)",
-								...labelStyle("small"),
-							}}
-						>
-							{temp}
-							{unit}
-						</span>
-					);
-				})}
-
-				{/* Opposite extreme */}
-				<span
-					style={{
-						...labelStyle("large"),
-						position: "absolute",
-						[isVertical ? "bottom" : "right"]: 0,
-					}}
-				>
-					{isVertical ? Math.round(extremes.min) : Math.round(extremes.max)}
-					{unit}
-				</span>
-			</>
-		);
-	};
-
-	return (
-		<div style={wrapperStyle}>
-			<div style={containerStyle}>
-				<div style={barStyle}>
-					{renderColorBlocks()}
-					{renderIntervalMarkers()}
+			<div style={wrapperStyle}>
+				<div style={containerStyle}>
+					<div style={barStyle}>
+						{renderColorBlocks()}
+						{renderIntervalMarkers()}
+					</div>
+					<div style={labelsStyle}>{renderLabels()}</div>
 				</div>
-				<div style={labelsStyle}>{renderLabels()}</div>
 			</div>
-		</div>
-	);
+		);
+	}
 };
 
 export const calculateExtremes = (

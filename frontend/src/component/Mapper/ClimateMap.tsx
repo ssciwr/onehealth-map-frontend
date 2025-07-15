@@ -1,7 +1,7 @@
 import * as turf from "@turf/turf";
 import { Modal } from "antd";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { GeoJSON, MapContainer, Marker, Pane, TileLayer } from "react-leaflet";
+import { useCallback, useEffect, useState } from "react";
+import { GeoJSON, MapContainer, Pane } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import ViewportMonitor from "./ViewportMonitor.tsx";
@@ -25,7 +25,6 @@ import type {
 	ViewportBounds,
 } from "./types.ts";
 import { getColorFromGradient } from "./utilities/gradientUtilities";
-import { gridToNutsConverter } from "./utilities/gridToNutsConverter";
 import {
 	Legend,
 	MAX_ZOOM,
@@ -39,7 +38,6 @@ interface ViewportChangeData {
 }
 
 const ClimateMap = ({ onMount = () => true }) => {
-	const [loading, setLoading] = useState<boolean>(false);
 	const [error, setError] = useState<string | null>(null);
 	const [processingError, setProcessingError] = useState<boolean>(false);
 	const [temperatureData, setTemperatureData] = useState<
@@ -317,20 +315,15 @@ const ClimateMap = ({ onMount = () => true }) => {
 		handleLoadTemperatureData(currentYear);
 	}, [currentYear, handleLoadTemperatureData]);
 
-	// Load worldwide regions on mount
-	useEffect(() => {
-		loadworldwideRegions();
-	}, []);
-
 	// Load worldwide administrative regions
-	const loadworldwideRegions = async () => {
+	const loadworldwideRegions = useCallback(async () => {
 		try {
 			console.log("Loading global administrative regions...");
 			const response = await fetch(NATURAL_EARTH_URL);
 			const data = await response.json();
 
 			// Load ALL administrative regions from around the world - no geographic filtering
-			const allFeatures = data.features.filter((feature: any) => {
+			const allFeatures = data.features.filter((feature: GeoJSON.Feature) => {
 				// Only keep polygons and multipolygons
 				return (
 					feature.geometry?.type === "Polygon" ||
@@ -350,211 +343,215 @@ const ClimateMap = ({ onMount = () => true }) => {
 		} catch (error) {
 			console.error("Failed to load worldwide administrative regions:", error);
 		}
-	};
+	}, []);
+
+	// Load worldwide regions on mount
+	useEffect(() => {
+		loadworldwideRegions();
+	}, [loadworldwideRegions]);
 
 	// Sample temperature data to 1% for performance
-	const sampleTemperatureData = (
-		temperatureData: TemperatureDataPoint[],
-		sampleRate = 0.01,
-	) => {
-		const sampleSize = Math.max(
-			1,
-			Math.floor(temperatureData.length * sampleRate),
-		);
-		const step = Math.floor(temperatureData.length / sampleSize);
+	const sampleTemperatureData = useCallback(
+		(temperatureData: TemperatureDataPoint[], sampleRate = 0.01) => {
+			const sampleSize = Math.max(
+				1,
+				Math.floor(temperatureData.length * sampleRate),
+			);
+			const step = Math.floor(temperatureData.length / sampleSize);
 
-		const sampledData = [];
-		for (let i = 0; i < temperatureData.length; i += step) {
-			sampledData.push(temperatureData[i]);
-			if (sampledData.length >= sampleSize) break;
-		}
+			const sampledData = [];
+			for (let i = 0; i < temperatureData.length; i += step) {
+				sampledData.push(temperatureData[i]);
+				if (sampledData.length >= sampleSize) break;
+			}
 
-		console.log(
-			`Sampled ${sampledData.length} points from ${temperatureData.length} total (${(sampleRate * 100).toFixed(1)}%)`,
-		);
-		return sampledData;
-	};
+			console.log(
+				`Sampled ${sampledData.length} points from ${temperatureData.length} total (${(sampleRate * 100).toFixed(1)}%)`,
+			);
+			return sampledData;
+		},
+		[],
+	);
 
 	// Calculate average temperature for a region based on points within it
-	const calculateRegionTemperature = (
-		regionFeature: any,
-		temperatureData: TemperatureDataPoint[],
-	) => {
-		const regionName =
-			regionFeature.properties.name ||
-			regionFeature.properties.name_en ||
-			regionFeature.properties.admin ||
-			"Unknown";
+	const calculateRegionTemperature = useCallback(
+		(
+			regionFeature: GeoJSON.Feature,
+			temperatureData: TemperatureDataPoint[],
+		) => {
+			const regionName =
+				regionFeature.properties?.name ||
+				regionFeature.properties?.name_en ||
+				regionFeature.properties?.admin ||
+				"Unknown";
 
-		const pointsInRegion = temperatureData.filter((point) => {
-			// Use turf.js for accurate point-in-polygon checking
-			const isInside = isPointInRegion(
-				point.lat,
-				point.lng,
-				regionFeature.geometry,
-			);
-			return isInside;
-		});
+			const pointsInRegion = temperatureData.filter((point) => {
+				// Use turf.js for accurate point-in-polygon checking
+				const isInside = isPointInRegion(
+					point.lat,
+					point.lng,
+					regionFeature.geometry,
+				);
+				return isInside;
+			});
 
-		console.log(
-			`Region ${regionName}: found ${pointsInRegion.length} points within region`,
-		);
-
-		// Debug: For first few regions, test with some sample points
-		if (temperatureData.length > 0) {
-			const samplePoint = temperatureData[0];
-			const testResult = isPointInRegion(
-				samplePoint.lat,
-				samplePoint.lng,
-				regionFeature.geometry,
-			);
 			console.log(
-				`Region ${regionName}: testing sample point (${samplePoint.lat}, ${samplePoint.lng}) - inside: ${testResult}`,
+				`Region ${regionName}: found ${pointsInRegion.length} points within region`,
 			);
-		}
 
-		if (pointsInRegion.length === 0) {
-			// Fallback: find nearest point
-			const nearestPoint = findNearestPoint(regionFeature, temperatureData);
+			// Debug: For first few regions, test with some sample points
+			if (temperatureData.length > 0) {
+				const samplePoint = temperatureData[0];
+				const testResult = isPointInRegion(
+					samplePoint.lat,
+					samplePoint.lng,
+					regionFeature.geometry,
+				);
+				console.log(
+					`Region ${regionName}: testing sample point (${samplePoint.lat}, ${samplePoint.lng}) - inside: ${testResult}`,
+				);
+			}
+
+			if (pointsInRegion.length === 0) {
+				// Fallback: find nearest point
+				const nearestPoint = findNearestPoint(regionFeature, temperatureData);
+				console.log(
+					`Region ${regionName}: using nearest point fallback, temp: ${nearestPoint ? nearestPoint.temperature : "null"}`,
+				);
+				return nearestPoint ? nearestPoint.temperature : null;
+			}
+
+			// Calculate average temperature
+			const avgTemp =
+				pointsInRegion.reduce((sum, point) => sum + point.temperature, 0) /
+				pointsInRegion.length;
 			console.log(
-				`Region ${regionName}: using nearest point fallback, temp: ${nearestPoint ? nearestPoint.temperature : "null"}`,
+				`Region ${regionName}: calculated average temp: ${avgTemp} from ${pointsInRegion.length} points`,
 			);
-			return nearestPoint ? nearestPoint.temperature : null;
-		}
-
-		// Calculate average temperature
-		const avgTemp =
-			pointsInRegion.reduce((sum, point) => sum + point.temperature, 0) /
-			pointsInRegion.length;
-		console.log(
-			`Region ${regionName}: calculated average temp: ${avgTemp} from ${pointsInRegion.length} points`,
-		);
-		return avgTemp;
-	};
+			return avgTemp;
+		},
+		[],
+	);
 
 	// Use turf.js for accurate point-in-polygon checking
-	const isPointInRegion = (lat: number, lon: number, geometry: any) => {
-		try {
-			// Reduced debug logging (only log first few calls to avoid spam)
-			if (Math.random() < 0.001) {
-				// Only log 0.1% of calls
-				console.log("isPointInRegion sample call:", {
+	const isPointInRegion = useCallback(
+		(lat: number, lon: number, geometry: GeoJSON.Geometry) => {
+			try {
+				// Reduced debug logging (only log first few calls to avoid spam)
+				if (Math.random() < 0.001) {
+					// Only log 0.1% of calls
+					console.log("isPointInRegion sample call:", {
+						lat,
+						lon,
+						latType: typeof lat,
+						lonType: typeof lon,
+						geometryType: geometry?.type,
+					});
+				}
+
+				// Validate inputs with more detailed checks
+				if (
+					typeof lat !== "number" ||
+					typeof lon !== "number" ||
+					Number.isNaN(lat) ||
+					Number.isNaN(lon) ||
+					!Number.isFinite(lat) ||
+					!Number.isFinite(lon)
+				) {
+					console.error("Invalid lat/lon values:", {
+						lat,
+						lon,
+						latType: typeof lat,
+						lonType: typeof lon,
+						latIsNaN: Number.isNaN(lat),
+						lonIsNaN: Number.isNaN(lon),
+						latIsFinite: Number.isFinite(lat),
+						lonIsFinite: Number.isFinite(lon),
+					});
+					return false;
+				}
+
+				if (!geometry || !geometry.type || !("coordinates" in geometry)) {
+					console.error("Invalid geometry:", geometry);
+					return false;
+				}
+
+				// Additional validation for coordinate values
+				if (lat < -90 || lat > 90 || lon < -180 || lon > 180) {
+					console.error("Lat/lon values out of valid range:", { lat, lon });
+					return false;
+				}
+
+				// Create a turf point from lat/lon coordinates
+				const point = turf.point([lon, lat]);
+
+				// Create a turf polygon/multipolygon from the geometry
+				const polygon = turf.feature(geometry);
+
+				// Use turf's booleanPointInPolygon for accurate checking
+				const result = turf.booleanPointInPolygon(
+					point,
+					polygon as GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon>,
+				);
+
+				return result;
+			} catch (error) {
+				console.error("Error in point-in-polygon check:", error);
+				console.error("Error details:", {
 					lat,
 					lon,
 					latType: typeof lat,
 					lonType: typeof lon,
+					latRaw: lat,
+					lonRaw: lon,
 					geometryType: geometry?.type,
-				});
-			}
-
-			// Validate inputs with more detailed checks
-			if (
-				typeof lat !== "number" ||
-				typeof lon !== "number" ||
-				isNaN(lat) ||
-				isNaN(lon) ||
-				!isFinite(lat) ||
-				!isFinite(lon)
-			) {
-				console.error("Invalid lat/lon values:", {
-					lat,
-					lon,
-					latType: typeof lat,
-					lonType: typeof lon,
-					latIsNaN: isNaN(lat),
-					lonIsNaN: isNaN(lon),
-					latIsFinite: isFinite(lat),
-					lonIsFinite: isFinite(lon),
+					geometryCoordinates:
+						"coordinates" in geometry ? "present" : "missing",
+					errorMessage: error instanceof Error ? error.message : String(error),
+					errorStack: error instanceof Error ? error.stack : undefined,
 				});
 				return false;
 			}
-
-			if (!geometry || !geometry.type || !geometry.coordinates) {
-				console.error("Invalid geometry:", geometry);
-				return false;
-			}
-
-			// Additional validation for coordinate values
-			if (lat < -90 || lat > 90 || lon < -180 || lon > 180) {
-				console.error("Lat/lon values out of valid range:", { lat, lon });
-				return false;
-			}
-
-			// Create a turf point from lat/lon coordinates
-			const point = turf.point([lon, lat]);
-
-			// Create a turf polygon/multipolygon from the geometry
-			const polygon = turf.feature(geometry);
-
-			// Use turf's booleanPointInPolygon for accurate checking
-			const result = turf.booleanPointInPolygon(point, polygon);
-
-			return result;
-		} catch (error) {
-			console.error("Error in point-in-polygon check:", error);
-			console.error("Error details:", {
-				lat,
-				lon,
-				latType: typeof lat,
-				lonType: typeof lon,
-				latRaw: lat,
-				lonRaw: lon,
-				geometryType: geometry?.type,
-				geometryCoordinates: geometry?.coordinates ? "present" : "missing",
-				errorMessage: error.message,
-				errorStack: error.stack,
-			});
-			return false;
-		}
-	};
+		},
+		[],
+	);
 
 	// Find nearest temperature point to a region using turf.js
-	const findNearestPoint = (
-		regionFeature: any,
-		temperatureData: TemperatureDataPoint[],
-	) => {
-		try {
-			// Get centroid of the region using turf.js
-			const polygon = turf.feature(regionFeature.geometry);
-			const centroid = turf.centroid(polygon);
-			const [centroidLon, centroidLat] = centroid.geometry.coordinates;
+	const findNearestPoint = useCallback(
+		(
+			regionFeature: GeoJSON.Feature,
+			temperatureData: TemperatureDataPoint[],
+		) => {
+			try {
+				// Get centroid of the region using turf.js
+				const polygon = turf.feature(regionFeature.geometry);
+				const centroid = turf.centroid(polygon);
+				centroid.geometry.coordinates;
 
-			let nearestPoint = null;
-			let minDistance = Number.POSITIVE_INFINITY;
+				let nearestPoint = null;
+				let minDistance = Number.POSITIVE_INFINITY;
 
-			for (const point of temperatureData) {
-				// Use turf.js distance calculation
-				const tempPoint = turf.point([point.lng, point.lat]);
-				const distance = turf.distance(centroid, tempPoint, {
-					units: "kilometers",
-				});
+				for (const point of temperatureData) {
+					// Use turf.js distance calculation
+					const tempPoint = turf.point([point.lng, point.lat]);
+					const distance = turf.distance(centroid, tempPoint, {
+						units: "kilometers",
+					});
 
-				if (distance < minDistance) {
-					minDistance = distance;
-					nearestPoint = point;
+					if (distance < minDistance) {
+						minDistance = distance;
+						nearestPoint = point;
+					}
 				}
+
+				return nearestPoint;
+			} catch (error) {
+				console.error("Error finding nearest point:", error);
+				return null;
 			}
-
-			return nearestPoint;
-		} catch (error) {
-			console.error("Error finding nearest point:", error);
-			return null;
-		}
-	};
-
-	// Get bounds of a geometry feature using turf.js
-	const getFeatureBounds = (geometry: any) => {
-		try {
-			const polygon = turf.feature(geometry);
-			const bbox = turf.bbox(polygon);
-			const [west, south, east, north] = bbox;
-
-			return { north, south, east, west };
-		} catch (error) {
-			console.error("Error getting feature bounds:", error);
-			return { north: -90, south: 90, east: -180, west: 180 };
-		}
-	};
+		},
+		[],
+	);
 
 	// Convert grid data to NUTS when mode is NUTS and temperature data is available
 	useEffect(() => {
@@ -589,10 +586,10 @@ const ClimateMap = ({ onMount = () => true }) => {
 					// Sample temperature data to 10% for better accuracy
 					const sampledTemperatureData = sampleTemperatureData(
 						temperatureData,
-						0.05,
+						0.005,
 					);
 					console.log(
-						`Temperature data sample: first few points:`,
+						"Temperature data sample: first few points:",
 						sampledTemperatureData.slice(0, 5),
 					);
 
@@ -609,16 +606,6 @@ const ClimateMap = ({ onMount = () => true }) => {
 						);
 					}
 
-					// Debug: Show bounds of first few global regions
-					console.log(
-						`First 3 global regions:`,
-						worldwideRegionsGeoJSON.features.slice(0, 3).map((f) => ({
-							name:
-								f.properties.name || f.properties.name_en || f.properties.admin,
-							bounds: getFeatureBounds(f.geometry),
-						})),
-					);
-
 					// Process each global region and calculate temperature
 					const processedFeatures = [];
 					let hasError = false;
@@ -630,9 +617,9 @@ const ClimateMap = ({ onMount = () => true }) => {
 					) {
 						const feature = worldwideRegionsGeoJSON.features[index];
 						const regionName =
-							feature.properties.name ||
-							feature.properties.name_en ||
-							feature.properties.admin ||
+							feature.properties?.name ||
+							feature.properties?.name_en ||
+							feature.properties?.admin ||
 							`Region-${index}`;
 
 						try {
@@ -648,10 +635,10 @@ const ClimateMap = ({ onMount = () => true }) => {
 									...feature.properties,
 									intensity: avgTemp,
 									NUTS_ID:
-										feature.properties.name ||
-										feature.properties.name_en ||
+										feature.properties?.name ||
+										feature.properties?.name_en ||
 										"Unknown",
-									countryName: feature.properties.admin || "Unknown Country",
+									countryName: feature.properties?.admin || "Unknown Country",
 									pointCount: sampledTemperatureData.filter((point) =>
 										isPointInRegion(point.lat, point.lng, feature.geometry),
 									).length,
@@ -705,7 +692,7 @@ const ClimateMap = ({ onMount = () => true }) => {
 						.map((f) => f.properties.intensity)
 						.filter((t) => t !== null);
 					console.log(
-						`Temperature values for extremes calculation:`,
+						"Temperature values for extremes calculation:",
 						temperatures,
 					);
 					if (temperatures.length > 0) {
@@ -747,7 +734,16 @@ const ClimateMap = ({ onMount = () => true }) => {
 		};
 
 		convertToNuts();
-	}, [mapMode, temperatureData, worldwideRegionsGeoJSON, processingError]);
+	}, [
+		mapMode,
+		temperatureData,
+		worldwideRegionsGeoJSON,
+		processingError,
+		loadworldwideRegions,
+		calculateRegionTemperature,
+		isPointInRegion,
+		sampleTemperatureData,
+	]);
 
 	// Cleanup timeouts on unmount
 	useEffect(() => {
@@ -837,7 +833,7 @@ const ClimateMap = ({ onMount = () => true }) => {
 				(position) => {
 					if (map) {
 						map.setView(
-							[position.coords.latitude, position.coords.lnggitude],
+							[position.coords.latitude, position.coords.longitude],
 							6,
 						);
 					}
@@ -1139,6 +1135,7 @@ const ClimateMap = ({ onMount = () => true }) => {
 										map={map}
 										selectedModel={selectedModel}
 										onModelSelect={handleModelSelect}
+										styleMode={styleMode}
 									/>
 								)}
 
@@ -1150,11 +1147,7 @@ const ClimateMap = ({ onMount = () => true }) => {
 									styleMode={styleMode}
 									legend={
 										dataExtremes ? (
-											<Legend
-												extremes={dataExtremes}
-												unit="°C"
-												isMobile={isMobile}
-											/>
+											<Legend extremes={dataExtremes} unit="°C" />
 										) : (
 											<div />
 										)
@@ -1163,8 +1156,8 @@ const ClimateMap = ({ onMount = () => true }) => {
 							</div>
 						)}
 
-						{/* Advanced Timeline Selector - Desktop Only */}
-						{!isMobile && styleMode !== "unchanged" && (
+						{/* Advanced Timeline Selector - Now supports mobile */}
+						{styleMode !== "unchanged" && (
 							<AdvancedTimelineSelector
 								year={currentYear}
 								month={currentMonth}
@@ -1182,11 +1175,7 @@ const ClimateMap = ({ onMount = () => true }) => {
 								screenshoter={screenshoter}
 								legend={
 									dataExtremes ? (
-										<Legend
-											extremes={dataExtremes}
-											unit="°C"
-											isMobile={false}
-										/>
+										<Legend extremes={dataExtremes} unit="°C" />
 									) : (
 										<div />
 									)
@@ -1200,6 +1189,7 @@ const ClimateMap = ({ onMount = () => true }) => {
 								map={map}
 								selectedModel={selectedModel}
 								onModelSelect={handleModelSelect}
+								styleMode={styleMode}
 							/>
 						)}
 					</div>
@@ -1207,7 +1197,7 @@ const ClimateMap = ({ onMount = () => true }) => {
 
 				{/* Desktop-only legend positioned over the map */}
 				{!isMobile && dataExtremes && (
-					<Legend extremes={dataExtremes} unit="°C" isMobile={false} />
+					<Legend extremes={dataExtremes} unit="°C" />
 				)}
 
 				<div className="map-bottom-bar">

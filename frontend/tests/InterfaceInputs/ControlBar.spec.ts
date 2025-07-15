@@ -160,21 +160,25 @@ test.describe("ControlBar Component", () => {
 	});
 
 	test("Control bar is positioned correctly", async ({ page }) => {
-		const userAgent = await page.evaluate(() => navigator.userAgent);
-		test.skip(
-			userAgent.includes("Mobile") ||
-				userAgent.includes("Android") ||
-				userAgent.includes("iPhone"),
-			"Skipping on mobile devices",
-		);
-
 		const controlBar = page.locator('[data-testid="control-bar"]');
 
 		// Verify the control bar is visible
 		await expect(controlBar).toBeVisible();
 
-		// Check that all control buttons are present
+		// Check that control buttons are present (at least 6 buttons)
 		const buttons = controlBar.locator("button");
-		await expect(buttons).toHaveCount(6);
+		const buttonCount = await buttons.count();
+		expect(buttonCount).toBeGreaterThanOrEqual(6);
+
+		// Verify essential buttons exist on both mobile and desktop
+		const zoomInButton = page.locator("button").filter({
+			has: page.locator("svg.lucide-plus"),
+		});
+		const zoomOutButton = page.locator("button").filter({
+			has: page.locator("svg.lucide-minus"),
+		});
+
+		await expect(zoomInButton).toBeVisible();
+		await expect(zoomOutButton).toBeVisible();
 	});
 });
