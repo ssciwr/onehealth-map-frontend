@@ -145,7 +145,7 @@ export default ({
 							right: 0,
 							background: colorSchemes[styleMode],
 							boxShadow: "0 8px 32px rgba(0, 0, 0, 0.25)",
-							zIndex: 1000,
+							zIndex: 1001,
 							backdropFilter: "blur(20px)",
 							borderBottom: "1px solid rgba(255, 255, 255, 0.2)",
 							margin: 0,
@@ -155,7 +155,7 @@ export default ({
 							top: 0,
 							left: 0,
 							right: 0,
-							zIndex: 1000,
+							zIndex: 1001,
 							backgroundColor: "white",
 						}
 			}
@@ -454,7 +454,7 @@ export default ({
 							.glass-button button {
 								background: transparent !important;
 								border: none !important;
-								color: white !important;
+								color: white;
 							}
 
 							.glass-button button:hover {

@@ -267,7 +267,7 @@ const ModelSelector = ({
 						type="link"
 						size="small"
 						onClick={handleViewDetailsClick}
-						style={{ padding: 0, height: "auto", color: "var(--primary)" }}
+						style={{ padding: 0, height: "auto", color: "blue" }}
 						disabled={loading}
 					>
 						View Details & Compare Models
