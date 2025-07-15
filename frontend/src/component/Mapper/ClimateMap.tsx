@@ -59,36 +59,12 @@ const ClimateMap = ({ onMount = () => true }) => {
 		useState<GeoJSON.FeatureCollection | null>(null);
 	const [convertedNutsGeoJSON, setConvertedNutsGeoJSON] =
 		useState<NutsGeoJSON | null>(null);
-	const [africanRegionsGeoJSON, setAfricanRegionsGeoJSON] =
+	const [worldwideRegionsGeoJSON, setworldwideRegionsGeoJSON] =
 		useState<GeoJSON.FeatureCollection | null>(null);
 
-	// Natural Earth URL and African countries list
+	// Natural Earth URL with all countries geometries.
 	const NATURAL_EARTH_URL =
 		"https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_10m_admin_1_states_provinces.geojson";
-
-	const africanCountries = [
-		"South Africa",
-		"Nigeria",
-		"Kenya",
-		"Ghana",
-		"Ethiopia",
-		"Morocco",
-		"Egypt",
-		"Tanzania",
-		"Uganda",
-		"Algeria",
-		"Sudan",
-		"Libya",
-		"Chad",
-		"Mali",
-		"Niger",
-		"Angola",
-		"Burkina Faso",
-		"Cameroon",
-		"Madagascar",
-		"Zambia",
-		"Senegal",
-	];
 
 	// Grid/NUTS mode state
 	const [mapMode, setMapMode] = useState<"grid" | "nuts">("nuts");
@@ -98,7 +74,7 @@ const ClimateMap = ({ onMount = () => true }) => {
 
 	// Style mode state
 	const [styleMode, setStyleMode] = useState<"unchanged" | "purple" | "red">(
-		"unchanged",
+		"purple",
 	);
 
 	// Screenshoter state
@@ -341,13 +317,13 @@ const ClimateMap = ({ onMount = () => true }) => {
 		handleLoadTemperatureData(currentYear);
 	}, [currentYear, handleLoadTemperatureData]);
 
-	// Load African regions on mount
+	// Load worldwide regions on mount
 	useEffect(() => {
-		loadAfricanRegions();
+		loadworldwideRegions();
 	}, []);
 
-	// Load African administrative regions
-	const loadAfricanRegions = async () => {
+	// Load worldwide administrative regions
+	const loadworldwideRegions = async () => {
 		try {
 			console.log("Loading global administrative regions...");
 			const response = await fetch(NATURAL_EARTH_URL);
@@ -367,12 +343,12 @@ const ClimateMap = ({ onMount = () => true }) => {
 				features: allFeatures,
 			};
 
-			setAfricanRegionsGeoJSON(globalRegions);
+			setworldwideRegionsGeoJSON(globalRegions);
 			console.log(
 				`Loaded ${allFeatures.length} global administrative regions from all countries`,
 			);
 		} catch (error) {
-			console.error("Failed to load African administrative regions:", error);
+			console.error("Failed to load worldwide administrative regions:", error);
 		}
 	};
 
@@ -590,14 +566,14 @@ const ClimateMap = ({ onMount = () => true }) => {
 
 		const convertToNuts = async () => {
 			if (mapMode === "nuts" && temperatureData.length > 0) {
-				// Load African regions if not already loaded
-				if (!africanRegionsGeoJSON) {
+				// Load worldwide regions if not already loaded
+				if (!worldwideRegionsGeoJSON) {
 					try {
-						await loadAfricanRegions();
+						await loadworldwideRegions();
 					} catch (error) {
-						console.error("Failed to load African regions:", error);
+						console.error("Failed to load worldwide regions:", error);
 						setProcessingError(true);
-						setError("Failed to load African regions");
+						setError("Failed to load worldwide regions");
 					}
 					return;
 				}
@@ -607,13 +583,13 @@ const ClimateMap = ({ onMount = () => true }) => {
 						"Converting grid data to global administrative regions...",
 					);
 					console.log(
-						`Processing ${africanRegionsGeoJSON.features.length} global regions`,
+						`Processing ${worldwideRegionsGeoJSON.features.length} global regions`,
 					);
 
 					// Sample temperature data to 10% for better accuracy
 					const sampledTemperatureData = sampleTemperatureData(
 						temperatureData,
-						0.02,
+						0.05,
 					);
 					console.log(
 						`Temperature data sample: first few points:`,
@@ -636,7 +612,7 @@ const ClimateMap = ({ onMount = () => true }) => {
 					// Debug: Show bounds of first few global regions
 					console.log(
 						`First 3 global regions:`,
-						africanRegionsGeoJSON.features.slice(0, 3).map((f) => ({
+						worldwideRegionsGeoJSON.features.slice(0, 3).map((f) => ({
 							name:
 								f.properties.name || f.properties.name_en || f.properties.admin,
 							bounds: getFeatureBounds(f.geometry),
@@ -649,10 +625,10 @@ const ClimateMap = ({ onMount = () => true }) => {
 
 					for (
 						let index = 0;
-						index < africanRegionsGeoJSON.features.length;
+						index < worldwideRegionsGeoJSON.features.length;
 						index++
 					) {
-						const feature = africanRegionsGeoJSON.features[index];
+						const feature = worldwideRegionsGeoJSON.features[index];
 						const regionName =
 							feature.properties.name ||
 							feature.properties.name_en ||
@@ -738,7 +714,7 @@ const ClimateMap = ({ onMount = () => true }) => {
 							max: Math.max(...temperatures),
 						};
 						setDataExtremes(extremes);
-						console.log("Set African regions extremes:", extremes);
+						console.log("Set worldwide regions extremes:", extremes);
 						console.log(
 							`Total regions with temperature data: ${temperatures.length}`,
 						);
@@ -747,11 +723,11 @@ const ClimateMap = ({ onMount = () => true }) => {
 					}
 				} catch (error) {
 					console.error(
-						"Failed to convert grid data to African regions:",
+						"Failed to convert grid data to worldwide regions:",
 						error,
 					);
 					setProcessingError(true);
-					setError("Failed to process African regions");
+					setError("Failed to process worldwide regions");
 				}
 			} else if (mapMode === "grid") {
 				setConvertedNutsGeoJSON(null);
@@ -771,7 +747,7 @@ const ClimateMap = ({ onMount = () => true }) => {
 		};
 
 		convertToNuts();
-	}, [mapMode, temperatureData, africanRegionsGeoJSON, processingError]);
+	}, [mapMode, temperatureData, worldwideRegionsGeoJSON, processingError]);
 
 	// Cleanup timeouts on unmount
 	useEffect(() => {
@@ -971,8 +947,8 @@ const ClimateMap = ({ onMount = () => true }) => {
 			};
 			if (mapMode === "nuts" && convertedNutsGeoJSON) {
 				prevLayer.setStyle(nutsStyle(prevLayer.feature));
-			} else if (nutsGeoJSON) {
-				prevLayer.setStyle(style(prevLayer.feature));
+			} else if (worldGeoJSON) {
+				prevLayer.setStyle(worldStyle());
 			}
 			(prevLayer as L.Layer & { closePopup: () => void }).closePopup();
 		}
@@ -1015,8 +991,8 @@ const ClimateMap = ({ onMount = () => true }) => {
 		if (currentHoveredLayer === geoJSONLayer) {
 			if (mapMode === "nuts" && convertedNutsGeoJSON) {
 				geoJSONLayer.setStyle(nutsStyle(geoJSONLayer.feature));
-			} else if (nutsGeoJSON) {
-				geoJSONLayer.setStyle(style(geoJSONLayer.feature));
+			} else if (worldGeoJSON) {
+				geoJSONLayer.setStyle(worldStyle());
 			}
 
 			// Close popup on mouseout for NUTS mode
