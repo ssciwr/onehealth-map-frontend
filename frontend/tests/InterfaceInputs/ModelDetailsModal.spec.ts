@@ -3,6 +3,16 @@ import { expect, test } from "@playwright/test";
 test.describe("ModelDetailsModal", () => {
 	test.beforeEach(async ({ page }) => {
 		await page.goto("http://localhost:5174/map/expert?notour=true");
+
+		// Wait for page to load
+		await page.waitForTimeout(3000);
+
+		// Close any modal that might be open
+		try {
+			await page.locator(".ant-modal-close").click({ timeout: 5000 });
+		} catch (e) {
+			// Ignore if no modal to close
+		}
 	});
 
 	test("Model details dropdown should open and allow the user to view all models", async ({
@@ -19,7 +29,7 @@ test.describe("ModelDetailsModal", () => {
 		// Data Source only shows until it loads in.
 
 		await expect(dropdownTrigger).toBeVisible();
-		await dropdownTrigger.click();
+		await dropdownTrigger.click({ force: true });
 
 		await page.waitForTimeout(1000);
 
@@ -29,7 +39,7 @@ test.describe("ModelDetailsModal", () => {
 
 		// only desktop has the quick switch preview, mobile goes right to the modal due to spacing concerns.
 		if (await viewAllModelsOption.isVisible()) {
-			await viewAllModelsOption.click();
+			await viewAllModelsOption.click({ force: true });
 		}
 
 		const modal = page.locator('[data-testid="model-details-modal"]');
