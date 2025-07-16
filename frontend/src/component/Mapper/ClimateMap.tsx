@@ -24,6 +24,7 @@ import type {
 	NutsGeoJSON,
 	TemperatureDataPoint,
 	ViewportBounds,
+	WorldwideGeoJSON,
 } from "./types.ts";
 import { getColorFromGradient } from "./utilities/gradientUtilities";
 import {
@@ -32,6 +33,7 @@ import {
 	MIN_ZOOM,
 	loadTemperatureData,
 } from "./utilities/mapDataUtils";
+import NutsMapperV5 from "./utilities/prepareNutsDataForDrawing";
 
 interface ViewportChangeData {
 	bounds: L.LatLngBounds;
@@ -56,17 +58,21 @@ const ClimateMap = ({ onMount = () => true }) => {
 	const [dataBounds, setDataBounds] = useState<L.LatLngBounds | null>(null);
 	const [worldGeoJSON, setWorldGeoJSON] =
 		useState<GeoJSON.FeatureCollection | null>(null);
-	const [convertedNutsGeoJSON, setConvertedNutsGeoJSON] =
-		useState<NutsGeoJSON | null>(null);
+	const [convertedWorldwideGeoJSON, setConvertedWorldwideGeoJSON] =
+		useState<WorldwideGeoJSON | null>(null);
 	const [worldwideRegionsGeoJSON, setworldwideRegionsGeoJSON] =
 		useState<GeoJSON.FeatureCollection | null>(null);
+	const [convertedNutsGeoJSON, setConvertedNutsGeoJSON] =
+		useState<NutsGeoJSON | null>(null);
 
 	// Natural Earth URL with all countries geometries.
 	const NATURAL_EARTH_URL =
 		"https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_10m_admin_1_states_provinces.geojson";
 
-	// Grid/NUTS mode state
-	const [mapMode, setMapMode] = useState<"grid" | "nuts">("nuts");
+	// Grid/Worldwide/NUTS mode state
+	const [mapMode, setMapMode] = useState<"grid" | "worldwide" | "nutsonly">(
+		"nutsonly",
+	);
 	const [hoverTimeout, setHoverTimeout] = useState<NodeJS.Timeout | null>(null);
 	const [currentHoveredLayer, setCurrentHoveredLayer] =
 		useState<L.Layer | null>(null);
@@ -609,7 +615,7 @@ const ClimateMap = ({ onMount = () => true }) => {
 		[],
 	);
 
-	// Convert grid data to NUTS when mode is NUTS and temperature data is available
+	// Convert grid data to worldwide regions when mode is worldwide and temperature data is available
 	useEffect(() => {
 		// Skip processing if there's already a processing error
 		if (processingError) {
@@ -617,8 +623,8 @@ const ClimateMap = ({ onMount = () => true }) => {
 			return;
 		}
 
-		const convertToNuts = async () => {
-			if (mapMode === "nuts" && temperatureData.length > 0) {
+		const convertToWorldwide = async () => {
+			if (mapMode === "worldwide" && temperatureData.length > 0) {
 				// Load worldwide regions if not already loaded
 				if (!worldwideRegionsGeoJSON) {
 					try {
@@ -690,7 +696,7 @@ const ClimateMap = ({ onMount = () => true }) => {
 								properties: {
 									...feature.properties,
 									intensity: avgTemp,
-									NUTS_ID:
+									WORLDWIDE_ID:
 										feature.properties?.name ||
 										feature.properties?.name_en ||
 										"Unknown",
@@ -741,7 +747,7 @@ const ClimateMap = ({ onMount = () => true }) => {
 						features: processedFeatures,
 					};
 
-					setConvertedNutsGeoJSON(processedGeoJSON as NutsGeoJSON);
+					setConvertedWorldwideGeoJSON(processedGeoJSON as WorldwideGeoJSON);
 
 					// Calculate extremes from processed data
 					const temperatures = processedFeatures
@@ -772,7 +778,45 @@ const ClimateMap = ({ onMount = () => true }) => {
 					setProcessingError(true);
 					setError("Failed to process worldwide regions");
 				}
+			} else if (mapMode === "nutsonly") {
+				try {
+					console.log("Loading NUTS regions from CSV...");
+					// Load NUTS regions CSV data
+					const response = await fetch("/data/nutsRegions.csv");
+					const csvData = await response.text();
+
+					// Use NutsMapperV5 to process the CSV data
+					const nutsMapper = new NutsMapperV5();
+					const nutsGeoJSON = nutsMapper.parseNutsCSV(csvData);
+
+					// Calculate extremes from NUTS data
+					const intensities = nutsGeoJSON.features
+						.map((feature) => feature.properties.intensity)
+						.filter(
+							(intensity): intensity is number =>
+								intensity !== null && !Number.isNaN(intensity),
+						);
+
+					if (intensities.length > 0) {
+						const extremes = {
+							min: Math.min(...intensities),
+							max: Math.max(...intensities),
+						};
+						setDataExtremes(extremes);
+						console.log("NUTS extremes:", extremes);
+					}
+
+					setConvertedNutsGeoJSON(nutsGeoJSON as NutsGeoJSON);
+					console.log(
+						`NUTS conversion completed: ${nutsGeoJSON.features.length} regions`,
+					);
+				} catch (error) {
+					console.error("Failed to load NUTS regions:", error);
+					setProcessingError(true);
+					setError("Failed to load NUTS regions");
+				}
 			} else if (mapMode === "grid") {
+				setConvertedWorldwideGeoJSON(null);
 				setConvertedNutsGeoJSON(null);
 				// Restore original extremes for grid mode
 				if (temperatureData.length > 0) {
@@ -786,10 +830,14 @@ const ClimateMap = ({ onMount = () => true }) => {
 				} else {
 					console.log("No temperature data for grid mode");
 				}
+			} else {
+				// Clear both when switching modes
+				setConvertedWorldwideGeoJSON(null);
+				setConvertedNutsGeoJSON(null);
 			}
 		};
 
-		convertToNuts();
+		convertToWorldwide();
 	}, [
 		mapMode,
 		temperatureData,
@@ -958,7 +1006,7 @@ const ClimateMap = ({ onMount = () => true }) => {
 		setLackOfDataModalVisible(false);
 	};
 
-	const nutsStyle = (feature: GeoJSON.Feature) => {
+	const worldwideStyle = (feature: GeoJSON.Feature) => {
 		if (!feature || !feature.properties) return {};
 
 		const properties = feature.properties as { intensity?: number };
@@ -985,6 +1033,23 @@ const ClimateMap = ({ onMount = () => true }) => {
 		};
 	};
 
+	const nutsStyle = (feature: GeoJSON.Feature) => {
+		if (!feature || !feature.properties) return {};
+
+		const properties = feature.properties as { intensity?: number };
+
+		return {
+			fillColor: dataExtremes
+				? getColorFromGradient(properties.intensity || 0, dataExtremes)
+				: "#cccccc",
+			weight: 2,
+			opacity: 1,
+			color: "white",
+			dashArray: "",
+			fillOpacity: 0.8,
+		};
+	};
+
 	const highlightFeature = (e: L.LeafletMouseEvent) => {
 		const layer = e.target as L.Path;
 
@@ -1003,7 +1068,9 @@ const ClimateMap = ({ onMount = () => true }) => {
 			const prevLayer = currentHoveredLayer as L.Path & {
 				feature: GeoJSON.Feature;
 			};
-			if (mapMode === "nuts" && convertedNutsGeoJSON) {
+			if (mapMode === "worldwide" && convertedWorldwideGeoJSON) {
+				prevLayer.setStyle(worldwideStyle(prevLayer.feature));
+			} else if (mapMode === "nutsonly" && convertedNutsGeoJSON) {
 				prevLayer.setStyle(nutsStyle(prevLayer.feature));
 			} else if (worldGeoJSON) {
 				prevLayer.setStyle(worldStyle());
@@ -1025,8 +1092,8 @@ const ClimateMap = ({ onMount = () => true }) => {
 
 		setCurrentHoveredLayer(layer);
 
-		// Show popup on hover for NUTS mode with slight delay
-		if (mapMode === "nuts") {
+		// Show popup on hover for worldwide and nutsonly modes with slight delay
+		if (mapMode === "worldwide" || mapMode === "nutsonly") {
 			const timeout = setTimeout(() => {
 				if (currentHoveredLayer === layer) {
 					(layer as L.Layer & { openPopup: () => void }).openPopup();
@@ -1047,18 +1114,59 @@ const ClimateMap = ({ onMount = () => true }) => {
 
 		// Only reset if this is the currently hovered layer
 		if (currentHoveredLayer === geoJSONLayer) {
-			if (mapMode === "nuts" && convertedNutsGeoJSON) {
+			if (mapMode === "worldwide" && convertedWorldwideGeoJSON) {
+				geoJSONLayer.setStyle(worldwideStyle(geoJSONLayer.feature));
+			} else if (mapMode === "nutsonly" && convertedNutsGeoJSON) {
 				geoJSONLayer.setStyle(nutsStyle(geoJSONLayer.feature));
 			} else if (worldGeoJSON) {
 				geoJSONLayer.setStyle(worldStyle());
 			}
 
-			// Close popup on mouseout for NUTS mode
-			if (mapMode === "nuts") {
+			// Close popup on mouseout for worldwide and nutsonly modes
+			if (mapMode === "worldwide" || mapMode === "nutsonly") {
 				(geoJSONLayer as L.Layer & { closePopup: () => void }).closePopup();
 			}
 
 			setCurrentHoveredLayer(null);
+		}
+	};
+
+	const onEachWorldwideFeature = (feature: GeoJSON.Feature, layer: L.Layer) => {
+		layer.on({
+			mouseover: highlightFeature,
+			mouseout: resetHighlight,
+		});
+
+		if (feature.properties) {
+			const properties = feature.properties as {
+				WORLDWIDE_ID?: string;
+				intensity?: number;
+				countryName?: string;
+				pointCount?: number;
+				isFallback?: boolean;
+			};
+			const { WORLDWIDE_ID, intensity, countryName, pointCount, isFallback } =
+				properties;
+			const displayName = countryName || WORLDWIDE_ID || "Unknown Country";
+
+			const dataSource = isFallback
+				? "Nearest point"
+				: pointCount && pointCount > 0
+					? `${pointCount} data points`
+					: "Calculated";
+
+			const popupContent = `
+        <div class="worldwide-popup">
+          <h4>${displayName}</h4>
+          <p><strong>Temperature:</strong> ${intensity !== null && intensity !== undefined ? `${intensity.toFixed(1)}°C` : "N/A"}</p>
+          <p><strong>Data Source:</strong> ${dataSource}</p>
+          ${isFallback ? `<p><small style="color: #666;">⚠️ Using nearest available data point</small></p>` : ""}
+          <p><small>Region: ${WORLDWIDE_ID || "N/A"}</small></p>
+        </div>
+      `;
+			(layer as L.Layer & { bindPopup: (content: string) => void }).bindPopup(
+				popupContent,
+			);
 		}
 	};
 
@@ -1071,28 +1179,16 @@ const ClimateMap = ({ onMount = () => true }) => {
 		if (feature.properties) {
 			const properties = feature.properties as {
 				NUTS_ID?: string;
-				intensity?: number;
-				countryName?: string;
-				pointCount?: number;
-				isFallback?: boolean;
+				intensity?: number | null;
 			};
-			const { NUTS_ID, intensity, countryName, pointCount, isFallback } =
-				properties;
-			const displayName = countryName || NUTS_ID || "Unknown Country";
-
-			const dataSource = isFallback
-				? "Nearest point"
-				: pointCount && pointCount > 0
-					? `${pointCount} data points`
-					: "Calculated";
+			const { NUTS_ID, intensity } = properties;
+			const displayName = NUTS_ID || "Unknown Region";
 
 			const popupContent = `
         <div class="nuts-popup">
-          <h4>${displayName}</h4>
+          <h4>NUTS Region: ${displayName}</h4>
           <p><strong>Temperature:</strong> ${intensity !== null && intensity !== undefined ? `${intensity.toFixed(1)}°C` : "N/A"}</p>
-          <p><strong>Data Source:</strong> ${dataSource}</p>
-          ${isFallback ? `<p><small style="color: #666;">⚠️ Using nearest available data point</small></p>` : ""}
-          <p><small>Region: ${NUTS_ID || "N/A"}</small></p>
+          <p><small>Region ID: ${NUTS_ID || "N/A"}</small></p>
         </div>
       `;
 			(layer as L.Layer & { bindPopup: (content: string) => void }).bindPopup(
@@ -1156,7 +1252,20 @@ const ClimateMap = ({ onMount = () => true }) => {
 								</Pane>
 							)}
 
-							{mapMode === "nuts" && (
+							{mapMode === "worldwide" && (
+								<Pane name="worldwidePane" style={{ zIndex: 30, opacity: 0.9 }}>
+									{convertedWorldwideGeoJSON?.features &&
+										convertedWorldwideGeoJSON.features.length > 0 && (
+											<GeoJSON
+												data={convertedWorldwideGeoJSON}
+												style={(f) => (f ? worldwideStyle(f) : {})}
+												onEachFeature={onEachWorldwideFeature}
+											/>
+										)}
+								</Pane>
+							)}
+
+							{mapMode === "nutsonly" && (
 								<Pane name="nutsPane" style={{ zIndex: 30, opacity: 0.9 }}>
 									{convertedNutsGeoJSON?.features &&
 										convertedNutsGeoJSON.features.length > 0 && (

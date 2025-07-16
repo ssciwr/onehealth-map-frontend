@@ -16,8 +16,8 @@ interface MapHeaderProps {
 	selectedOptimism: string;
 	setSelectedOptimism: (optimism: string) => void;
 	getOptimismLevels: () => string[];
-	mapMode?: "grid" | "nuts";
-	onMapModeChange?: (mode: "grid" | "nuts") => void;
+	mapMode?: "grid" | "worldwide" | "nutsonly";
+	onMapModeChange?: (mode: "grid" | "worldwide" | "nutsonly") => void;
 	styleMode?: "unchanged" | "purple" | "red";
 	onStyleModeChange?: (mode: "unchanged" | "purple" | "red") => void;
 }
@@ -28,7 +28,7 @@ export default ({
 	selectedOptimism,
 	setSelectedOptimism,
 	getOptimismLevels,
-	mapMode = "grid",
+	mapMode = "nutsonly",
 	onMapModeChange,
 	styleMode = "unchanged",
 	onStyleModeChange,
@@ -300,11 +300,7 @@ export default ({
 					</div>
 					{!areControlsHidden && (
 						<>
-							<button
-								type="button"
-								onClick={() =>
-									onMapModeChange?.(mapMode === "grid" ? "nuts" : "grid")
-								}
+							<div
 								className={styleMode !== "unchanged" ? "glass-button" : ""}
 								style={
 									styleMode !== "unchanged"
@@ -328,11 +324,19 @@ export default ({
 												padding: "8px 12px",
 											}
 								}
-								title={`Switch to ${mapMode === "grid" ? "NUTS" : "Grid"} mode`}
 							>
 								<MapIcon size={styleMode !== "unchanged" ? 20 : 16} />
-								{mapMode === "grid" ? "Grid" : "NUTS"}
-							</button>
+								<Select
+									value={mapMode}
+									onChange={onMapModeChange}
+									style={{ minWidth: 120 }}
+									size="middle"
+								>
+									<Option value="nutsonly">NUTS</Option>
+									<Option value="worldwide">Worldwide</Option>
+									<Option value="grid">Grid</Option>
+								</Select>
+							</div>
 							{!isMobile && (
 								<div
 									className={styleMode !== "unchanged" ? "glass-button" : ""}

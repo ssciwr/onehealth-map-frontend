@@ -7,9 +7,9 @@ import type {
 } from "geojson";
 import type {
 	DataExtremes,
-	NutsFeature,
-	NutsGeoJSON,
 	TemperatureDataPoint,
+	WorldwideFeature,
+	WorldwideGeoJSON,
 } from "../types";
 
 interface CountryData {
@@ -22,11 +22,11 @@ interface CountryTemperatureMap {
 	[countryCode: string]: CountryData;
 }
 
-export class GridToNutsConverter {
+export class GridToWorldwideConverter {
 	private countriesGeoJSON: FeatureCollection | null = null;
-	private nutsGeoJSON: FeatureCollection | null = null;
+	private worldwideGeoJSON: FeatureCollection | null = null;
 	private isLoading = false;
-	private isLoadingNuts = false;
+	private isLoadingWorldwide = false;
 
 	async loadCountriesGeoJSON(): Promise<void> {
 		if (this.countriesGeoJSON || this.isLoading) return;
@@ -53,54 +53,58 @@ export class GridToNutsConverter {
 		}
 	}
 
-	async loadNutsGeoJSON(): Promise<void> {
-		if (this.nutsGeoJSON || this.isLoadingNuts) return;
+	async loadWorldwideGeoJSON(): Promise<void> {
+		if (this.worldwideGeoJSON || this.isLoadingWorldwide) return;
 
-		this.isLoadingNuts = true;
+		this.isLoadingWorldwide = true;
 		try {
 			// Load NUTS 2 regions from Eurostat official source
 			const response = await fetch(
 				"https://gisco-services.ec.europa.eu/distribution/v2/nuts/geojson/NUTS_RG_20M_2021_4326_LEVL_2.geojson",
 			);
-			const nutsData = await response.json();
+			const worldwideData = await response.json();
 
 			// Filter to only NUTS 2 level regions (level code "2")
-			const nuts2Features = nutsData.features.filter(
+			const worldwide2Features = worldwideData.features.filter(
 				(feature: Feature) => feature.properties?.LEVL_CODE === 2,
 			);
 
-			this.nutsGeoJSON = {
+			this.worldwideGeoJSON = {
 				type: "FeatureCollection",
-				features: nuts2Features,
+				features: worldwide2Features,
 			};
 
-			console.log(`NUTS 2 GeoJSON loaded: ${nuts2Features.length} regions`);
+			console.log(
+				`NUTS 2 GeoJSON loaded: ${worldwide2Features.length} regions`,
+			);
 			console.log(
 				"Sample regions:",
-				nuts2Features.slice(0, 5).map((f: Feature) => f.properties?.NUTS_ID),
+				worldwide2Features
+					.slice(0, 5)
+					.map((f: Feature) => f.properties?.WORLDWIDE_ID),
 			);
 		} catch (error) {
 			console.error("Failed to load NUTS data from Eurostat:", error);
 			// Fallback to empty if can't load
-			this.nutsGeoJSON = { type: "FeatureCollection", features: [] };
+			this.worldwideGeoJSON = { type: "FeatureCollection", features: [] };
 		} finally {
-			this.isLoadingNuts = false;
+			this.isLoadingWorldwide = false;
 		}
 	}
 
-	private getCountriesWithNutsData(): Set<string> {
-		const nutsCountries = new Set<string>();
-		if (this.nutsGeoJSON?.features) {
-			for (const feature of this.nutsGeoJSON.features) {
-				const nutsId =
-					feature.properties?.NUTS_ID || feature.properties?.nuts_id;
-				if (nutsId) {
-					const countryCode = nutsId.substring(0, 2);
-					nutsCountries.add(countryCode);
+	private getCountriesWithWorldwideData(): Set<string> {
+		const worldwideCountries = new Set<string>();
+		if (this.worldwideGeoJSON?.features) {
+			for (const feature of this.worldwideGeoJSON.features) {
+				const worldwideId =
+					feature.properties?.WORLDWIDE_ID || feature.properties?.worldwide_id;
+				if (worldwideId) {
+					const countryCode = worldwideId.substring(0, 2);
+					worldwideCountries.add(countryCode);
 				}
 			}
 		}
-		return nutsCountries;
+		return worldwideCountries;
 	}
 
 	private createSpatialIndex(
@@ -299,12 +303,15 @@ export class GridToNutsConverter {
 		}
 	}
 
-	async convertGridDataToNuts(
+	async convertGridDataToWorldwide(
 		temperatureData: TemperatureDataPoint[],
-	): Promise<{ nutsGeoJSON: NutsGeoJSON; extremes: DataExtremes }> {
+	): Promise<{ worldwideGeoJSON: WorldwideGeoJSON; extremes: DataExtremes }> {
 		try {
 			console.log("Starting NUTS conversion...");
-			await Promise.all([this.loadCountriesGeoJSON(), this.loadNutsGeoJSON()]);
+			await Promise.all([
+				this.loadCountriesGeoJSON(),
+				this.loadWorldwideGeoJSON(),
+			]);
 
 			if (!this.countriesGeoJSON) {
 				throw new Error("Countries GeoJSON not loaded");
@@ -330,32 +337,36 @@ export class GridToNutsConverter {
 				`Created spatial index with ${Object.keys(spatialIndex).length} buckets`,
 			);
 
-			const nutsFeatures: NutsFeature[] = [];
+			const worldwideFeatures: WorldwideFeature[] = [];
 			const temperatures: number[] = [];
 
 			// Identify countries that have NUTS 2 data
-			const nutsCountries = this.getCountriesWithNutsData();
+			const worldwideCountries = this.getCountriesWithWorldwideData();
 			console.log(
 				"Countries with NUTS 2 regions:",
-				Array.from(nutsCountries).sort(),
+				Array.from(worldwideCountries).sort(),
 			);
 
 			// Process NUTS 2 regions for EU countries
 			console.log("About to process NUTS regions...");
-			if (this.nutsGeoJSON && this.nutsGeoJSON.features.length > 0) {
+			if (this.worldwideGeoJSON && this.worldwideGeoJSON.features.length > 0) {
 				console.log(
-					`Processing ${this.nutsGeoJSON.features.length} NUTS 2 regions...`,
+					`Processing ${this.worldwideGeoJSON.features.length} NUTS 2 regions...`,
 				);
 
-				for (const nutsFeature of this.nutsGeoJSON.features) {
-					const polygon = this.createPolygonFromFeature(nutsFeature);
+				for (const worldwideFeature of this.worldwideGeoJSON.features) {
+					const polygon = this.createPolygonFromFeature(worldwideFeature);
 					if (!polygon) continue;
 
-					const nutsId =
-						nutsFeature.properties?.NUTS_ID || nutsFeature.properties?.nuts_id;
+					const worldwideId =
+						worldwideFeature.properties?.WORLDWIDE_ID ||
+						worldwideFeature.properties?.worldwide_id;
 
-					if (!nutsId) {
-						console.warn("NUTS feature missing NUTS_ID:", nutsFeature);
+					if (!worldwideId) {
+						console.warn(
+							"NUTS feature missing WORLDWIDE_ID:",
+							worldwideFeature,
+						);
 						continue;
 					}
 
@@ -403,19 +414,19 @@ export class GridToNutsConverter {
 
 						temperatures.push(avgTemperature);
 
-						const nutsFeatureResult: NutsFeature = {
+						const worldwideFeatureResult: WorldwideFeature = {
 							type: "Feature",
 							properties: {
-								NUTS_ID: nutsId,
+								WORLDWIDE_ID: worldwideId,
 								intensity: avgTemperature,
-								countryName: this.getNutsDisplayName(nutsId),
+								countryName: this.getWorldwideDisplayName(worldwideId),
 								pointCount: pointsInRegion.length,
-								nutsLevel: 2,
+								worldwideLevel: 2,
 							},
-							geometry: nutsFeature.geometry as Polygon | MultiPolygon,
+							geometry: worldwideFeature.geometry as Polygon | MultiPolygon,
 						};
 
-						nutsFeatures.push(nutsFeatureResult);
+						worldwideFeatures.push(worldwideFeatureResult);
 					} else {
 						// Fallback: find nearest point to region centroid
 						const centroid = turf.centroid(polygon);
@@ -431,27 +442,27 @@ export class GridToNutsConverter {
 
 						if (nearestPoint) {
 							console.log(
-								`NUTS region ${nutsId}: no points inside, using nearest point (${nearestPoint.temperature.toFixed(1)}°C)`,
+								`NUTS region ${worldwideId}: no points inside, using nearest point (${nearestPoint.temperature.toFixed(1)}°C)`,
 							);
 							temperatures.push(nearestPoint.temperature);
 
-							const nutsFeatureResult: NutsFeature = {
+							const worldwideFeatureResult: WorldwideFeature = {
 								type: "Feature",
 								properties: {
-									NUTS_ID: nutsId,
+									WORLDWIDE_ID: worldwideId,
 									intensity: nearestPoint.temperature,
-									countryName: this.getNutsDisplayName(nutsId),
+									countryName: this.getWorldwideDisplayName(worldwideId),
 									pointCount: 0, // Mark as fallback
-									nutsLevel: 2,
+									worldwideLevel: 2,
 									isFallback: true,
 								},
-								geometry: nutsFeature.geometry as Polygon | MultiPolygon,
+								geometry: worldwideFeature.geometry as Polygon | MultiPolygon,
 							};
 
-							nutsFeatures.push(nutsFeatureResult);
+							worldwideFeatures.push(worldwideFeatureResult);
 						} else {
 							console.log(
-								`NUTS region ${nutsId}: no points found (checked ${totalCandidatePoints} candidates)`,
+								`NUTS region ${worldwideId}: no points found (checked ${totalCandidatePoints} candidates)`,
 							);
 						}
 					}
@@ -493,7 +504,7 @@ export class GridToNutsConverter {
 				];
 
 				if (
-					nutsCountries.has(countryCode) ||
+					worldwideCountries.has(countryCode) ||
 					hardcodedExclusions.includes(countryCode)
 				) {
 					console.log(
@@ -570,14 +581,14 @@ export class GridToNutsConverter {
 
 				temperatures.push(countryData.avgTemperature);
 
-				const nutsFeature: NutsFeature = {
+				const worldwideFeature: WorldwideFeature = {
 					type: "Feature",
 					properties: {
-						NUTS_ID: countryId,
+						WORLDWIDE_ID: countryId,
 						intensity: countryData.avgTemperature,
 						countryName: displayName,
 						pointCount: countryData.pointCount,
-						nutsLevel: 0,
+						worldwideLevel: 0,
 					},
 					geometry: {
 						type:
@@ -593,7 +604,7 @@ export class GridToNutsConverter {
 					},
 				};
 
-				nutsFeatures.push(nutsFeature);
+				worldwideFeatures.push(worldwideFeature);
 			}
 
 			// Calculate extremes
@@ -609,24 +620,24 @@ export class GridToNutsConverter {
 							max: 0,
 						};
 
-			const nutsGeoJSON: NutsGeoJSON = {
+			const worldwideGeoJSON: WorldwideGeoJSON = {
 				type: "FeatureCollection",
-				features: nutsFeatures,
+				features: worldwideFeatures,
 			};
 
 			console.log(
-				`NUTS conversion complete: ${nutsFeatures.length} regions with temperature data`,
+				`NUTS conversion complete: ${worldwideFeatures.length} regions with temperature data`,
 			);
 			console.log(
 				`Temperature range: ${extremes.min.toFixed(1)}°C to ${extremes.max.toFixed(1)}°C`,
 			);
 
-			return { nutsGeoJSON, extremes };
+			return { worldwideGeoJSON, extremes };
 		} catch (error) {
-			console.error("Error in convertGridDataToNuts:", error);
+			console.error("Error in convertGridDataToWorldwide:", error);
 			// Return a fallback result to prevent the function from returning undefined
 			return {
-				nutsGeoJSON: { type: "FeatureCollection", features: [] },
+				worldwideGeoJSON: { type: "FeatureCollection", features: [] },
 				extremes: { min: 0, max: 0 },
 			};
 		}
@@ -738,9 +749,9 @@ export class GridToNutsConverter {
 		return countryId.toUpperCase();
 	}
 
-	private getNutsDisplayName(nutsId: string): string {
+	private getWorldwideDisplayName(worldwideId: string): string {
 		// Map NUTS IDs to more readable names
-		const nutsNames: { [key: string]: string } = {
+		const worldwideNames: { [key: string]: string } = {
 			AT: "Austria",
 			BE: "Belgium",
 			DE: "Germany",
@@ -753,33 +764,37 @@ export class GridToNutsConverter {
 			SK: "Slovakia",
 		};
 
-		const countryCode = nutsId.substring(0, 2);
-		const baseCountry = nutsNames[countryCode] || countryCode;
+		const countryCode = worldwideId.substring(0, 2);
+		const baseCountry = worldwideNames[countryCode] || countryCode;
 
-		if (nutsId.length > 2) {
-			return `${baseCountry} - ${nutsId}`;
+		if (worldwideId.length > 2) {
+			return `${baseCountry} - ${worldwideId}`;
 		}
 
 		return baseCountry;
 	}
 
 	// Method to overlay actual model NUTS 3 data over calculated data
-	async overlayModelData(modelData: { [nutsId: string]: number }): Promise<{
-		nutsGeoJSON: NutsGeoJSON;
+	async overlayModelData(modelData: {
+		[worldwideId: string]: number;
+	}): Promise<{
+		worldwideGeoJSON: WorldwideGeoJSON;
 		extremes: DataExtremes;
 	}> {
-		if (!this.nutsGeoJSON) {
-			throw new Error("NUTS GeoJSON not loaded. Call loadNutsGeoJSON() first.");
+		if (!this.worldwideGeoJSON) {
+			throw new Error(
+				"NUTS GeoJSON not loaded. Call loadWorldwideGeoJSON() first.",
+			);
 		}
 
-		const updatedFeatures: NutsFeature[] = [];
+		const updatedFeatures: WorldwideFeature[] = [];
 		const temperatures: number[] = [];
 
 		// Update features with model data where available
-		for (const feature of this.nutsGeoJSON.features) {
+		for (const feature of this.worldwideGeoJSON.features) {
 			if (!feature.properties) continue;
-			const nutsId = feature.properties.NUTS_ID;
-			const modelTemperature = modelData[nutsId];
+			const worldwideId = feature.properties.WORLDWIDE_ID;
+			const modelTemperature = modelData[worldwideId];
 
 			if (modelTemperature !== undefined) {
 				// Use model data
@@ -788,7 +803,7 @@ export class GridToNutsConverter {
 					...feature,
 					properties: {
 						...feature.properties,
-						NUTS_ID: nutsId,
+						WORLDWIDE_ID: worldwideId,
 						intensity: modelTemperature,
 						isModelData: true,
 					},
@@ -802,7 +817,7 @@ export class GridToNutsConverter {
 						...feature,
 						properties: {
 							...feature.properties,
-							NUTS_ID: feature.properties?.NUTS_ID || "",
+							WORLDWIDE_ID: feature.properties?.WORLDWIDE_ID || "",
 							intensity: feature.properties?.intensity || 0,
 							isModelData: false,
 						},
@@ -817,7 +832,7 @@ export class GridToNutsConverter {
 			max: Math.max(...temperatures),
 		};
 
-		const nutsGeoJSON: NutsGeoJSON = {
+		const worldwideGeoJSON: WorldwideGeoJSON = {
 			type: "FeatureCollection",
 			features: updatedFeatures,
 		};
@@ -825,15 +840,15 @@ export class GridToNutsConverter {
 		console.log(
 			`Model data overlay complete: ${Object.keys(modelData).length} regions updated with model data`,
 		);
-		return { nutsGeoJSON, extremes };
+		return { worldwideGeoJSON, extremes };
 	}
 
 	// Method to reset to calculated data only
 	async resetToCalculatedData(
 		temperatureData: TemperatureDataPoint[],
-	): Promise<{ nutsGeoJSON: NutsGeoJSON; extremes: DataExtremes }> {
-		return this.convertGridDataToNuts(temperatureData);
+	): Promise<{ worldwideGeoJSON: WorldwideGeoJSON; extremes: DataExtremes }> {
+		return this.convertGridDataToWorldwide(temperatureData);
 	}
 }
 
-export const gridToNutsConverter = new GridToNutsConverter();
+export const gridToWorldwideConverter = new GridToWorldwideConverter();

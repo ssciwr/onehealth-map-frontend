@@ -1,19 +1,40 @@
 import type { Feature, Point as PointGeometry } from "geojson";
 import type L from "leaflet";
 
-export interface NutsProperties {
-	NUTS_ID: string;
+export interface WorldwideProperties {
+	WORLDWIDE_ID: string;
 	intensity: number | null;
 	countryName?: string;
 	pointCount?: number;
-	nutsLevel?: number;
+	worldwideLevel?: number;
 	isFallback?: boolean;
 	isModelData?: boolean;
 }
 
-export interface NutsGeometry {
+export interface WorldwideGeometry {
 	type: "Polygon" | "MultiPolygon";
 	coordinates: number[][][] | number[][][][]; // Proper coordinate typing
+}
+
+export interface WorldwideFeature {
+	type: "Feature";
+	properties: WorldwideProperties;
+	geometry: WorldwideGeometry;
+}
+
+export interface WorldwideGeoJSON {
+	type: "FeatureCollection";
+	features: WorldwideFeature[];
+}
+
+export interface NutsProperties {
+	NUTS_ID: string;
+	intensity: number | null;
+}
+
+export interface NutsGeometry {
+	type: "Polygon" | "MultiPolygon";
+	coordinates: number[][][] | number[][][][];
 }
 
 export interface NutsFeature {
