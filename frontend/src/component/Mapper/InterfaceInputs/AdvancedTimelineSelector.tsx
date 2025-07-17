@@ -340,7 +340,6 @@ const AdvancedTimelineSelector: React.FC<AdvancedTimelineSelectorProps> = ({
 							display: "flex",
 							alignItems: "center",
 							justifyContent: "space-between",
-							padding: "12px 20px",
 							minHeight: "60px",
 							width: "100%",
 						}}

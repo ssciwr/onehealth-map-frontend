@@ -68,10 +68,6 @@ const ClimateMap = ({ onMount = () => true }) => {
 	const [isProcessingEuropeOnly, setIsProcessingEuropeOnly] = useState(false);
 	const [isProcessingWorldwide, setIsProcessingWorldwide] = useState(false);
 	const [isLoadingData, setIsLoadingData] = useState(false);
-	const currentProcessingRef = useRef<{
-		year: number;
-		timestamp: number;
-	} | null>(null);
 
 	// Natural Earth URL with all countries geometries.
 	const NATURAL_EARTH_URL =
@@ -341,7 +337,7 @@ const ClimateMap = ({ onMount = () => true }) => {
 			try {
 				loadingStore.start();
 				setIsLoadingData(true);
-				console.log("Started loading of store...");
+				console.log(`DEBUGYEARCHANGE: Starting to load data for year ${year}`);
 				setRequestedYear(year);
 
 				// Get the selected model's output value
@@ -354,12 +350,23 @@ const ClimateMap = ({ onMount = () => true }) => {
 					requestedVariableValue,
 					outputFormat,
 				);
+				console.log(
+					`DEBUGYEARCHANGE: Loaded ${dataPoints.length} data points for year ${year}`,
+				);
+				console.log(
+					`DEBUGYEARCHANGE: Sample point for year ${year}:`,
+					dataPoints[0],
+				);
+				console.log(
+					`DEBUGYEARCHANGE: Data extremes for year ${year}:`,
+					extremes,
+				);
 				setTemperatureData(dataPoints);
 				setDataExtremes(extremes);
 				if (bounds) {
 					setDataBounds(bounds);
 				}
-				console.log("Finished loading of store...");
+				console.log(`DEBUGYEARCHANGE: Finished loading store for year ${year}`);
 				loadingStore.complete();
 				setIsLoadingData(false);
 			} catch (err: unknown) {
@@ -385,6 +392,10 @@ const ClimateMap = ({ onMount = () => true }) => {
 	);
 
 	useEffect(() => {
+		console.log(
+			"DEBUGYEARCHANGE: Year effect triggered, currentYear:",
+			currentYear,
+		);
 		handleLoadTemperatureData(currentYear);
 	}, [currentYear, handleLoadTemperatureData]);
 
@@ -502,6 +513,78 @@ const ClimateMap = ({ onMount = () => true }) => {
 				`Region ${regionName}: calculated average temp: ${avgTemp} from ${pointsInRegion.length} points`,
 			);
 			return avgTemp;
+		},
+		[],
+	);
+
+	// Calculate temperature and coordinate info for a region
+	const calculateRegionTemperatureWithCoords = useCallback(
+		(
+			regionFeature: GeoJSON.Feature,
+			temperatureData: TemperatureDataPoint[],
+		) => {
+			const regionName =
+				regionFeature.properties?.name ||
+				regionFeature.properties?.name_en ||
+				regionFeature.properties?.admin ||
+				"Unknown";
+
+			const pointsInRegion = temperatureData.filter((point) => {
+				// Use turf.js for accurate point-in-polygon checking
+				const isInside = isPointInRegion(
+					point.lat,
+					point.lng,
+					regionFeature.geometry,
+				);
+				return isInside;
+			});
+
+			// Get centroid of the region using turf.js
+			const polygon = turf.feature(regionFeature.geometry);
+			const centroid = turf.centroid(polygon);
+			const currentPosition = {
+				lat: centroid.geometry.coordinates[1],
+				lng: centroid.geometry.coordinates[0],
+			};
+
+			console.log(
+				`Region ${regionName}: found ${pointsInRegion.length} points within region`,
+			);
+
+			if (pointsInRegion.length === 0) {
+				// Fallback: find nearest point
+				const nearestPoint = findNearestPoint(regionFeature, temperatureData);
+				console.log(
+					`Region ${regionName}: using nearest point fallback, temp: ${nearestPoint ? nearestPoint.temperature : "null"}`,
+				);
+				return {
+					temperature: nearestPoint ? nearestPoint.temperature : null,
+					isFallback: true,
+					currentPosition,
+					nearestDataPoint: nearestPoint
+						? {
+								lat: nearestPoint.lat,
+								lng: nearestPoint.lng,
+							}
+						: null,
+					dataPoints: nearestPoint ? [nearestPoint] : [],
+				};
+			}
+
+			// Calculate average temperature
+			const avgTemp =
+				pointsInRegion.reduce((sum, point) => sum + point.temperature, 0) /
+				pointsInRegion.length;
+			console.log(
+				`Region ${regionName}: calculated average temp: ${avgTemp} from ${pointsInRegion.length} points`,
+			);
+			return {
+				temperature: avgTemp,
+				isFallback: false,
+				currentPosition,
+				nearestDataPoint: null,
+				dataPoints: pointsInRegion.slice(0, 3),
+			};
 		},
 		[],
 	);
@@ -698,7 +781,7 @@ const ClimateMap = ({ onMount = () => true }) => {
 						try {
 							console.log(`Processing region ${index + 1}: ${regionName}`);
 
-							const avgTemp = calculateRegionTemperature(
+							const tempResult = calculateRegionTemperatureWithCoords(
 								feature,
 								sampledTemperatureData,
 							);
@@ -706,7 +789,7 @@ const ClimateMap = ({ onMount = () => true }) => {
 								...feature,
 								properties: {
 									...feature.properties,
-									intensity: avgTemp,
+									intensity: tempResult.temperature,
 									WORLDWIDE_ID:
 										feature.properties?.name ||
 										feature.properties?.name_en ||
@@ -715,17 +798,17 @@ const ClimateMap = ({ onMount = () => true }) => {
 									pointCount: sampledTemperatureData.filter((point) =>
 										isPointInRegion(point.lat, point.lng, feature.geometry),
 									).length,
-									isFallback:
-										sampledTemperatureData.filter((point) =>
-											isPointInRegion(point.lat, point.lng, feature.geometry),
-										).length === 0,
+									isFallback: tempResult.isFallback,
+									currentPosition: tempResult.currentPosition,
+									nearestDataPoint: tempResult.nearestDataPoint,
+									dataPoints: tempResult.dataPoints,
 								},
 							};
 
 							if (result.properties.intensity !== null) {
 								processedFeatures.push(result);
 								console.log(
-									`Region ${regionName} processed successfully: intensity=${avgTemp}`,
+									`Region ${regionName} processed successfully: intensity=${result.properties.intensity}`,
 								);
 							} else {
 								console.log(
@@ -793,13 +876,16 @@ const ClimateMap = ({ onMount = () => true }) => {
 				}
 			} else if (mapMode === "europe-only") {
 				try {
-					// sample times with data: 2016 June, 2017 June, 2017 December (always 1st of the month)
-					// sample query: docker exec -it onehealth-db-db-1 psql -U postgres -d onehealth_db -c "SELECT * FROM var_value WHERE var_id = 5 AND time_id = 12 ORDER BY id DESC limit 5"
-					console.log("Converting grid data to Europe-only NUTS regions...");
-
-					// Track this processing request
-					const processingId = { year: currentYear, timestamp: Date.now() };
-					currentProcessingRef.current = processingId;
+					console.log(
+						`DEBUGYEARCHANGE: Converting grid data to Europe-only NUTS regions for year ${currentYear}...`,
+					);
+					console.log(
+						`DEBUGYEARCHANGE: Temperature data length: ${temperatureData.length}`,
+					);
+					console.log(
+						`DEBUGYEARCHANGE: First temperature point:`,
+						temperatureData[0],
+					);
 
 					// Clear existing data immediately to prevent stale display
 					setConvertedEuropeOnlyGeoJSON(null);
@@ -809,23 +895,22 @@ const ClimateMap = ({ onMount = () => true }) => {
 					const { nutsGeoJSON, extremes } =
 						await gridToNutsConverter.convertGridDataToNuts(temperatureData);
 
-					// Only update state if this is still the current request and we're still in europe-only mode
-					if (
-						currentProcessingRef.current === processingId &&
-						mapMode === "europe-only"
-					) {
-						setConvertedEuropeOnlyGeoJSON(nutsGeoJSON);
-						setDataExtremes(extremes);
-					} else {
-						console.log(
-							`Discarding stale Europe-only data for year ${processingId.year}`,
-						);
-					}
+					console.log(
+						`DEBUGYEARCHANGE: NUTS conversion complete for year ${currentYear}`,
+					);
+					console.log(
+						`DEBUGYEARCHANGE: NUTS features count: ${nutsGeoJSON.features.length}`,
+					);
+					console.log(`DEBUGYEARCHANGE: NUTS extremes:`, extremes);
+					console.log(
+						`DEBUGYEARCHANGE: First NUTS feature:`,
+						nutsGeoJSON.features[0],
+					);
 
-					// Only clear processing state if this is still the current request
-					if (currentProcessingRef.current === processingId) {
-						setIsProcessingEuropeOnly(false);
-					}
+					// Always update state since we're processing the latest data
+					setConvertedEuropeOnlyGeoJSON({ ...nutsGeoJSON });
+					setDataExtremes(extremes);
+					setIsProcessingEuropeOnly(false);
 				} catch (error) {
 					console.error(
 						"Failed to convert grid data to Europe-only NUTS regions:",
@@ -856,7 +941,6 @@ const ClimateMap = ({ onMount = () => true }) => {
 				setConvertedEuropeOnlyGeoJSON(null);
 				setIsProcessingEuropeOnly(false);
 				setIsProcessingWorldwide(false);
-				currentProcessingRef.current = null;
 			}
 		};
 
@@ -1167,9 +1251,20 @@ const ClimateMap = ({ onMount = () => true }) => {
 				countryName?: string;
 				pointCount?: number;
 				isFallback?: boolean;
+				currentPosition?: { lat: number; lng: number };
+				nearestDataPoint?: { lat: number; lng: number };
+				dataPoints?: Array<{ lat: number; lng: number; temperature: number }>;
 			};
-			const { WORLDWIDE_ID, intensity, countryName, pointCount, isFallback } =
-				properties;
+			const {
+				WORLDWIDE_ID,
+				intensity,
+				countryName,
+				pointCount,
+				isFallback,
+				currentPosition,
+				nearestDataPoint,
+				dataPoints,
+			} = properties;
 			const displayName = countryName || WORLDWIDE_ID || "Unknown Country";
 
 			const dataSource = isFallback
@@ -1178,12 +1273,41 @@ const ClimateMap = ({ onMount = () => true }) => {
 					? `${pointCount} data points`
 					: "Calculated";
 
+			// Build coordinate information for fallback case
+			let coordinateInfo = "";
+			if (isFallback && currentPosition && nearestDataPoint) {
+				coordinateInfo = `
+          <p><strong>Current Position:</strong> ${currentPosition.lat.toFixed(3)}, ${currentPosition.lng.toFixed(3)}</p>
+          <p><strong>Nearest Data Point:</strong> ${nearestDataPoint.lat.toFixed(3)}, ${nearestDataPoint.lng.toFixed(3)}</p>
+        `;
+			}
+
+			// Build data points list (first 3)
+			let dataPointsList = "";
+			if (dataPoints && dataPoints.length > 0) {
+				const pointsToShow = dataPoints.slice(0, 3);
+				const pointsListItems = pointsToShow
+					.map(
+						(point) =>
+							`<li>[${point.lat.toFixed(3)}, ${point.lng.toFixed(3)}, ${point.temperature.toFixed(1)}°C]</li>`,
+					)
+					.join("");
+				dataPointsList = `
+          <p><strong>Data Points:</strong></p>
+          <ul style="margin: 0; padding-left: 15px;">
+            ${pointsListItems}
+          </ul>
+        `;
+			}
+
 			const popupContent = `
         <div class="worldwide-popup">
           <h4>${displayName}</h4>
           <p><strong>Temperature:</strong> ${intensity !== null && intensity !== undefined ? `${intensity.toFixed(1)}°C` : "N/A"}</p>
           <p><strong>Data Source:</strong> ${dataSource}</p>
           ${isFallback ? `<p><small style="color: #666;">⚠️ Using nearest available data point</small></p>` : ""}
+          ${coordinateInfo}
+          ${dataPointsList}
           <p><small>Region: ${WORLDWIDE_ID || "N/A"}</small></p>
         </div>
       `;
@@ -1211,6 +1335,9 @@ const ClimateMap = ({ onMount = () => true }) => {
 				nutsLevel?: number;
 				isFallback?: boolean;
 				isModelData?: boolean;
+				currentPosition?: { lat: number; lng: number };
+				nearestDataPoint?: { lat: number; lng: number };
+				dataPoints?: Array<{ lat: number; lng: number; temperature: number }>;
 			};
 			const {
 				NUTS_ID,
@@ -1220,6 +1347,9 @@ const ClimateMap = ({ onMount = () => true }) => {
 				nutsLevel,
 				isFallback,
 				isModelData,
+				currentPosition,
+				nearestDataPoint,
+				dataPoints,
 			} = properties;
 			const displayName = countryName || NUTS_ID || "Unknown Region";
 
@@ -1236,6 +1366,33 @@ const ClimateMap = ({ onMount = () => true }) => {
 					? `${pointCount} data points`
 					: "Calculated";
 
+			// Build coordinate information for fallback case
+			let coordinateInfo = "";
+			if (isFallback && currentPosition && nearestDataPoint) {
+				coordinateInfo = `
+          <p><strong>Current Position:</strong> ${currentPosition.lat.toFixed(3)}, ${currentPosition.lng.toFixed(3)}</p>
+          <p><strong>Nearest Data Point:</strong> ${nearestDataPoint.lat.toFixed(3)}, ${nearestDataPoint.lng.toFixed(3)}</p>
+        `;
+			}
+
+			// Build data points list (first 3)
+			let dataPointsList = "";
+			if (dataPoints && dataPoints.length > 0) {
+				const pointsToShow = dataPoints.slice(0, 3);
+				const pointsListItems = pointsToShow
+					.map(
+						(point) =>
+							`<li>[${point.lat.toFixed(3)}, ${point.lng.toFixed(3)}, ${point.temperature.toFixed(1)}°C]</li>`,
+					)
+					.join("");
+				dataPointsList = `
+          <p><strong>Data Points:</strong></p>
+          <ul style="margin: 0; padding-left: 15px;">
+            ${pointsListItems}
+          </ul>
+        `;
+			}
+
 			const popupContent = `
         <div class="europe-only-popup">
           <h4>${regionType}: ${displayName}</h4>
@@ -1243,6 +1400,8 @@ const ClimateMap = ({ onMount = () => true }) => {
           <p><strong>Data Source:</strong> ${dataSource}</p>
           ${isFallback ? `<p><small style="color: #666;">⚠️ Using nearest available data point</small></p>` : ""}
           ${isModelData ? `<p><small style="color: #007acc;">📊 Model data</small></p>` : ""}
+          ${coordinateInfo}
+          ${dataPointsList}
           <p><small>Region ID: ${NUTS_ID || "N/A"}</small></p>
         </div>
       `;
@@ -1328,11 +1487,40 @@ const ClimateMap = ({ onMount = () => true }) => {
 									{!isProcessingEuropeOnly &&
 										convertedEuropeOnlyGeoJSON?.features &&
 										convertedEuropeOnlyGeoJSON.features.length > 0 && (
-											<GeoJSON
-												data={convertedEuropeOnlyGeoJSON}
-												style={(f) => (f ? nutsStyle(f) : {})}
-												onEachFeature={onEachEuropeOnlyFeature}
-											/>
+											<div>
+												<div
+													hidden
+													style={{
+														position: "fixed",
+														top: "150px",
+														left: "150px",
+														backgroundColor: "red",
+														color: "white",
+														padding: "50px",
+														zIndex: "92382354",
+													}}
+												>
+													GeoJSON debug:{" "}
+													{
+														convertedEuropeOnlyGeoJSON.features[0].properties
+															.NUTS_ID
+													}
+													:{" "}
+													{
+														convertedEuropeOnlyGeoJSON.features[0].properties
+															.intensity
+													}
+												</div>
+												<GeoJSON
+													data={convertedEuropeOnlyGeoJSON}
+													key={
+														convertedEuropeOnlyGeoJSON.features[0].properties
+															.intensity
+													}
+													style={(f) => (f ? nutsStyle(f) : {})}
+													onEachFeature={onEachEuropeOnlyFeature}
+												/>
+											</div>
 										)}
 								</Pane>
 							)}

@@ -5,7 +5,7 @@ import { fetchClimateData } from "../../../services/climateDataService.ts";
 import type { DataExtremes, TemperatureDataPoint } from "../types.ts";
 
 export const MIN_ZOOM = 3.4;
-export const MAX_ZOOM = 7;
+export const MAX_ZOOM = 10;
 
 export const TEMP_COLORS = [
 	"#4c1d4b", // Deep purple
@@ -382,8 +382,8 @@ export const loadTemperatureData = async (
 			const lats = dataPoints.map((p) => p.lat);
 			const lngs = dataPoints.map((p) => p.lng);
 			bounds = L.latLngBounds([
-				[Math.min(...lats), Math.min(...lngs)],
-				[Math.max(...lats), Math.max(...lngs)],
+				[Math.min(...lats) - 15, Math.min(...lngs) - 15],
+				[Math.max(...lats) + 15, Math.max(...lngs) + 15],
 			]);
 		}
 

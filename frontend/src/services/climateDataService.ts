@@ -60,8 +60,8 @@ export async function fetchClimateData(
 
 		return data.result["latitude, longitude, var_value"].map(
 			([latitude, longitude, temperature]: [number, number, number]) => ({
-				latitude,
-				longitude,
+				latitude, // "longitude": latitude,
+				longitude, // "latitude": longitude,
 				temperature,
 			}),
 		);

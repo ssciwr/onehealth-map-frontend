@@ -275,7 +275,7 @@ export class GridToNutsConverter {
 					const polygonBounds = this.getPolygonBounds(polygon);
 					const relevantBuckets = this.getRelevantBuckets(polygonBounds, 5);
 
-					const pointsInRegion: number[] = [];
+					const pointsInRegion: TemperatureDataPoint[] = [];
 					let totalCandidatePoints = 0;
 
 					// Only check points in relevant buckets
@@ -295,7 +295,7 @@ export class GridToNutsConverter {
 									continue;
 								}
 								if (turf.booleanPointInPolygon(dataPoint.point, polygon)) {
-									pointsInRegion.push(dataPoint.temperature);
+									pointsInRegion.push(dataPoint);
 								}
 							} catch (error) {
 								console.warn(
@@ -310,10 +310,20 @@ export class GridToNutsConverter {
 
 					// Calculate average temperature if we have points
 					if (pointsInRegion.length > 0) {
-						const temperatureSum = pointsInRegion.reduce((a, b) => a + b, 0);
+						const temperatureSum = pointsInRegion.reduce(
+							(sum, point) => sum + point.temperature,
+							0,
+						);
 						const avgTemperature = temperatureSum / pointsInRegion.length;
 
 						temperatures.push(avgTemperature);
+
+						// Get centroid for current position
+						const centroid = turf.centroid(polygon);
+						const currentPosition = {
+							lat: centroid.geometry.coordinates[1],
+							lng: centroid.geometry.coordinates[0],
+						};
 
 						const nutsFeatureResult: NutsFeature = {
 							type: "Feature",
@@ -323,6 +333,12 @@ export class GridToNutsConverter {
 								countryName: this.getNutsDisplayName(nutsId),
 								pointCount: pointsInRegion.length,
 								nutsLevel: 2,
+								currentPosition,
+								dataPoints: pointsInRegion.slice(0, 3).map((point) => ({
+									lat: point.lat,
+									lng: point.lng,
+									temperature: point.temperature,
+								})),
 							},
 							geometry: nutsFeature.geometry as NutsGeometry,
 						};
@@ -335,6 +351,10 @@ export class GridToNutsConverter {
 							number,
 							number,
 						];
+						const currentPosition = {
+							lat: centroidCoords[1],
+							lng: centroidCoords[0],
+						};
 						const nearestPoint = this.findNearestDataPoint(
 							centroidCoords,
 							spatialIndex,
@@ -356,6 +376,18 @@ export class GridToNutsConverter {
 									pointCount: 0, // Mark as fallback
 									nutsLevel: 2,
 									isFallback: true,
+									currentPosition,
+									nearestDataPoint: {
+										lat: nearestPoint.lat,
+										lng: nearestPoint.lng,
+									},
+									dataPoints: [
+										{
+											lat: nearestPoint.lat,
+											lng: nearestPoint.lng,
+											temperature: nearestPoint.temperature,
+										},
+									],
 								},
 								geometry: nutsFeature.geometry as NutsGeometry,
 							};
