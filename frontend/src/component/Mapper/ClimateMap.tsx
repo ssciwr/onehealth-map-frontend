@@ -59,7 +59,7 @@ const ClimateMap = ({ onMount = () => true }) => {
 	const [selectedOptimism, setSelectedOptimism] =
 		useState<string>("optimistic");
 	const [currentYear, setCurrentYear] = useState<number>(2016);
-	const [currentMonth, setCurrentMonth] = useState<Month>(1);
+	const [currentMonth, setCurrentMonth] = useState<Month>(6);
 	const [currentVariableValue, setCurrentVariableValue] =
 		useState<string>("R0");
 	const [map, setMap] = useState<L.Map | null>(null);

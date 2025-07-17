@@ -110,6 +110,10 @@ const ControlBar = ({
 		}>
 	>([]);
 
+	useEffect(() => {
+		console.log("Show info:", showInfo);
+	}, [showInfo]);
+
 	// Apply theme to document root
 	useEffect(() => {
 		console.log("Applying theme to document:", currentTheme);
@@ -364,13 +368,13 @@ const ControlBar = ({
 		if (styleMode === "purple") {
 			return {
 				backgroundColor: "#667eea",
-				background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+				background: "#6d63c8",
 			};
 		}
 		if (styleMode === "red") {
 			return {
 				backgroundColor: "#ff6b6b",
-				background: "linear-gradient(135deg, #ff6b6b 0%, #ffa726 100%)",
+				background: "#ff2659",
 			};
 		}
 		return {}; // Default styling from CSS
@@ -385,6 +389,67 @@ const ControlBar = ({
 			? `${baseClass} control-bar-bottom-right`
 			: `${baseClass} control-bar-top-left`;
 	};
+
+	const modals = (
+		<div>
+			<Modal
+				title=""
+				open={showInfo}
+				onCancel={() => setShowInfo(false)}
+				footer={null}
+				width={400}
+			>
+				<AboutContent />
+				<br />
+				<button
+					type="button"
+					onClick={handleThemeToggle}
+					style={{
+						background: "none",
+						border: "none",
+						color: "inherit",
+						textDecoration: "underline",
+						cursor: "pointer",
+					}}
+				>
+					Change Theme
+				</button>
+			</Modal>
+
+			<Modal
+				title="Screenshot Error"
+				open={showScreenshotErrorModal}
+				onOk={() => setShowScreenshotErrorModal(false)}
+				onCancel={() => setShowScreenshotErrorModal(false)}
+				okText="OK"
+				cancelButtonProps={{ style: { display: "none" } }}
+			>
+				<p>Error saving screenshot. Please reload the map and try again.</p>
+			</Modal>
+
+			<Modal
+				title="Finding Your Location"
+				open={showLocationModal}
+				footer={null}
+				closable={false}
+				centered
+				width={300}
+			>
+				<div style={{ textAlign: "center", padding: "20px 0" }}>
+					<Spin size="large" />
+					<p style={{ marginTop: "16px", marginBottom: 0 }}>Zooming to you!</p>
+				</div>
+			</Modal>
+
+			<ModelDetailsModal
+				isOpen={showModelDetails}
+				onClose={() => setShowModelDetails(false)}
+				models={models}
+				selectedModelId={selectedModel || ""}
+				onModelSelect={onModelSelect || (() => {})}
+			/>
+		</div>
+	);
 
 	if (isMobile) {
 		// Mobile: circular buttons with minimize functionality
@@ -469,7 +534,7 @@ const ControlBar = ({
 						)}
 					</button>
 				</div>
-				{/* Mobile modals remain the same */}
+				{modals}
 			</>
 		);
 	}
@@ -623,62 +688,7 @@ const ControlBar = ({
 				</div>
 			</div>
 
-			<Modal
-				title=""
-				open={showInfo}
-				onCancel={() => setShowInfo(false)}
-				footer={null}
-				width={400}
-			>
-				<AboutContent />
-				<br />
-				<button
-					type="button"
-					onClick={handleThemeToggle}
-					style={{
-						background: "none",
-						border: "none",
-						color: "inherit",
-						textDecoration: "underline",
-						cursor: "pointer",
-					}}
-				>
-					Change Theme
-				</button>
-			</Modal>
-
-			<Modal
-				title="Screenshot Error"
-				open={showScreenshotErrorModal}
-				onOk={() => setShowScreenshotErrorModal(false)}
-				onCancel={() => setShowScreenshotErrorModal(false)}
-				okText="OK"
-				cancelButtonProps={{ style: { display: "none" } }}
-			>
-				<p>Error saving screenshot. Please reload the map and try again.</p>
-			</Modal>
-
-			<Modal
-				title="Finding Your Location"
-				open={showLocationModal}
-				footer={null}
-				closable={false}
-				centered
-				width={300}
-			>
-				<div style={{ textAlign: "center", padding: "20px 0" }}>
-					<Spin size="large" />
-					<p style={{ marginTop: "16px", marginBottom: 0 }}>Zooming to you!</p>
-				</div>
-			</Modal>
-
-			<ModelDetailsModal
-				isOpen={showModelDetails}
-				onClose={() => setShowModelDetails(false)}
-				models={models}
-				selectedModelId={selectedModel || ""}
-				onModelSelect={onModelSelect || (() => {})}
-			/>
+			{modals}
 		</>
 	);
 };
