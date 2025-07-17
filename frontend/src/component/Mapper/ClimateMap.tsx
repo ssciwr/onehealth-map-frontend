@@ -1,6 +1,6 @@
 import * as turf from "@turf/turf";
 import { Modal } from "antd";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { GeoJSON, MapContainer, Pane } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
@@ -26,6 +26,7 @@ import type {
 	ViewportBounds,
 	WorldwideGeoJSON,
 } from "./types.ts";
+import { gridToNutsConverter } from "./utilities/GridToNutsConverter";
 import { getColorFromGradient } from "./utilities/gradientUtilities";
 import {
 	Legend,
@@ -33,7 +34,6 @@ import {
 	MIN_ZOOM,
 	loadTemperatureData,
 } from "./utilities/mapDataUtils";
-import NutsMapperV5 from "./utilities/prepareNutsDataForDrawing";
 
 interface ViewportChangeData {
 	bounds: L.LatLngBounds;
@@ -62,16 +62,21 @@ const ClimateMap = ({ onMount = () => true }) => {
 		useState<WorldwideGeoJSON | null>(null);
 	const [worldwideRegionsGeoJSON, setworldwideRegionsGeoJSON] =
 		useState<GeoJSON.FeatureCollection | null>(null);
-	const [convertedNutsGeoJSON, setConvertedNutsGeoJSON] =
+	const [convertedEuropeOnlyGeoJSON, setConvertedEuropeOnlyGeoJSON] =
 		useState<NutsGeoJSON | null>(null);
+	const [isProcessingEuropeOnly, setIsProcessingEuropeOnly] = useState(false);
+	const currentProcessingRef = useRef<{
+		year: number;
+		timestamp: number;
+	} | null>(null);
 
 	// Natural Earth URL with all countries geometries.
 	const NATURAL_EARTH_URL =
 		"https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_10m_admin_1_states_provinces.geojson";
 
 	// Grid/Worldwide/NUTS mode state
-	const [mapMode, setMapMode] = useState<"grid" | "worldwide" | "nutsonly">(
-		"nutsonly",
+	const [mapMode, setMapMode] = useState<"grid" | "worldwide" | "europe-only">(
+		"europe-only",
 	);
 	const [hoverTimeout, setHoverTimeout] = useState<NodeJS.Timeout | null>(null);
 	const [currentHoveredLayer, setCurrentHoveredLayer] =
@@ -174,7 +179,7 @@ const ClimateMap = ({ onMount = () => true }) => {
 
 					const yamlText = await response.text();
 					const lines = yamlText.split("\n");
-					const result: Record<string, any> = {};
+					const result: Record<string, string> = {};
 					let currentKey = "";
 					let isInArray = false;
 					let arrayItems: string[] = [];
@@ -184,9 +189,9 @@ const ClimateMap = ({ onMount = () => true }) => {
 						if (trimmed && !trimmed.startsWith("#")) {
 							const colonIndex = trimmed.indexOf(":");
 							if (colonIndex > 0) {
-								// If we were in an array, save it
+								// If we were in an array, save it as a string
 								if (isInArray && currentKey) {
-									result[currentKey] = arrayItems;
+									result[currentKey] = arrayItems.join(", ");
 									arrayItems = [];
 									isInArray = false;
 								}
@@ -215,9 +220,9 @@ const ClimateMap = ({ onMount = () => true }) => {
 						}
 					}
 
-					// Handle any remaining array
+					// Handle any remaining array - convert to string for the result type
 					if (isInArray && currentKey) {
-						result[currentKey] = arrayItems;
+						result[currentKey] = arrayItems.join(", ");
 					}
 
 					const model = {
@@ -230,7 +235,7 @@ const ClimateMap = ({ onMount = () => true }) => {
 						icon: result.icon || "",
 						color: result.color || "",
 						details: result.details || "",
-						output: result.output || ["t2m"],
+						output: result.output ? result.output.split(", ") : ["t2m"],
 					};
 
 					if (model.id) {
@@ -588,7 +593,6 @@ const ClimateMap = ({ onMount = () => true }) => {
 				// Get centroid of the region using turf.js
 				const polygon = turf.feature(regionFeature.geometry);
 				const centroid = turf.centroid(polygon);
-				centroid.geometry.coordinates;
 
 				let nearestPoint = null;
 				let minDistance = Number.POSITIVE_INFINITY;
@@ -778,46 +782,58 @@ const ClimateMap = ({ onMount = () => true }) => {
 					setProcessingError(true);
 					setError("Failed to process worldwide regions");
 				}
-			} else if (mapMode === "nutsonly") {
+			} else if (mapMode === "europe-only") {
 				try {
-					console.log("Loading NUTS regions from CSV...");
-					// Load NUTS regions CSV data
-					const response = await fetch("/data/nutsRegions.csv");
-					const csvData = await response.text();
+					console.log("Converting grid data to Europe-only NUTS regions...");
 
-					// Use NutsMapperV5 to process the CSV data
-					const nutsMapper = new NutsMapperV5();
-					const nutsGeoJSON = nutsMapper.parseNutsCSV(csvData);
+					// Track this processing request
+					const processingId = { year: currentYear, timestamp: Date.now() };
+					currentProcessingRef.current = processingId;
 
-					// Calculate extremes from NUTS data
-					const intensities = nutsGeoJSON.features
-						.map((feature) => feature.properties.intensity)
-						.filter(
-							(intensity): intensity is number =>
-								intensity !== null && !Number.isNaN(intensity),
-						);
+					// Clear existing data immediately to prevent stale display
+					setConvertedEuropeOnlyGeoJSON(null);
+					setIsProcessingEuropeOnly(true);
 
-					if (intensities.length > 0) {
-						const extremes = {
-							min: Math.min(...intensities),
-							max: Math.max(...intensities),
-						};
+					// Use GridToNutsConverter to process temperature data into NUTS regions
+					const { nutsGeoJSON, extremes } =
+						await gridToNutsConverter.convertGridDataToNuts(temperatureData);
+
+					// Only update state if this is still the current request and we're still in europe-only mode
+					if (
+						currentProcessingRef.current === processingId &&
+						mapMode === "europe-only"
+					) {
+						setConvertedEuropeOnlyGeoJSON(nutsGeoJSON);
 						setDataExtremes(extremes);
-						console.log("NUTS extremes:", extremes);
+						console.log(
+							`Europe-only NUTS extremes for ${currentYear}:`,
+							extremes,
+						);
+						console.log(
+							`Europe-only conversion completed for ${currentYear}: ${nutsGeoJSON.features.length} regions`,
+						);
+					} else {
+						console.log(
+							`Discarding stale Europe-only data for year ${processingId.year}`,
+						);
 					}
 
-					setConvertedNutsGeoJSON(nutsGeoJSON as NutsGeoJSON);
-					console.log(
-						`NUTS conversion completed: ${nutsGeoJSON.features.length} regions`,
-					);
+					// Only clear processing state if this is still the current request
+					if (currentProcessingRef.current === processingId) {
+						setIsProcessingEuropeOnly(false);
+					}
 				} catch (error) {
-					console.error("Failed to load NUTS regions:", error);
+					console.error(
+						"Failed to convert grid data to Europe-only NUTS regions:",
+						error,
+					);
 					setProcessingError(true);
-					setError("Failed to load NUTS regions");
+					setError("Failed to process Europe-only NUTS regions");
+					setIsProcessingEuropeOnly(false);
 				}
 			} else if (mapMode === "grid") {
 				setConvertedWorldwideGeoJSON(null);
-				setConvertedNutsGeoJSON(null);
+				setConvertedEuropeOnlyGeoJSON(null);
 				// Restore original extremes for grid mode
 				if (temperatureData.length > 0) {
 					const temps = temperatureData.map((d) => d.temperature);
@@ -831,9 +847,11 @@ const ClimateMap = ({ onMount = () => true }) => {
 					console.log("No temperature data for grid mode");
 				}
 			} else {
-				// Clear both when switching modes
+				// Clear all when switching modes
 				setConvertedWorldwideGeoJSON(null);
-				setConvertedNutsGeoJSON(null);
+				setConvertedEuropeOnlyGeoJSON(null);
+				setIsProcessingEuropeOnly(false);
+				currentProcessingRef.current = null;
 			}
 		};
 
@@ -1070,7 +1088,7 @@ const ClimateMap = ({ onMount = () => true }) => {
 			};
 			if (mapMode === "worldwide" && convertedWorldwideGeoJSON) {
 				prevLayer.setStyle(worldwideStyle(prevLayer.feature));
-			} else if (mapMode === "nutsonly" && convertedNutsGeoJSON) {
+			} else if (mapMode === "europe-only" && convertedEuropeOnlyGeoJSON) {
 				prevLayer.setStyle(nutsStyle(prevLayer.feature));
 			} else if (worldGeoJSON) {
 				prevLayer.setStyle(worldStyle());
@@ -1092,8 +1110,8 @@ const ClimateMap = ({ onMount = () => true }) => {
 
 		setCurrentHoveredLayer(layer);
 
-		// Show popup on hover for worldwide and nutsonly modes with slight delay
-		if (mapMode === "worldwide" || mapMode === "nutsonly") {
+		// Show popup on hover for worldwide and europe-only modes with slight delay
+		if (mapMode === "worldwide" || mapMode === "europe-only") {
 			const timeout = setTimeout(() => {
 				if (currentHoveredLayer === layer) {
 					(layer as L.Layer & { openPopup: () => void }).openPopup();
@@ -1116,14 +1134,14 @@ const ClimateMap = ({ onMount = () => true }) => {
 		if (currentHoveredLayer === geoJSONLayer) {
 			if (mapMode === "worldwide" && convertedWorldwideGeoJSON) {
 				geoJSONLayer.setStyle(worldwideStyle(geoJSONLayer.feature));
-			} else if (mapMode === "nutsonly" && convertedNutsGeoJSON) {
+			} else if (mapMode === "europe-only" && convertedEuropeOnlyGeoJSON) {
 				geoJSONLayer.setStyle(nutsStyle(geoJSONLayer.feature));
 			} else if (worldGeoJSON) {
 				geoJSONLayer.setStyle(worldStyle());
 			}
 
-			// Close popup on mouseout for worldwide and nutsonly modes
-			if (mapMode === "worldwide" || mapMode === "nutsonly") {
+			// Close popup on mouseout for worldwide and europe-only modes
+			if (mapMode === "worldwide" || mapMode === "europe-only") {
 				(geoJSONLayer as L.Layer & { closePopup: () => void }).closePopup();
 			}
 
@@ -1170,7 +1188,10 @@ const ClimateMap = ({ onMount = () => true }) => {
 		}
 	};
 
-	const onEachNutsFeature = (feature: GeoJSON.Feature, layer: L.Layer) => {
+	const onEachEuropeOnlyFeature = (
+		feature: GeoJSON.Feature,
+		layer: L.Layer,
+	) => {
 		layer.on({
 			mouseover: highlightFeature,
 			mouseout: resetHighlight,
@@ -1180,14 +1201,43 @@ const ClimateMap = ({ onMount = () => true }) => {
 			const properties = feature.properties as {
 				NUTS_ID?: string;
 				intensity?: number | null;
+				countryName?: string;
+				pointCount?: number;
+				nutsLevel?: number;
+				isFallback?: boolean;
+				isModelData?: boolean;
 			};
-			const { NUTS_ID, intensity } = properties;
-			const displayName = NUTS_ID || "Unknown Region";
+			const {
+				NUTS_ID,
+				intensity,
+				countryName,
+				pointCount,
+				nutsLevel,
+				isFallback,
+				isModelData,
+			} = properties;
+			const displayName = countryName || NUTS_ID || "Unknown Region";
+
+			const regionType =
+				nutsLevel === 2
+					? "NUTS 2 Region"
+					: nutsLevel === 0
+						? "Country"
+						: "Region";
+
+			const dataSource = isFallback
+				? "Nearest point"
+				: pointCount && pointCount > 0
+					? `${pointCount} data points`
+					: "Calculated";
 
 			const popupContent = `
-        <div class="nuts-popup">
-          <h4>NUTS Region: ${displayName}</h4>
+        <div class="europe-only-popup">
+          <h4>${regionType}: ${displayName}</h4>
           <p><strong>Temperature:</strong> ${intensity !== null && intensity !== undefined ? `${intensity.toFixed(1)}°C` : "N/A"}</p>
+          <p><strong>Data Source:</strong> ${dataSource}</p>
+          ${isFallback ? `<p><small style="color: #666;">⚠️ Using nearest available data point</small></p>` : ""}
+          ${isModelData ? `<p><small style="color: #007acc;">📊 Model data</small></p>` : ""}
           <p><small>Region ID: ${NUTS_ID || "N/A"}</small></p>
         </div>
       `;
@@ -1265,16 +1315,37 @@ const ClimateMap = ({ onMount = () => true }) => {
 								</Pane>
 							)}
 
-							{mapMode === "nutsonly" && (
-								<Pane name="nutsPane" style={{ zIndex: 30, opacity: 0.9 }}>
-									{convertedNutsGeoJSON?.features &&
-										convertedNutsGeoJSON.features.length > 0 && (
+							{mapMode === "europe-only" && (
+								<Pane
+									name="europeOnlyPane"
+									style={{ zIndex: 30, opacity: 0.9 }}
+								>
+									{!isProcessingEuropeOnly &&
+										convertedEuropeOnlyGeoJSON?.features &&
+										convertedEuropeOnlyGeoJSON.features.length > 0 && (
 											<GeoJSON
-												data={convertedNutsGeoJSON}
+												data={convertedEuropeOnlyGeoJSON}
 												style={(f) => (f ? nutsStyle(f) : {})}
-												onEachFeature={onEachNutsFeature}
+												onEachFeature={onEachEuropeOnlyFeature}
 											/>
 										)}
+									{isProcessingEuropeOnly && (
+										<div
+											style={{
+												position: "absolute",
+												top: "50%",
+												left: "50%",
+												transform: "translate(-50%, -50%)",
+												background: "rgba(255, 255, 255, 0.9)",
+												padding: "20px",
+												borderRadius: "8px",
+												zIndex: 1000,
+												boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
+											}}
+										>
+											<div>Processing Europe-only data...</div>
+										</div>
+									)}
 								</Pane>
 							)}
 

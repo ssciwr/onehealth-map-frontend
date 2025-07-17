@@ -16,8 +16,8 @@ interface MapHeaderProps {
 	selectedOptimism: string;
 	setSelectedOptimism: (optimism: string) => void;
 	getOptimismLevels: () => string[];
-	mapMode?: "grid" | "worldwide" | "nutsonly";
-	onMapModeChange?: (mode: "grid" | "worldwide" | "nutsonly") => void;
+	mapMode?: "grid" | "worldwide" | "europe-only";
+	onMapModeChange?: (mode: "grid" | "worldwide" | "europe-only") => void;
 	styleMode?: "unchanged" | "purple" | "red";
 	onStyleModeChange?: (mode: "unchanged" | "purple" | "red") => void;
 }
@@ -28,7 +28,7 @@ export default ({
 	selectedOptimism,
 	setSelectedOptimism,
 	getOptimismLevels,
-	mapMode = "nutsonly",
+	mapMode = "europe-only",
 	onMapModeChange,
 	styleMode = "unchanged",
 	onStyleModeChange,
@@ -332,7 +332,7 @@ export default ({
 									style={{ minWidth: 120 }}
 									size="middle"
 								>
-									<Option value="nutsonly">NUTS</Option>
+									<Option value="europe-only">Europe-only</Option>
 									<Option value="worldwide">Worldwide</Option>
 									<Option value="grid">Grid</Option>
 								</Select>

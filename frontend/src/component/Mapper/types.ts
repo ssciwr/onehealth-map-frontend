@@ -30,6 +30,11 @@ export interface WorldwideGeoJSON {
 export interface NutsProperties {
 	NUTS_ID: string;
 	intensity: number | null;
+	countryName?: string;
+	pointCount?: number;
+	nutsLevel?: number;
+	isFallback?: boolean;
+	isModelData?: boolean;
 }
 
 export interface NutsGeometry {
