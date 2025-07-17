@@ -36,6 +36,8 @@ interface AdvancedTimelineSelectorProps {
 	screenshoter?: L.SimpleMapScreenshoter | null;
 }
 
+const hideMonthSelector = true; // disabled for now so as to not confuse users. But will be connected through soon.
+
 const AdvancedTimelineSelector: React.FC<AdvancedTimelineSelectorProps> = ({
 	year,
 	month,
@@ -290,7 +292,7 @@ const AdvancedTimelineSelector: React.FC<AdvancedTimelineSelectorProps> = ({
 						</div>
 
 						{/* Month selector */}
-						<div style={{ minWidth: "140px" }}>
+						<div hidden={hideMonthSelector} style={{ minWidth: "140px" }}>
 							<Select
 								value={month}
 								onChange={onMonthChange}
@@ -407,7 +409,7 @@ const AdvancedTimelineSelector: React.FC<AdvancedTimelineSelectorProps> = ({
 						</div>
 						{/* Right controls */}
 						<div className="control-group">
-							<div className="month-selector">
+							<div hidden={hideMonthSelector} className="month-selector">
 								<select
 									value={month}
 									onChange={(e) => onMonthChange(Number(e.target.value))}

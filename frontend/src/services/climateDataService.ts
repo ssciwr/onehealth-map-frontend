@@ -20,13 +20,13 @@ const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export async function fetchClimateData(
 	year: number,
-	requestedVariableValue = "t2m",
+	requestedVariableValue = "R0",
 	_outputFormat?: string[],
 ): Promise<ClimateDataPoint[]> {
 	await delay(100 + Math.random() * 300);
 
-	// Format date as YYYY-01-01 (always January 1st)
-	const requestedTimePoint = `${year}-01-01`;
+	// Format date as YYYY-01-01 (always June 1st for now)
+	const requestedTimePoint = `${year}-06-01`;
 
 	console.log(
 		`Fetching climate data for year: ${year}, variable: ${requestedVariableValue}, date: ${requestedTimePoint}`,

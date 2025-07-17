@@ -10,4 +10,4 @@ details: Environmental transmission risk model analyzing temperature, humidity, 
   radiation, and air quality data. Uses WHO and CDC datasets combined with local weather
   patterns to assess outdoor transmission probability.
 output:
-  - t2m
+  - R0

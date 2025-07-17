@@ -121,7 +121,7 @@ const loadModels = async (): Promise<Model[]> => {
 				icon: yamlData.icon || "",
 				color: yamlData.color || "",
 				details: yamlData.details || "",
-				output: yamlData.output || ["t2m"],
+				output: yamlData.output || ["R0"],
 			};
 
 			models.push(model);
@@ -180,7 +180,7 @@ const ModelSelector = ({
 						color: "#754910",
 						details:
 							"Advanced climate model incorporating temperature, humidity, and precipitation data from NOAA weather stations.",
-						output: ["t2m"],
+						output: ["R0"],
 					},
 				]);
 			} finally {

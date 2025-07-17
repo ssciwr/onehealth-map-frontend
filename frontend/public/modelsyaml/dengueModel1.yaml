@@ -15,4 +15,4 @@ paper:
   paperTitle: Analysis of multi-scale dengue transmission in European regions
   url: somedoilink.com
 output:
-  - t2m
+  - R0

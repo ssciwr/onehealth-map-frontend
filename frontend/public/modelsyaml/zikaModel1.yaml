@@ -10,4 +10,4 @@ details: Integrated Zika surveillance model combining climate variables with dem
   and mobility data. Uses temperature and precipitation forecasts to predict vector
   activity and disease spread patterns across urban environments.
 output:
-  - t2m
+  - R0

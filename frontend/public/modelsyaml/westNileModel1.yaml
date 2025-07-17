@@ -11,4 +11,4 @@ details: Advanced climate model incorporating temperature, humidity, and precipi
   years of outbreak data to predict mosquito breeding patterns and disease transmission
   risk.
 output:
-  - t2m
+  - R0

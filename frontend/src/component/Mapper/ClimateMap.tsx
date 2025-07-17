@@ -238,7 +238,7 @@ const ClimateMap = ({ onMount = () => true }) => {
 						icon: result.icon || "",
 						color: result.color || "",
 						details: result.details || "",
-						output: result.output ? result.output.split(", ") : ["t2m"],
+						output: result.output ? result.output.split(", ") : ["R0"],
 					};
 
 					if (model.id) {
@@ -346,7 +346,7 @@ const ClimateMap = ({ onMount = () => true }) => {
 
 				// Get the selected model's output value
 				const selectedModelData = models.find((m) => m.id === selectedModel);
-				const requestedVariableValue = selectedModelData?.output?.[0] || "t2m";
+				const requestedVariableValue = selectedModelData?.output?.[0] || "R0";
 				const outputFormat = selectedModelData?.output;
 
 				const { dataPoints, extremes, bounds } = await loadTemperatureData(
@@ -793,6 +793,8 @@ const ClimateMap = ({ onMount = () => true }) => {
 				}
 			} else if (mapMode === "europe-only") {
 				try {
+					// sample times with data: 2016 June, 2017 June, 2017 December (always 1st of the month)
+					// sample query: docker exec -it onehealth-db-db-1 psql -U postgres -d onehealth_db -c "SELECT * FROM var_value WHERE var_id = 5 AND time_id = 12 ORDER BY id DESC limit 5"
 					console.log("Converting grid data to Europe-only NUTS regions...");
 
 					// Track this processing request

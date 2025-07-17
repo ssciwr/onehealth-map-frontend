@@ -332,7 +332,7 @@ export const calculateExtremes = (
 
 export const loadTemperatureData = async (
 	year: number,
-	requestedVariableValue = "t2m",
+	requestedVariableValue = "R0",
 	outputFormat?: string[],
 ): Promise<{
 	dataPoints: TemperatureDataPoint[];
