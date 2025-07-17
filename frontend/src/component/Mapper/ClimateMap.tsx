@@ -425,7 +425,7 @@ const ClimateMap = ({ onMount = () => true }) => {
 
 	// Sample temperature data to 1% for performance
 	const sampleTemperatureData = useCallback(
-		(temperatureData: TemperatureDataPoint[], sampleRate = 0.01) => {
+		(temperatureData: TemperatureDataPoint[], sampleRate = 0.5) => {
 			const sampleSize = Math.max(
 				1,
 				Math.floor(temperatureData.length * sampleRate),
