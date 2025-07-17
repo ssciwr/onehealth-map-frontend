@@ -1,6 +1,6 @@
 import * as turf from "@turf/turf";
 import { Modal } from "antd";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { GeoJSON, MapContainer, Pane } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
@@ -883,7 +883,7 @@ const ClimateMap = ({ onMount = () => true }) => {
 						`DEBUGYEARCHANGE: Temperature data length: ${temperatureData.length}`,
 					);
 					console.log(
-						`DEBUGYEARCHANGE: First temperature point:`,
+						"DEBUGYEARCHANGE: First temperature point:",
 						temperatureData[0],
 					);
 
@@ -901,9 +901,9 @@ const ClimateMap = ({ onMount = () => true }) => {
 					console.log(
 						`DEBUGYEARCHANGE: NUTS features count: ${nutsGeoJSON.features.length}`,
 					);
-					console.log(`DEBUGYEARCHANGE: NUTS extremes:`, extremes);
+					console.log("DEBUGYEARCHANGE: NUTS extremes:", extremes);
 					console.log(
-						`DEBUGYEARCHANGE: First NUTS feature:`,
+						"DEBUGYEARCHANGE: First NUTS feature:",
 						nutsGeoJSON.features[0],
 					);
 
@@ -951,9 +951,10 @@ const ClimateMap = ({ onMount = () => true }) => {
 		worldwideRegionsGeoJSON,
 		processingError,
 		loadworldwideRegions,
-		calculateRegionTemperature,
+		calculateRegionTemperatureWithCoords,
 		isPointInRegion,
 		sampleTemperatureData,
+		currentYear,
 	]);
 
 	// Cleanup timeouts on unmount

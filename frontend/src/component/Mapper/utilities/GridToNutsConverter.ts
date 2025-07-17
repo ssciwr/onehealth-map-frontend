@@ -90,7 +90,9 @@ export class GridToNutsConverter {
 		return index;
 	}
 
-	private getPolygonBounds(polygon: any): {
+	private getPolygonBounds(
+		polygon: turf.Feature<turf.Polygon | turf.MultiPolygon>,
+	): {
 		minLat: number;
 		maxLat: number;
 		minLng: number;
@@ -205,7 +207,9 @@ export class GridToNutsConverter {
 		return nearestPoint;
 	}
 
-	private createPolygonFromFeature(feature: GeoJSONFeature): any {
+	private createPolygonFromFeature(
+		feature: GeoJSONFeature,
+	): turf.Feature<turf.Polygon | turf.MultiPolygon> | null {
 		try {
 			if (feature.geometry?.type === "Polygon") {
 				return turf.polygon((feature.geometry as Polygon).coordinates);
