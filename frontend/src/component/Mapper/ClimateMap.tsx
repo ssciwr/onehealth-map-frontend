@@ -1230,7 +1230,7 @@ const ClimateMap = ({ onMount = () => true }) => {
 				const pointsListItems = pointsToShow
 					.map(
 						(point) =>
-							`<li>[${point.lat.toFixed(3)}, ${point.lng.toFixed(3)}, ${point.temperature.toFixed(1)}°C]</li>`,
+							`<li>[${point.lat.toFixed(3)}, ${point.lng.toFixed(3)}, ${point.temperature.toFixed(1)}R0]</li>`,
 					)
 					.join("");
 				dataPointsList = `
@@ -1244,7 +1244,7 @@ const ClimateMap = ({ onMount = () => true }) => {
 			const popupContent = `
         <div class="worldwide-popup">
           <h4>${displayName}</h4>
-          <p><strong>Temperature:</strong> ${intensity !== null && intensity !== undefined ? `${intensity.toFixed(1)}°C` : "N/A"}</p>
+          <p><strong>Temperature:</strong> ${intensity !== null && intensity !== undefined ? `${intensity.toFixed(1)}R0` : "N/A"}</p>
           <p><strong>Data Source:</strong> ${dataSource}</p>
           ${isFallback ? `<p><small style="color: #666;">⚠️ Using nearest available data point</small></p>` : ""}
           ${coordinateInfo}
@@ -1323,7 +1323,7 @@ const ClimateMap = ({ onMount = () => true }) => {
 				const pointsListItems = pointsToShow
 					.map(
 						(point) =>
-							`<li>[${point.lat.toFixed(3)}, ${point.lng.toFixed(3)}, ${point.temperature.toFixed(1)}°C]</li>`,
+							`<li>[${point.lat.toFixed(3)}, ${point.lng.toFixed(3)}, ${point.temperature.toFixed(1)}R0]</li>`,
 					)
 					.join("");
 				dataPointsList = `
@@ -1337,7 +1337,7 @@ const ClimateMap = ({ onMount = () => true }) => {
 			const popupContent = `
         <div class="europe-only-popup">
           <h4>${regionType}: ${displayName}</h4>
-          <p><strong>Temperature:</strong> ${intensity !== null && intensity !== undefined ? `${intensity.toFixed(1)}°C` : "N/A"}</p>
+          <p><strong>R0:</strong> ${intensity !== null && intensity !== undefined ? `${intensity.toFixed(1)}` : "N/A"}</p>
           <p><strong>Data Source:</strong> ${dataSource}</p>
           ${isFallback ? `<p><small style="color: #666;">⚠️ Using nearest available data point</small></p>` : ""}
           ${isModelData ? `<p><small style="color: #007acc;">📊 Model data</small></p>` : ""}
@@ -1520,7 +1520,7 @@ const ClimateMap = ({ onMount = () => true }) => {
 									styleMode={styleMode}
 									legend={
 										dataExtremes ? (
-											<Legend extremes={dataExtremes} unit="°C" />
+											<Legend extremes={dataExtremes} unit="R0" />
 										) : (
 											<div />
 										)
@@ -1548,7 +1548,7 @@ const ClimateMap = ({ onMount = () => true }) => {
 								screenshoter={screenshoter}
 								legend={
 									dataExtremes ? (
-										<Legend extremes={dataExtremes} unit="°C" />
+										<Legend extremes={dataExtremes} unit="R0" />
 									) : (
 										<div />
 									)
@@ -1570,7 +1570,7 @@ const ClimateMap = ({ onMount = () => true }) => {
 
 				{/* Desktop-only legend positioned over the map */}
 				{!isMobile && dataExtremes && (
-					<Legend extremes={dataExtremes} unit="°C" />
+					<Legend extremes={dataExtremes} unit="R0" />
 				)}
 
 				<div className="map-bottom-bar">

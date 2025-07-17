@@ -42,7 +42,7 @@ const generateIntervals = (
 
 export const Legend = ({
 	extremes,
-	unit = "°C",
+	unit = "R0",
 }: { extremes: DataExtremes; unit?: string }) => {
 	if (!extremes) return null;
 
@@ -118,7 +118,7 @@ export const Legend = ({
 				<>
 					<span style={labelStyle}>
 						{Math.round(extremes.min)}
-						{unit}
+						&nbsp;{unit}
 					</span>
 					{intervals.map((temp) => {
 						const position = ((temp - extremes.min) / totalRange) * 100;
@@ -141,7 +141,7 @@ export const Legend = ({
 					})}
 					<span style={labelStyle}>
 						{Math.round(extremes.max)}
-						{unit}
+						&nbsp;{unit}
 					</span>
 				</>
 			);
@@ -252,7 +252,7 @@ export const Legend = ({
 				<>
 					<span style={labelStyle("large")}>
 						{Math.round(extremes.max)}
-						{unit}
+						&nbsp;{unit}
 					</span>
 
 					{sortedIntervals.map((temp) => {
@@ -268,7 +268,7 @@ export const Legend = ({
 								}}
 							>
 								{temp}
-								{unit}
+								&nbsp;{unit}
 							</span>
 						);
 					})}
@@ -281,7 +281,7 @@ export const Legend = ({
 						}}
 					>
 						{Math.round(extremes.min)}
-						{unit}
+						&nbsp;{unit}
 					</span>
 				</>
 			);
