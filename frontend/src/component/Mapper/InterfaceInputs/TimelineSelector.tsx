@@ -10,14 +10,16 @@ import { isMobile } from "react-device-detect";
 import { useLocation } from "react-router-dom";
 import { viewingMode } from "../../../stores/ViewingModeStore.ts";
 import GeneralCard from "../../General/GeneralCard.tsx";
+import type { Month } from "../types";
+import { MONTHS } from "../utilities/monthUtils";
 
 const { Option } = Select;
 
 interface AntdTimelineSelectorProps {
 	year: number;
-	month: number;
+	month: Month;
 	onYearChange: (value: number) => void;
-	onMonthChange: (value: number) => void;
+	onMonthChange: (value: Month) => void;
 	legend?: ReactNode;
 	styleMode?: "unchanged" | "purple" | "red";
 }
@@ -60,20 +62,7 @@ const TimelineSelector: React.FC<AntdTimelineSelectorProps> = ({
 		}
 	};
 
-	const months = [
-		"January",
-		"February",
-		"March",
-		"April",
-		"May",
-		"June",
-		"July",
-		"August",
-		"September",
-		"October",
-		"November",
-		"December",
-	];
+	// months array is now imported from utilities
 
 	const marks = {
 		1960: "1960",
@@ -315,12 +304,9 @@ const TimelineSelector: React.FC<AntdTimelineSelectorProps> = ({
 									style={{ minWidth: 140, flexShrink: 0 }}
 									suffixIcon={<CalendarOutlined />}
 								>
-									{months.map((monthName, index) => (
-										<Option
-											key={index.toString() + monthName}
-											value={index + 1}
-										>
-											{monthName}
+									{MONTHS.map((monthInfo) => (
+										<Option key={monthInfo.value} value={monthInfo.value}>
+											{monthInfo.label}
 										</Option>
 									))}
 								</Select>

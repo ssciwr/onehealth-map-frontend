@@ -1,6 +1,14 @@
 import type { Feature, Point as PointGeometry } from "geojson";
 import type L from "leaflet";
 
+export type Month = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12;
+
+export interface MonthInfo {
+	value: Month;
+	label: string;
+	shortLabel: string;
+}
+
 export interface WorldwideProperties {
 	WORLDWIDE_ID: string;
 	intensity: number | null;

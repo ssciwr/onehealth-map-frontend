@@ -20,16 +20,31 @@ const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export async function fetchClimateData(
 	year: number,
+	month: number,
 	requestedVariableValue = "R0",
 	_outputFormat?: string[],
 ): Promise<ClimateDataPoint[]> {
 	await delay(100 + Math.random() * 300);
 
-	// Format date as YYYY-01-01 (always June 1st for now)
-	const requestedTimePoint = `${year}-06-01`;
+	// Validate month parameter
+	if (month === undefined || month === null) {
+		throw new Error(
+			`Month parameter is ${month}. Expected a number between 1-12.`,
+		);
+	}
+
+	if (typeof month !== "number" || month < 1 || month > 12) {
+		throw new Error(
+			`Invalid month parameter: ${month}. Expected a number between 1-12.`,
+		);
+	}
+
+	// Format date as YYYY-MM-01 (using provided month)
+	const monthStr = month.toString().padStart(2, "0");
+	const requestedTimePoint = `${year}-${monthStr}-01`;
 
 	console.log(
-		`Fetching climate data for year: ${year}, variable: ${requestedVariableValue}, date: ${requestedTimePoint}`,
+		`Fetching climate data for year: ${year}, month: ${month}, variable: ${requestedVariableValue}, date: ${requestedTimePoint}`,
 	);
 
 	try {

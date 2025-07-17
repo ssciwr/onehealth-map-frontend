@@ -15,14 +15,16 @@ import {
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { isMobile } from "react-device-detect";
+import type { Month } from "../types";
+import { MONTHS } from "../utilities/monthUtils";
 
 const { Option } = Select;
 
 interface AdvancedTimelineSelectorProps {
 	year: number;
-	month: number;
+	month: Month;
 	onYearChange: (value: number) => void;
-	onMonthChange: (value: number) => void;
+	onMonthChange: (value: Month) => void;
 	onZoomIn: () => void;
 	onZoomOut: () => void;
 	onResetZoom: () => void;
@@ -36,7 +38,7 @@ interface AdvancedTimelineSelectorProps {
 	screenshoter?: L.SimpleMapScreenshoter | null;
 }
 
-const hideMonthSelector = true; // disabled for now so as to not confuse users. But will be connected through soon.
+const hideMonthSelector = false; // Month selector is now enabled and connected to the API
 
 const AdvancedTimelineSelector: React.FC<AdvancedTimelineSelectorProps> = ({
 	year,
@@ -196,20 +198,7 @@ const AdvancedTimelineSelector: React.FC<AdvancedTimelineSelectorProps> = ({
 		}
 	};
 
-	const months = [
-		"January",
-		"February",
-		"March",
-		"April",
-		"May",
-		"June",
-		"July",
-		"August",
-		"September",
-		"October",
-		"November",
-		"December",
-	];
+	// months array is now imported from utilities
 
 	const marks = {
 		1960: "1960",
@@ -308,9 +297,9 @@ const AdvancedTimelineSelector: React.FC<AdvancedTimelineSelectorProps> = ({
 									backdropFilter: "blur(10px)",
 								}}
 							>
-								{months.map((monthName, index) => (
-									<Option key={monthName} value={index + 1}>
-										{monthName}
+								{MONTHS.map((monthInfo) => (
+									<Option key={monthInfo.value} value={monthInfo.value}>
+										{monthInfo.label}
 									</Option>
 								))}
 							</Select>
@@ -411,12 +400,14 @@ const AdvancedTimelineSelector: React.FC<AdvancedTimelineSelectorProps> = ({
 							<div hidden={hideMonthSelector} className="month-selector">
 								<select
 									value={month}
-									onChange={(e) => onMonthChange(Number(e.target.value))}
+									onChange={(e) =>
+										onMonthChange(Number(e.target.value) as Month)
+									}
 									className="month-select"
 								>
-									{months.map((monthName, index) => (
-										<option key={monthName} value={index + 1}>
-											{monthName}
+									{MONTHS.map((monthInfo) => (
+										<option key={monthInfo.value} value={monthInfo.value}>
+											{monthInfo.label}
 										</option>
 									))}
 								</select>

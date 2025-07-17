@@ -22,6 +22,7 @@ import LoadingSkeleton from "./LoadingSkeleton.tsx";
 import NoDataModal from "./NoDataModal.tsx";
 import type {
 	DataExtremes,
+	Month,
 	NutsGeoJSON,
 	TemperatureDataPoint,
 	ViewportBounds,
@@ -35,6 +36,11 @@ import {
 	MIN_ZOOM,
 	loadTemperatureData,
 } from "./utilities/mapDataUtils";
+import {
+	getFormattedVariableValue,
+	getVariableDisplayName,
+	getVariableUnit,
+} from "./utilities/monthUtils";
 
 interface ViewportChangeData {
 	bounds: L.LatLngBounds;
@@ -53,7 +59,9 @@ const ClimateMap = ({ onMount = () => true }) => {
 	const [selectedOptimism, setSelectedOptimism] =
 		useState<string>("optimistic");
 	const [currentYear, setCurrentYear] = useState<number>(2016);
-	const [currentMonth, setCurrentMonth] = useState<number>(1);
+	const [currentMonth, setCurrentMonth] = useState<Month>(1);
+	const [currentVariableValue, setCurrentVariableValue] =
+		useState<string>("R0");
 	const [map, setMap] = useState<L.Map | null>(null);
 	const [dataExtremes, setDataExtremes] = useState<DataExtremes | null>(null);
 	const [dataBounds, setDataBounds] = useState<L.LatLngBounds | null>(null);
@@ -333,11 +341,21 @@ const ClimateMap = ({ onMount = () => true }) => {
 	const getOptimismLevels = () => ["optimistic", "realistic", "pessimistic"];
 
 	const handleLoadTemperatureData = useCallback(
-		async (year: number) => {
+		async (year: number, month: Month) => {
 			try {
 				loadingStore.start();
 				setIsLoadingData(true);
-				console.log(`DEBUGYEARCHANGE: Starting to load data for year ${year}`);
+
+				// Guard against undefined month - use June as default
+				const safeMonth = month || 6;
+				console.log(
+					`DEBUGYEARCHANGE: Starting to load data for year ${year}, month ${safeMonth}`,
+					"Original month:",
+					month,
+					"Types:",
+					typeof year,
+					typeof month,
+				);
 				setRequestedYear(year);
 
 				// Get the selected model's output value
@@ -345,20 +363,24 @@ const ClimateMap = ({ onMount = () => true }) => {
 				const requestedVariableValue = selectedModelData?.output?.[0] || "R0";
 				const outputFormat = selectedModelData?.output;
 
+				// Update current variable value for legend display
+				setCurrentVariableValue(requestedVariableValue);
+
 				const { dataPoints, extremes, bounds } = await loadTemperatureData(
 					year,
+					safeMonth,
 					requestedVariableValue,
 					outputFormat,
 				);
 				console.log(
-					`DEBUGYEARCHANGE: Loaded ${dataPoints.length} data points for year ${year}`,
+					`DEBUGYEARCHANGE: Loaded ${dataPoints.length} data points for year ${year}, month ${safeMonth}`,
 				);
 				console.log(
-					`DEBUGYEARCHANGE: Sample point for year ${year}:`,
+					`DEBUGYEARCHANGE: Sample point for year ${year}, month ${safeMonth}:`,
 					dataPoints[0],
 				);
 				console.log(
-					`DEBUGYEARCHANGE: Data extremes for year ${year}:`,
+					`DEBUGYEARCHANGE: Data extremes for year ${year}, month ${safeMonth}:`,
 					extremes,
 				);
 				setTemperatureData(dataPoints);
@@ -366,7 +388,9 @@ const ClimateMap = ({ onMount = () => true }) => {
 				if (bounds) {
 					setDataBounds(bounds);
 				}
-				console.log(`DEBUGYEARCHANGE: Finished loading store for year ${year}`);
+				console.log(
+					`DEBUGYEARCHANGE: Finished loading store for year ${year}, month ${safeMonth}`,
+				);
 				loadingStore.complete();
 				setIsLoadingData(false);
 			} catch (err: unknown) {
@@ -393,11 +417,26 @@ const ClimateMap = ({ onMount = () => true }) => {
 
 	useEffect(() => {
 		console.log(
-			"DEBUGYEARCHANGE: Year effect triggered, currentYear:",
+			"DEBUGYEARCHANGE: Year/Month effect triggered, currentYear:",
 			currentYear,
+			"currentMonth:",
+			currentMonth,
+			"typeof currentMonth:",
+			typeof currentMonth,
 		);
-		handleLoadTemperatureData(currentYear);
-	}, [currentYear, handleLoadTemperatureData]);
+
+		// Additional validation before calling
+		if (
+			typeof currentMonth !== "number" ||
+			currentMonth < 1 ||
+			currentMonth > 12
+		) {
+			console.error("Invalid currentMonth value:", currentMonth);
+			return;
+		}
+
+		handleLoadTemperatureData(currentYear, currentMonth);
+	}, [currentYear, currentMonth, handleLoadTemperatureData]);
 
 	// Load worldwide administrative regions
 	const loadworldwideRegions = useCallback(async () => {
@@ -1230,7 +1269,7 @@ const ClimateMap = ({ onMount = () => true }) => {
 				const pointsListItems = pointsToShow
 					.map(
 						(point) =>
-							`<li>[${point.lat.toFixed(3)}, ${point.lng.toFixed(3)}, ${point.temperature.toFixed(1)}°C]</li>`,
+							`<li>[${point.lat.toFixed(3)}, ${point.lng.toFixed(3)}, ${getFormattedVariableValue(currentVariableValue, point.temperature)}]</li>`,
 					)
 					.join("");
 				dataPointsList = `
@@ -1244,7 +1283,7 @@ const ClimateMap = ({ onMount = () => true }) => {
 			const popupContent = `
         <div class="worldwide-popup">
           <h4>${displayName}</h4>
-          <p><strong>Temperature:</strong> ${intensity !== null && intensity !== undefined ? `${intensity.toFixed(1)}°C` : "N/A"}</p>
+          <p><strong>${getVariableDisplayName(currentVariableValue)}:</strong> ${intensity !== null && intensity !== undefined ? getFormattedVariableValue(currentVariableValue, intensity) : "N/A"}</p>
           <p><strong>Data Source:</strong> ${dataSource}</p>
           ${isFallback ? `<p><small style="color: #666;">⚠️ Using nearest available data point</small></p>` : ""}
           ${coordinateInfo}
@@ -1323,7 +1362,7 @@ const ClimateMap = ({ onMount = () => true }) => {
 				const pointsListItems = pointsToShow
 					.map(
 						(point) =>
-							`<li>[${point.lat.toFixed(3)}, ${point.lng.toFixed(3)}, ${point.temperature.toFixed(1)}°C]</li>`,
+							`<li>[${point.lat.toFixed(3)}, ${point.lng.toFixed(3)}, ${getFormattedVariableValue(currentVariableValue, point.temperature)}]</li>`,
 					)
 					.join("");
 				dataPointsList = `
@@ -1337,7 +1376,7 @@ const ClimateMap = ({ onMount = () => true }) => {
 			const popupContent = `
         <div class="europe-only-popup">
           <h4>${regionType}: ${displayName}</h4>
-          <p><strong>Temperature:</strong> ${intensity !== null && intensity !== undefined ? `${intensity.toFixed(1)}°C` : "N/A"}</p>
+          <p><strong>${getVariableDisplayName(currentVariableValue)}:</strong> ${intensity !== null && intensity !== undefined ? getFormattedVariableValue(currentVariableValue, intensity) : "N/A"}</p>
           <p><strong>Data Source:</strong> ${dataSource}</p>
           ${isFallback ? `<p><small style="color: #666;">⚠️ Using nearest available data point</small></p>` : ""}
           ${isModelData ? `<p><small style="color: #007acc;">📊 Model data</small></p>` : ""}
@@ -1520,7 +1559,10 @@ const ClimateMap = ({ onMount = () => true }) => {
 									styleMode={styleMode}
 									legend={
 										dataExtremes ? (
-											<Legend extremes={dataExtremes} unit="°C" />
+											<Legend
+												extremes={dataExtremes}
+												unit={getVariableUnit(currentVariableValue)}
+											/>
 										) : (
 											<div />
 										)
@@ -1548,7 +1590,10 @@ const ClimateMap = ({ onMount = () => true }) => {
 								screenshoter={screenshoter}
 								legend={
 									dataExtremes ? (
-										<Legend extremes={dataExtremes} unit="°C" />
+										<Legend
+											extremes={dataExtremes}
+											unit={getVariableUnit(currentVariableValue)}
+										/>
 									) : (
 										<div />
 									)
@@ -1570,7 +1615,10 @@ const ClimateMap = ({ onMount = () => true }) => {
 
 				{/* Desktop-only legend positioned over the map */}
 				{!isMobile && dataExtremes && (
-					<Legend extremes={dataExtremes} unit="°C" />
+					<Legend
+						extremes={dataExtremes}
+						unit={getVariableUnit(currentVariableValue)}
+					/>
 				)}
 
 				<div className="map-bottom-bar">

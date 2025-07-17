@@ -42,7 +42,7 @@ const generateIntervals = (
 
 export const Legend = ({
 	extremes,
-	unit = "°C",
+	unit = "R0",
 }: { extremes: DataExtremes; unit?: string }) => {
 	if (!extremes) return null;
 
@@ -332,6 +332,7 @@ export const calculateExtremes = (
 
 export const loadTemperatureData = async (
 	year: number,
+	month: number,
 	requestedVariableValue = "R0",
 	outputFormat?: string[],
 ): Promise<{
@@ -342,13 +343,23 @@ export const loadTemperatureData = async (
 	console.log(
 		"Loading climate data for year:",
 		year,
+		"month:",
+		month,
 		"variable:",
 		requestedVariableValue,
 	);
 
+	// Additional validation here too
+	if (month === undefined || month === null) {
+		throw new Error(
+			`loadTemperatureData: Month parameter is ${month}. Expected a number between 1-12.`,
+		);
+	}
+
 	try {
 		const apiData = await fetchClimateData(
 			year,
+			month,
 			requestedVariableValue,
 			outputFormat,
 		);
