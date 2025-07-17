@@ -1,6 +1,11 @@
-import { CalendarOutlined } from "@ant-design/icons";
-import { Select, Slider, Tooltip } from "antd";
+import {
+	CalendarOutlined,
+	LeftOutlined,
+	RightOutlined,
+} from "@ant-design/icons";
+import { Button, Select, Slider, Tooltip } from "antd";
 import type { ReactNode } from "react";
+import { useEffect, useState } from "react";
 import { isMobile } from "react-device-detect";
 import { useLocation } from "react-router-dom";
 import { viewingMode } from "../../../stores/ViewingModeStore.ts";
@@ -27,6 +32,33 @@ const TimelineSelector: React.FC<AntdTimelineSelectorProps> = ({
 }) => {
 	const location = useLocation();
 	const isAdvanced = location.pathname.includes("/advanced");
+	const [screenWidth, setScreenWidth] = useState(window.innerWidth);
+
+	// Track screen width for responsive features
+	useEffect(() => {
+		const handleResize = () => {
+			setScreenWidth(window.innerWidth);
+		};
+
+		window.addEventListener("resize", handleResize);
+		return () => window.removeEventListener("resize", handleResize);
+	}, []);
+
+	// Check if we should show year navigation buttons
+	const showYearNavButtons = screenWidth > 1200 && !isMobile;
+
+	// Year navigation handlers
+	const handlePreviousYear = () => {
+		if (year > 1960) {
+			onYearChange(year - 1);
+		}
+	};
+
+	const handleNextYear = () => {
+		if (year < 2100) {
+			onYearChange(year + 1);
+		}
+	};
 
 	const months = [
 		"January",
@@ -112,13 +144,88 @@ const TimelineSelector: React.FC<AntdTimelineSelectorProps> = ({
 							<div
 								hidden={isMobile}
 								style={{
-									fontSize: "2rem",
 									borderRight: "1px solid lightgray",
 									paddingRight: "20px",
 									marginRight: "10px",
+									display: "flex",
+									alignItems: "center",
+									gap: showYearNavButtons ? "12px" : "0px",
 								}}
 							>
-								{year}
+								{showYearNavButtons && (
+									<Button
+										type="text"
+										icon={<LeftOutlined />}
+										onClick={handlePreviousYear}
+										disabled={year <= 1960}
+										style={{
+											border: "1px solid #d9d9d9",
+											borderRadius: "6px",
+											width: "32px",
+											height: "32px",
+											display: "flex",
+											alignItems: "center",
+											justifyContent: "center",
+											padding: "0",
+											fontSize: "14px",
+											color:
+												year <= 1960
+													? "#bfbfbf"
+													: styleMode !== "unchanged"
+														? "white"
+														: "#595959",
+											borderColor:
+												styleMode !== "unchanged"
+													? "rgba(255, 255, 255, 0.3)"
+													: "#d9d9d9",
+											backgroundColor:
+												styleMode !== "unchanged"
+													? "rgba(255, 255, 255, 0.1)"
+													: "transparent",
+										}}
+									/>
+								)}
+								<div
+									style={{
+										fontSize: "2rem",
+										minWidth: showYearNavButtons ? "auto" : "unset",
+									}}
+								>
+									{year}
+								</div>
+								{showYearNavButtons && (
+									<Button
+										type="text"
+										icon={<RightOutlined />}
+										onClick={handleNextYear}
+										disabled={year >= 2100}
+										style={{
+											border: "1px solid #d9d9d9",
+											borderRadius: "6px",
+											width: "32px",
+											height: "32px",
+											display: "flex",
+											alignItems: "center",
+											justifyContent: "center",
+											padding: "0",
+											fontSize: "14px",
+											color:
+												year >= 2100
+													? "#bfbfbf"
+													: styleMode !== "unchanged"
+														? "white"
+														: "#595959",
+											borderColor:
+												styleMode !== "unchanged"
+													? "rgba(255, 255, 255, 0.3)"
+													: "#d9d9d9",
+											backgroundColor:
+												styleMode !== "unchanged"
+													? "rgba(255, 255, 255, 0.1)"
+													: "transparent",
+										}}
+									/>
+								)}
 							</div>
 
 							{/* Year input - slider on desktop, dropdown on mobile */}

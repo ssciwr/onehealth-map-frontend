@@ -18,6 +18,7 @@ import { errorStore } from "../../stores/ErrorStore";
 import { loadingStore } from "../../stores/LoadingStore";
 import AdvancedTimelineSelector from "./InterfaceInputs/AdvancedTimelineSelector.tsx";
 import TimelineSelector from "./InterfaceInputs/TimelineSelector.tsx";
+import LoadingSkeleton from "./LoadingSkeleton.tsx";
 import NoDataModal from "./NoDataModal.tsx";
 import type {
 	DataExtremes,
@@ -65,6 +66,8 @@ const ClimateMap = ({ onMount = () => true }) => {
 	const [convertedEuropeOnlyGeoJSON, setConvertedEuropeOnlyGeoJSON] =
 		useState<NutsGeoJSON | null>(null);
 	const [isProcessingEuropeOnly, setIsProcessingEuropeOnly] = useState(false);
+	const [isProcessingWorldwide, setIsProcessingWorldwide] = useState(false);
+	const [isLoadingData, setIsLoadingData] = useState(false);
 	const currentProcessingRef = useRef<{
 		year: number;
 		timestamp: number;
@@ -337,6 +340,7 @@ const ClimateMap = ({ onMount = () => true }) => {
 		async (year: number) => {
 			try {
 				loadingStore.start();
+				setIsLoadingData(true);
 				console.log("Started loading of store...");
 				setRequestedYear(year);
 
@@ -357,9 +361,11 @@ const ClimateMap = ({ onMount = () => true }) => {
 				}
 				console.log("Finished loading of store...");
 				loadingStore.complete();
+				setIsLoadingData(false);
 			} catch (err: unknown) {
 				const error = err as Error;
 				loadingStore.complete();
+				setIsLoadingData(false);
 
 				// Check if this is an API error indicating missing data
 				if (error.message.includes("API_ERROR:")) {
@@ -642,6 +648,7 @@ const ClimateMap = ({ onMount = () => true }) => {
 				}
 
 				try {
+					setIsProcessingWorldwide(true);
 					console.log(
 						"Converting grid data to global administrative regions...",
 					);
@@ -774,6 +781,7 @@ const ClimateMap = ({ onMount = () => true }) => {
 					} else {
 						console.warn("No temperature data found for any region!");
 					}
+					setIsProcessingWorldwide(false);
 				} catch (error) {
 					console.error(
 						"Failed to convert grid data to worldwide regions:",
@@ -781,6 +789,7 @@ const ClimateMap = ({ onMount = () => true }) => {
 					);
 					setProcessingError(true);
 					setError("Failed to process worldwide regions");
+					setIsProcessingWorldwide(false);
 				}
 			} else if (mapMode === "europe-only") {
 				try {
@@ -805,13 +814,6 @@ const ClimateMap = ({ onMount = () => true }) => {
 					) {
 						setConvertedEuropeOnlyGeoJSON(nutsGeoJSON);
 						setDataExtremes(extremes);
-						console.log(
-							`Europe-only NUTS extremes for ${currentYear}:`,
-							extremes,
-						);
-						console.log(
-							`Europe-only conversion completed for ${currentYear}: ${nutsGeoJSON.features.length} regions`,
-						);
 					} else {
 						console.log(
 							`Discarding stale Europe-only data for year ${processingId.year}`,
@@ -851,6 +853,7 @@ const ClimateMap = ({ onMount = () => true }) => {
 				setConvertedWorldwideGeoJSON(null);
 				setConvertedEuropeOnlyGeoJSON(null);
 				setIsProcessingEuropeOnly(false);
+				setIsProcessingWorldwide(false);
 				currentProcessingRef.current = null;
 			}
 		};
@@ -1329,28 +1332,25 @@ const ClimateMap = ({ onMount = () => true }) => {
 												onEachFeature={onEachEuropeOnlyFeature}
 											/>
 										)}
-									{isProcessingEuropeOnly && (
-										<div
-											style={{
-												position: "absolute",
-												top: "50%",
-												left: "50%",
-												transform: "translate(-50%, -50%)",
-												background: "rgba(255, 255, 255, 0.9)",
-												padding: "20px",
-												borderRadius: "8px",
-												zIndex: 1000,
-												boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
-											}}
-										>
-											<div>Processing Europe-only data...</div>
-										</div>
-									)}
 								</Pane>
 							)}
 
 							<ViewportMonitor onViewportChange={handleViewportChange} />
 						</MapContainer>
+
+						{/* Loading Skeleton Overlay */}
+						<LoadingSkeleton
+							isProcessing={
+								isProcessingEuropeOnly || isProcessingWorldwide || isLoadingData
+							}
+							message={
+								isProcessingEuropeOnly
+									? "Processing Europe-only data..."
+									: isProcessingWorldwide
+										? "Processing worldwide data..."
+										: "Loading map data..."
+							}
+						/>
 
 						{/* Bottom UI Container - TimelineSelector and ControlBar */}
 						{styleMode === "unchanged" && (

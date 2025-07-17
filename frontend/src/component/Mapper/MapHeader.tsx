@@ -448,7 +448,12 @@ export default ({
 								box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
 							}
 
-							.glass-button .ant-select-selector,
+							.glass-button .ant-select-selector {
+								background: rgba(255, 255, 255, 0.1) !important;
+								border: 1px solid rgba(255, 255, 255, 0.3) !important;
+								color: white !important;
+							}
+
 							.glass-button .ant-select-selection-item,
 							.glass-button .ant-select-arrow,
 							.glass-button .anticon {
@@ -463,6 +468,17 @@ export default ({
 
 							.glass-button button:hover {
 								background: rgba(255, 255, 255, 0.1) !important;
+							}
+
+							.glass-button .ant-select-selector:hover {
+								background: rgba(255, 255, 255, 0.2) !important;
+								border-color: rgba(255, 255, 255, 0.4) !important;
+							}
+
+							.glass-button .ant-select-focused .ant-select-selector {
+								background: rgba(255, 255, 255, 0.2) !important;
+								border-color: rgba(255, 255, 255, 0.4) !important;
+								box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.2) !important;
 							}
 						`}
 					</style>
