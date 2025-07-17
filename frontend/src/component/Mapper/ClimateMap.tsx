@@ -457,66 +457,6 @@ const ClimateMap = ({ onMount = () => true }) => {
 		[],
 	);
 
-	// Calculate average temperature for a region based on points within it
-	const calculateRegionTemperature = useCallback(
-		(
-			regionFeature: GeoJSON.Feature,
-			temperatureData: TemperatureDataPoint[],
-		) => {
-			const regionName =
-				regionFeature.properties?.name ||
-				regionFeature.properties?.name_en ||
-				regionFeature.properties?.admin ||
-				"Unknown";
-
-			const pointsInRegion = temperatureData.filter((point) => {
-				// Use turf.js for accurate point-in-polygon checking
-				const isInside = isPointInRegion(
-					point.lat,
-					point.lng,
-					regionFeature.geometry,
-				);
-				return isInside;
-			});
-
-			console.log(
-				`Region ${regionName}: found ${pointsInRegion.length} points within region`,
-			);
-
-			// Debug: For first few regions, test with some sample points
-			if (temperatureData.length > 0) {
-				const samplePoint = temperatureData[0];
-				const testResult = isPointInRegion(
-					samplePoint.lat,
-					samplePoint.lng,
-					regionFeature.geometry,
-				);
-				console.log(
-					`Region ${regionName}: testing sample point (${samplePoint.lat}, ${samplePoint.lng}) - inside: ${testResult}`,
-				);
-			}
-
-			if (pointsInRegion.length === 0) {
-				// Fallback: find nearest point
-				const nearestPoint = findNearestPoint(regionFeature, temperatureData);
-				console.log(
-					`Region ${regionName}: using nearest point fallback, temp: ${nearestPoint ? nearestPoint.temperature : "null"}`,
-				);
-				return nearestPoint ? nearestPoint.temperature : null;
-			}
-
-			// Calculate average temperature
-			const avgTemp =
-				pointsInRegion.reduce((sum, point) => sum + point.temperature, 0) /
-				pointsInRegion.length;
-			console.log(
-				`Region ${regionName}: calculated average temp: ${avgTemp} from ${pointsInRegion.length} points`,
-			);
-			return avgTemp;
-		},
-		[],
-	);
-
 	// Calculate temperature and coordinate info for a region
 	const calculateRegionTemperatureWithCoords = useCallback(
 		(

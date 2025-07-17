@@ -26,7 +26,7 @@ interface YamlData {
 
 const parseYamlText = (yamlText: string): YamlData => {
 	const lines = yamlText.split("\n");
-	const result: Record<string, any> = {};
+	const result: Record<string, string | string[]> = {};
 	let currentKey = "";
 	let isInArray = false;
 	let arrayItems: string[] = [];
