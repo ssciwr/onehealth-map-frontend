@@ -3,7 +3,7 @@ import { expect, test } from "@playwright/test";
 import { skipIfMobile } from "../utils";
 
 // Test works locally
-test.describe.skip("Comprehensive Grid Color Analysis - Desktop Only", () => {
+test.describe("Comprehensive Grid Color Analysis - Desktop Only", () => {
 	test.setTimeout(1500000); // (25 minutes - yes it does take a long time (3.5 min on dev machine) due to
 	// geoJSON processing of country boundries + sampling many points )
 
@@ -176,7 +176,7 @@ test.describe.skip("Comprehensive Grid Color Analysis - Desktop Only", () => {
 		await waitForMapDataStability();
 
 		// Test multiple years
-		const testYears = [2030, 2025, 2035];
+		const testYears = [2016, 2017];
 		const yearColorMaps = new Map();
 
 		for (const year of testYears) {
@@ -188,12 +188,10 @@ test.describe.skip("Comprehensive Grid Color Analysis - Desktop Only", () => {
 		}
 
 		// Assert colors are different between years
-		const colors2030 = yearColorMaps.get(2030);
-		const colors2025 = yearColorMaps.get(2025);
-		const colors2035 = yearColorMaps.get(2035);
+		const colors2016 = yearColorMaps.get(2016);
+		const colors2017 = yearColorMaps.get(2017);
 
-		expect(JSON.stringify(colors2030)).not.toBe(JSON.stringify(colors2025));
-		expect(JSON.stringify(colors2025)).not.toBe(JSON.stringify(colors2035));
+		expect(JSON.stringify(colors2016)).not.toBe(JSON.stringify(colors2017));
 
 		// Validate hex color format
 		yearColorMaps.forEach((colors, year) => {

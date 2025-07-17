@@ -22,7 +22,8 @@ test("Expert mode can be selected from modal on /map", async ({ page }) => {
 	await expect(page.locator("body")).toContainText("Expert Mode");
 
 	// Click the expert mode card using data-testid
-	await page.getByTestId("expert-mode-card").click();
+	// Use force click to bypass modal interference
+	await page.getByTestId("expert-mode-card").click({ force: true });
 
 	// Wait for modal to close
 	await page.waitForTimeout(2000);

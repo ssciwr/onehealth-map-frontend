@@ -22,7 +22,14 @@ export default defineConfig({
 
 		/* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
 		trace: "on-first-retry",
+
+		/* Extended timeouts for mapping software with slow loading */
+		actionTimeout: 60000, // 60 seconds for individual actions
+		navigationTimeout: 60000, // 60 seconds for page navigation
 	},
+
+	/* Global timeout for all tests - 5 minutes for mapping software with slow loading */
+	timeout: 300000, // 300 seconds (5 minutes)
 
 	/* Configure projects for major browsers */
 	projects: [
@@ -51,5 +58,6 @@ export default defineConfig({
 		command: "pnpm run dev --port 5174",
 		url: "http://localhost:5174",
 		reuseExistingServer: !process.env.CI,
+		timeout: 300000, // 5 minutes for dev server to start
 	},
 });

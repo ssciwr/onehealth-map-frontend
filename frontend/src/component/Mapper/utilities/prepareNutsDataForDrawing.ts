@@ -87,11 +87,11 @@ class NutsMapperV5 {
 		const header: string[] = lines[0].split(",");
 		const nutsIdIndex: number = header.indexOf("NUTS_ID");
 		const geometryIndex: number = header.indexOf("geometry");
-		const intensityIndex: number = header.indexOf("t2m");
+		const intensityIndex: number = header.indexOf("R0");
 
 		if (nutsIdIndex === -1 || geometryIndex === -1 || intensityIndex === -1) {
 			throw new Error(
-				`CSV must contain NUTS_ID, geometry, and t2m columns. Found columns: ${header.join(", ")}`,
+				`CSV must contain NUTS_ID, geometry, and R0 columns. Found columns: ${header.join(", ")}`,
 			);
 		}
 

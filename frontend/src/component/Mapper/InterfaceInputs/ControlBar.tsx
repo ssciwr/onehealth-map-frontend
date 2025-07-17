@@ -73,6 +73,7 @@ interface ControlBarProps {
 	position?: ControlBarLocation;
 	selectedModel?: string;
 	onModelSelect?: (modelId: string) => void;
+	styleMode?: "unchanged" | "purple" | "red";
 }
 
 const ControlBar = ({
@@ -80,6 +81,7 @@ const ControlBar = ({
 	position = CONTROL_BAR_LOCATIONS.BOTTOM_RIGHT,
 	selectedModel,
 	onModelSelect,
+	styleMode = "unchanged",
 }: ControlBarProps) => {
 	const [isLocating, setIsLocating] = useState<boolean>(false);
 	const [isSaving, setIsSaving] = useState<boolean>(false);
@@ -357,6 +359,23 @@ const ControlBar = ({
 
 	const circularButtonSize = 24;
 
+	// Get button styles based on styleMode
+	const getButtonStyle = () => {
+		if (styleMode === "purple") {
+			return {
+				backgroundColor: "#667eea",
+				background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+			};
+		}
+		if (styleMode === "red") {
+			return {
+				backgroundColor: "#ff6b6b",
+				background: "linear-gradient(135deg, #ff6b6b 0%, #ffa726 100%)",
+			};
+		}
+		return {}; // Default styling from CSS
+	};
+
 	const getControlBarClasses = () => {
 		const baseClass = isMobile
 			? "control-bar control-bar-mobile"
@@ -374,7 +393,12 @@ const ControlBar = ({
 				<div data-testid="control-bar" className={getControlBarClasses()}>
 					{!isMinimized ? (
 						<>
-							<button type="button" onClick={handleZoomIn} className="btn-icon">
+							<button
+								type="button"
+								onClick={handleZoomIn}
+								className="btn-icon"
+								style={getButtonStyle()}
+							>
 								<Plus size={circularButtonSize} />
 							</button>
 
@@ -382,6 +406,7 @@ const ControlBar = ({
 								type="button"
 								onClick={handleZoomOut}
 								className="btn-icon"
+								style={getButtonStyle()}
 							>
 								<Minus size={circularButtonSize} />
 							</button>
@@ -391,6 +416,7 @@ const ControlBar = ({
 								onClick={handleLocationRequest}
 								disabled={isLocating}
 								className="btn-icon"
+								style={getButtonStyle()}
 							>
 								<MapPin size={circularButtonSize} />
 							</button>
@@ -400,6 +426,7 @@ const ControlBar = ({
 								onClick={handleSaveScreenshot}
 								disabled={isSaving || !screenshoter}
 								className="btn-icon"
+								style={getButtonStyle()}
 								title={
 									!screenshoter
 										? "Screenshot plugin not loaded"
@@ -412,6 +439,7 @@ const ControlBar = ({
 								type="button"
 								onClick={() => setShowInfo(true)}
 								className="btn-icon"
+								style={getButtonStyle()}
 							>
 								<Info size={circularButtonSize} />
 							</button>
@@ -421,6 +449,7 @@ const ControlBar = ({
 								onClick={() => setShowModelDetails(true)}
 								className="btn-icon"
 								disabled={!selectedModel || models.length === 0}
+								style={getButtonStyle()}
 							>
 								<FileText size={circularButtonSize} />
 							</button>
@@ -431,6 +460,7 @@ const ControlBar = ({
 						type="button"
 						onClick={handleToggleMinimize}
 						className="btn-icon minimize-button"
+						style={getButtonStyle()}
 					>
 						{isMinimized ? (
 							<ChevronDown size={circularButtonSize} />

@@ -341,12 +341,14 @@
 	min-width: 200px;
 }
 
+.worldwide-popup,
 .nuts-popup,
 .grid-popup,
 .outbreak-popup {
 	padding: 0.75rem;
 }
 
+.worldwide-popup h4,
 .nuts-popup h4,
 .grid-popup h4,
 .outbreak-popup h3 {
@@ -356,6 +358,7 @@
 	margin: 0 0 0.5rem 0;
 }
 
+.worldwide-popup p,
 .nuts-popup p,
 .grid-popup p,
 .outbreak-popup p {

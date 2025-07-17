@@ -1,12 +1,11 @@
+import * as turf from "@turf/turf";
 import { Modal } from "antd";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { GeoJSON, MapContainer, Marker, Pane, TileLayer } from "react-leaflet";
-import NutsMapperV5 from "./utilities/prepareNutsDataForDrawing";
+import { useCallback, useEffect, useState } from "react";
+import { GeoJSON, MapContainer, Pane } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import ViewportMonitor from "./ViewportMonitor.tsx";
 import "./Map.css";
-import { Layers } from "lucide-react";
 import Footer, { AboutContent } from "../../static/Footer.tsx";
 import ClippedGridLayer from "./ClippedGridLayer.tsx";
 import DebugStatsPanel from "./DebugStatsPanel.tsx";
@@ -19,15 +18,17 @@ import { errorStore } from "../../stores/ErrorStore";
 import { loadingStore } from "../../stores/LoadingStore";
 import AdvancedTimelineSelector from "./InterfaceInputs/AdvancedTimelineSelector.tsx";
 import TimelineSelector from "./InterfaceInputs/TimelineSelector.tsx";
+import LoadingSkeleton from "./LoadingSkeleton.tsx";
+import NoDataModal from "./NoDataModal.tsx";
 import type {
 	DataExtremes,
 	NutsGeoJSON,
-	ProcessingStats,
 	TemperatureDataPoint,
 	ViewportBounds,
+	WorldwideGeoJSON,
 } from "./types.ts";
+import { gridToNutsConverter } from "./utilities/GridToNutsConverter";
 import { getColorFromGradient } from "./utilities/gradientUtilities";
-import { gridToNutsConverter } from "./utilities/gridToNutsConverter";
 import {
 	Legend,
 	MAX_ZOOM,
@@ -41,14 +42,8 @@ interface ViewportChangeData {
 }
 
 const ClimateMap = ({ onMount = () => true }) => {
-	const [nutsGeoJSON, setNutsGeoJSON] = useState<NutsGeoJSON | null>(null);
-	const [loading, setLoading] = useState<boolean>(false);
 	const [error, setError] = useState<string | null>(null);
-	const [stats, setStats] = useState<ProcessingStats>({
-		processed: 0,
-		skipped: 0,
-		errors: 0,
-	});
+	const [processingError, setProcessingError] = useState<boolean>(false);
 	const [temperatureData, setTemperatureData] = useState<
 		TemperatureDataPoint[]
 	>([]);
@@ -57,43 +52,48 @@ const ClimateMap = ({ onMount = () => true }) => {
 	const [selectedModel, setSelectedModel] = useState<string>("");
 	const [selectedOptimism, setSelectedOptimism] =
 		useState<string>("optimistic");
-	const [currentYear, setCurrentYear] = useState<number>(2025);
+	const [currentYear, setCurrentYear] = useState<number>(2016);
 	const [currentMonth, setCurrentMonth] = useState<number>(1);
 	const [map, setMap] = useState<L.Map | null>(null);
 	const [dataExtremes, setDataExtremes] = useState<DataExtremes | null>(null);
 	const [dataBounds, setDataBounds] = useState<L.LatLngBounds | null>(null);
 	const [worldGeoJSON, setWorldGeoJSON] =
 		useState<GeoJSON.FeatureCollection | null>(null);
-	const [convertedNutsGeoJSON, setConvertedNutsGeoJSON] =
+	const [convertedWorldwideGeoJSON, setConvertedWorldwideGeoJSON] =
+		useState<WorldwideGeoJSON | null>(null);
+	const [worldwideRegionsGeoJSON, setworldwideRegionsGeoJSON] =
+		useState<GeoJSON.FeatureCollection | null>(null);
+	const [convertedEuropeOnlyGeoJSON, setConvertedEuropeOnlyGeoJSON] =
 		useState<NutsGeoJSON | null>(null);
-	const fileInputRef = useRef<HTMLInputElement>(null);
+	const [isProcessingEuropeOnly, setIsProcessingEuropeOnly] = useState(false);
+	const [isProcessingWorldwide, setIsProcessingWorldwide] = useState(false);
+	const [isLoadingData, setIsLoadingData] = useState(false);
 
-	// Cities loaded from external data source
-	const [cities, setCities] = useState<
-		Array<{
-			name: string;
-			lat: number;
-			lng: number;
-			tier: number;
-			population: number;
-		}>
-	>([]);
+	// Natural Earth URL with all countries geometries.
+	const NATURAL_EARTH_URL =
+		"https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_10m_admin_1_states_provinces.geojson";
 
-	// Grid/NUTS mode state
-	const [mapMode, setMapMode] = useState<"grid" | "nuts">("nuts");
+	// Grid/Worldwide/NUTS mode state
+	const [mapMode, setMapMode] = useState<"grid" | "worldwide" | "europe-only">(
+		"europe-only",
+	);
 	const [hoverTimeout, setHoverTimeout] = useState<NodeJS.Timeout | null>(null);
 	const [currentHoveredLayer, setCurrentHoveredLayer] =
 		useState<L.Layer | null>(null);
-	const [showTileLayer, setShowTileLayer] = useState<boolean>(false);
 
 	// Style mode state
 	const [styleMode, setStyleMode] = useState<"unchanged" | "purple" | "red">(
-		"unchanged",
+		"purple",
 	);
 
 	// Screenshoter state
 	const [screenshoter, setScreenshoter] =
 		useState<L.SimpleMapScreenshoter | null>(null);
+
+	// No data modal state
+	const [lackOfDataModalVisible, setLackOfDataModalVisible] = useState(false);
+	const [requestedYear, setRequestedYear] = useState<number>(2016);
+	const [apiErrorMessage, setApiErrorMessage] = useState<string>("");
 
 	// Initialize screenshoter when map is ready
 	useEffect(() => {
@@ -149,49 +149,12 @@ const ClimateMap = ({ onMount = () => true }) => {
 			icon: string;
 			color: string;
 			details: string;
+			output: string[];
 		}>
 	>([]);
 
-	// Load cities data from JSON file
 	useEffect(() => {
-		const loadCities = async () => {
-			try {
-				const response = await fetch("/data/cities.json");
-				const data = await response.json();
-
-				// Create tiers based on population
-				const citiesWithTiers = data.cities.map(
-					(city: {
-						name: string;
-						lat: number;
-						lng: number;
-						population: number;
-					}) => ({
-						...city,
-						tier:
-							city.population >= 10000000
-								? 1
-								: // Tier 1: 10M+ population
-									city.population >= 5000000
-									? 2
-									: // Tier 2: 5M-10M population
-										city.population >= 1000000
-										? 3
-										: // Tier 3: 1M-5M population
-											4, // Tier 4: <1M population
-					}),
-				);
-
-				setCities(citiesWithTiers);
-			} catch (error) {
-				console.error("Failed to load cities data:", error);
-				// Fallback to empty array if loading fails
-				setCities([]);
-			}
-		};
-
 		onMount();
-		loadCities();
 	}, [onMount]);
 
 	// Load models for ModelDetailsModal
@@ -216,35 +179,62 @@ const ClimateMap = ({ onMount = () => true }) => {
 					const yamlText = await response.text();
 					const lines = yamlText.split("\n");
 					const result: Record<string, string> = {};
+					let currentKey = "";
+					let isInArray = false;
+					let arrayItems: string[] = [];
 
 					for (const line of lines) {
 						const trimmed = line.trim();
 						if (trimmed && !trimmed.startsWith("#")) {
 							const colonIndex = trimmed.indexOf(":");
 							if (colonIndex > 0) {
+								// If we were in an array, save it as a string
+								if (isInArray && currentKey) {
+									result[currentKey] = arrayItems.join(", ");
+									arrayItems = [];
+									isInArray = false;
+								}
+
 								const key = trimmed.substring(0, colonIndex).trim();
 								let value = trimmed.substring(colonIndex + 1).trim();
+
 								if (
 									(value.startsWith("'") && value.endsWith("'")) ||
 									(value.startsWith('"') && value.endsWith('"'))
 								) {
 									value = value.slice(1, -1);
 								}
-								result[key] = value;
+
+								if (value === "") {
+									// This might be the start of an array
+									currentKey = key;
+									isInArray = true;
+								} else {
+									result[key] = value;
+								}
+							} else if (trimmed.startsWith("- ") && isInArray) {
+								// This is an array item
+								arrayItems.push(trimmed.substring(2).trim());
 							}
 						}
 					}
 
+					// Handle any remaining array - convert to string for the result type
+					if (isInArray && currentKey) {
+						result[currentKey] = arrayItems.join(", ");
+					}
+
 					const model = {
 						id: result.id || "",
-						virusType: result.virusType || "",
-						modelName: result.modelName || "",
+						virusType: result["virus-type"] || "",
+						modelName: result["model-name"] || "",
 						title: result.title || "",
 						description: result.description || "",
 						emoji: result.emoji || "",
 						icon: result.icon || "",
 						color: result.color || "",
 						details: result.details || "",
+						output: result.output ? result.output.split(", ") : ["R0"],
 					};
 
 					if (model.id) {
@@ -342,48 +332,537 @@ const ClimateMap = ({ onMount = () => true }) => {
 
 	const getOptimismLevels = () => ["optimistic", "realistic", "pessimistic"];
 
-	const handleLoadTemperatureData = useCallback(async (year: number) => {
-		try {
-			loadingStore.start();
-			console.log("Started loading of store...");
-			const { dataPoints, extremes, bounds } = await loadTemperatureData(year);
-			setTemperatureData(dataPoints);
-			setDataExtremes(extremes);
-			if (bounds) {
-				setDataBounds(bounds);
+	const handleLoadTemperatureData = useCallback(
+		async (year: number) => {
+			try {
+				loadingStore.start();
+				setIsLoadingData(true);
+				console.log(`DEBUGYEARCHANGE: Starting to load data for year ${year}`);
+				setRequestedYear(year);
+
+				// Get the selected model's output value
+				const selectedModelData = models.find((m) => m.id === selectedModel);
+				const requestedVariableValue = selectedModelData?.output?.[0] || "R0";
+				const outputFormat = selectedModelData?.output;
+
+				const { dataPoints, extremes, bounds } = await loadTemperatureData(
+					year,
+					requestedVariableValue,
+					outputFormat,
+				);
+				console.log(
+					`DEBUGYEARCHANGE: Loaded ${dataPoints.length} data points for year ${year}`,
+				);
+				console.log(
+					`DEBUGYEARCHANGE: Sample point for year ${year}:`,
+					dataPoints[0],
+				);
+				console.log(
+					`DEBUGYEARCHANGE: Data extremes for year ${year}:`,
+					extremes,
+				);
+				setTemperatureData(dataPoints);
+				setDataExtremes(extremes);
+				if (bounds) {
+					setDataBounds(bounds);
+				}
+				console.log(`DEBUGYEARCHANGE: Finished loading store for year ${year}`);
+				loadingStore.complete();
+				setIsLoadingData(false);
+			} catch (err: unknown) {
+				const error = err as Error;
+				loadingStore.complete();
+				setIsLoadingData(false);
+
+				// Check if this is an API error indicating missing data
+				if (error.message.includes("API_ERROR:")) {
+					const errorMsg = error.message.replace("API_ERROR: ", "");
+					setApiErrorMessage(errorMsg);
+					setLackOfDataModalVisible(true);
+				} else {
+					errorStore.showError(
+						"Temperature Data Error",
+						`Failed to load temperature data: ${error.message}`,
+					);
+					setError(`Failed to load temperature data: ${error.message}`);
+				}
 			}
-			console.log("Finished loading of store...");
-			loadingStore.complete();
-		} catch (err: unknown) {
-			const error = err as Error;
-			loadingStore.complete();
-			errorStore.showError(
-				"Temperature Data Error",
-				`Failed to load temperature data: ${error.message}`,
-			);
-			setError(`Failed to load temperature data: ${error.message}`);
-		}
-	}, []);
+		},
+		[models, selectedModel],
+	);
 
 	useEffect(() => {
+		console.log(
+			"DEBUGYEARCHANGE: Year effect triggered, currentYear:",
+			currentYear,
+		);
 		handleLoadTemperatureData(currentYear);
 	}, [currentYear, handleLoadTemperatureData]);
 
-	// Convert grid data to NUTS when mode is NUTS and temperature data is available
+	// Load worldwide administrative regions
+	const loadworldwideRegions = useCallback(async () => {
+		try {
+			console.log("Loading global administrative regions...");
+			const response = await fetch(NATURAL_EARTH_URL);
+			const data = await response.json();
+
+			// Load ALL administrative regions from around the world - no geographic filtering
+			const allFeatures = data.features.filter((feature: GeoJSON.Feature) => {
+				// Only keep polygons and multipolygons
+				return (
+					feature.geometry?.type === "Polygon" ||
+					feature.geometry?.type === "MultiPolygon"
+				);
+			});
+
+			const globalRegions = {
+				type: "FeatureCollection" as const,
+				features: allFeatures,
+			};
+
+			setworldwideRegionsGeoJSON(globalRegions);
+			console.log(
+				`Loaded ${allFeatures.length} global administrative regions from all countries`,
+			);
+		} catch (error) {
+			console.error("Failed to load worldwide administrative regions:", error);
+		}
+	}, []);
+
+	// Load worldwide regions on mount
 	useEffect(() => {
-		const convertToNuts = async () => {
-			if (mapMode === "nuts" && temperatureData.length > 0) {
+		loadworldwideRegions();
+	}, [loadworldwideRegions]);
+
+	// Sample temperature data to 1% for performance
+	const sampleTemperatureData = useCallback(
+		(temperatureData: TemperatureDataPoint[], sampleRate = 0.5) => {
+			const sampleSize = Math.max(
+				1,
+				Math.floor(temperatureData.length * sampleRate),
+			);
+			const step = Math.floor(temperatureData.length / sampleSize);
+
+			const sampledData = [];
+			for (let i = 0; i < temperatureData.length; i += step) {
+				sampledData.push(temperatureData[i]);
+				if (sampledData.length >= sampleSize) break;
+			}
+
+			console.log(
+				`Sampled ${sampledData.length} points from ${temperatureData.length} total (${(sampleRate * 100).toFixed(1)}%)`,
+			);
+			return sampledData;
+		},
+		[],
+	);
+
+	// Calculate temperature and coordinate info for a region
+	const calculateRegionTemperatureWithCoords = useCallback(
+		(
+			regionFeature: GeoJSON.Feature,
+			temperatureData: TemperatureDataPoint[],
+		) => {
+			const regionName =
+				regionFeature.properties?.name ||
+				regionFeature.properties?.name_en ||
+				regionFeature.properties?.admin ||
+				"Unknown";
+
+			const pointsInRegion = temperatureData.filter((point) => {
+				// Use turf.js for accurate point-in-polygon checking
+				const isInside = isPointInRegion(
+					point.lat,
+					point.lng,
+					regionFeature.geometry,
+				);
+				return isInside;
+			});
+
+			// Get centroid of the region using turf.js
+			const polygon = turf.feature(regionFeature.geometry);
+			const centroid = turf.centroid(polygon);
+			const currentPosition = {
+				lat: centroid.geometry.coordinates[1],
+				lng: centroid.geometry.coordinates[0],
+			};
+
+			console.log(
+				`Region ${regionName}: found ${pointsInRegion.length} points within region`,
+			);
+
+			if (pointsInRegion.length === 0) {
+				// Fallback: find nearest point
+				const nearestPoint = findNearestPoint(regionFeature, temperatureData);
+				console.log(
+					`Region ${regionName}: using nearest point fallback, temp: ${nearestPoint ? nearestPoint.temperature : "null"}`,
+				);
+				return {
+					temperature: nearestPoint ? nearestPoint.temperature : null,
+					isFallback: true,
+					currentPosition,
+					nearestDataPoint: nearestPoint
+						? {
+								lat: nearestPoint.lat,
+								lng: nearestPoint.lng,
+							}
+						: null,
+					dataPoints: nearestPoint ? [nearestPoint] : [],
+				};
+			}
+
+			// Calculate average temperature
+			const avgTemp =
+				pointsInRegion.reduce((sum, point) => sum + point.temperature, 0) /
+				pointsInRegion.length;
+			console.log(
+				`Region ${regionName}: calculated average temp: ${avgTemp} from ${pointsInRegion.length} points`,
+			);
+			return {
+				temperature: avgTemp,
+				isFallback: false,
+				currentPosition,
+				nearestDataPoint: null,
+				dataPoints: pointsInRegion.slice(0, 3),
+			};
+		},
+		[],
+	);
+
+	// Use turf.js for accurate point-in-polygon checking
+	const isPointInRegion = useCallback(
+		(lat: number, lon: number, geometry: GeoJSON.Geometry) => {
+			try {
+				// Reduced debug logging (only log first few calls to avoid spam)
+				if (Math.random() < 0.001) {
+					// Only log 0.1% of calls
+					console.log("isPointInRegion sample call:", {
+						lat,
+						lon,
+						latType: typeof lat,
+						lonType: typeof lon,
+						geometryType: geometry?.type,
+					});
+				}
+
+				// Validate inputs with more detailed checks
+				if (
+					typeof lat !== "number" ||
+					typeof lon !== "number" ||
+					Number.isNaN(lat) ||
+					Number.isNaN(lon) ||
+					!Number.isFinite(lat) ||
+					!Number.isFinite(lon)
+				) {
+					console.error("Invalid lat/lon values:", {
+						lat,
+						lon,
+						latType: typeof lat,
+						lonType: typeof lon,
+						latIsNaN: Number.isNaN(lat),
+						lonIsNaN: Number.isNaN(lon),
+						latIsFinite: Number.isFinite(lat),
+						lonIsFinite: Number.isFinite(lon),
+					});
+					return false;
+				}
+
+				if (!geometry || !geometry.type || !("coordinates" in geometry)) {
+					console.error("Invalid geometry:", geometry);
+					return false;
+				}
+
+				// Additional validation for coordinate values
+				if (lat < -90 || lat > 90 || lon < -180 || lon > 180) {
+					console.error("Lat/lon values out of valid range:", { lat, lon });
+					return false;
+				}
+
+				// Create a turf point from lat/lon coordinates
+				const point = turf.point([lon, lat]);
+
+				// Create a turf polygon/multipolygon from the geometry
+				const polygon = turf.feature(geometry);
+
+				// Use turf's booleanPointInPolygon for accurate checking
+				const result = turf.booleanPointInPolygon(
+					point,
+					polygon as GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon>,
+				);
+
+				return result;
+			} catch (error) {
+				console.error("Error in point-in-polygon check:", error);
+				console.error("Error details:", {
+					lat,
+					lon,
+					latType: typeof lat,
+					lonType: typeof lon,
+					latRaw: lat,
+					lonRaw: lon,
+					geometryType: geometry?.type,
+					geometryCoordinates:
+						"coordinates" in geometry ? "present" : "missing",
+					errorMessage: error instanceof Error ? error.message : String(error),
+					errorStack: error instanceof Error ? error.stack : undefined,
+				});
+				return false;
+			}
+		},
+		[],
+	);
+
+	// Find nearest temperature point to a region using turf.js
+	const findNearestPoint = useCallback(
+		(
+			regionFeature: GeoJSON.Feature,
+			temperatureData: TemperatureDataPoint[],
+		) => {
+			try {
+				// Get centroid of the region using turf.js
+				const polygon = turf.feature(regionFeature.geometry);
+				const centroid = turf.centroid(polygon);
+
+				let nearestPoint = null;
+				let minDistance = Number.POSITIVE_INFINITY;
+
+				for (const point of temperatureData) {
+					// Use turf.js distance calculation
+					const tempPoint = turf.point([point.lng, point.lat]);
+					const distance = turf.distance(centroid, tempPoint, {
+						units: "kilometers",
+					});
+
+					if (distance < minDistance) {
+						minDistance = distance;
+						nearestPoint = point;
+					}
+				}
+
+				return nearestPoint;
+			} catch (error) {
+				console.error("Error finding nearest point:", error);
+				return null;
+			}
+		},
+		[],
+	);
+
+	// Convert grid data to worldwide regions when mode is worldwide and temperature data is available
+	useEffect(() => {
+		// Skip processing if there's already a processing error
+		if (processingError) {
+			console.log("Skipping processing due to previous error");
+			return;
+		}
+
+		const convertToWorldwide = async () => {
+			if (mapMode === "worldwide" && temperatureData.length > 0) {
+				// Load worldwide regions if not already loaded
+				if (!worldwideRegionsGeoJSON) {
+					try {
+						await loadworldwideRegions();
+					} catch (error) {
+						console.error("Failed to load worldwide regions:", error);
+						setProcessingError(true);
+						setError("Failed to load worldwide regions");
+					}
+					return;
+				}
+
 				try {
-					console.log("Converting grid data to NUTS regions...");
+					setIsProcessingWorldwide(true);
+					console.log(
+						"Converting grid data to global administrative regions...",
+					);
+					console.log(
+						`Processing ${worldwideRegionsGeoJSON.features.length} global regions`,
+					);
+
+					// Sample temperature data to 10% for better accuracy
+					const sampledTemperatureData = sampleTemperatureData(
+						temperatureData,
+						0.005,
+					);
+					console.log(
+						"Temperature data sample: first few points:",
+						sampledTemperatureData.slice(0, 5),
+					);
+
+					// Debug: Show bounds of temperature data
+					if (sampledTemperatureData.length > 0) {
+						const tempBounds = {
+							minLat: Math.min(...sampledTemperatureData.map((p) => p.lat)),
+							maxLat: Math.max(...sampledTemperatureData.map((p) => p.lat)),
+							minLon: Math.min(...sampledTemperatureData.map((p) => p.lng)),
+							maxLon: Math.max(...sampledTemperatureData.map((p) => p.lng)),
+						};
+						console.log(
+							`Temperature data bounds: lat(${tempBounds.minLat} to ${tempBounds.maxLat}), lon(${tempBounds.minLon} to ${tempBounds.maxLon})`,
+						);
+					}
+
+					// Process each global region and calculate temperature
+					const processedFeatures = [];
+					let hasError = false;
+
+					for (
+						let index = 0;
+						index < worldwideRegionsGeoJSON.features.length;
+						index++
+					) {
+						const feature = worldwideRegionsGeoJSON.features[index];
+						const regionName =
+							feature.properties?.name ||
+							feature.properties?.name_en ||
+							feature.properties?.admin ||
+							`Region-${index}`;
+
+						try {
+							console.log(`Processing region ${index + 1}: ${regionName}`);
+
+							const tempResult = calculateRegionTemperatureWithCoords(
+								feature,
+								sampledTemperatureData,
+							);
+							const result = {
+								...feature,
+								properties: {
+									...feature.properties,
+									intensity: tempResult.temperature,
+									WORLDWIDE_ID:
+										feature.properties?.name ||
+										feature.properties?.name_en ||
+										"Unknown",
+									countryName: feature.properties?.admin || "Unknown Country",
+									pointCount: sampledTemperatureData.filter((point) =>
+										isPointInRegion(point.lat, point.lng, feature.geometry),
+									).length,
+									isFallback: tempResult.isFallback,
+									currentPosition: tempResult.currentPosition,
+									nearestDataPoint: tempResult.nearestDataPoint,
+									dataPoints: tempResult.dataPoints,
+								},
+							};
+
+							if (result.properties.intensity !== null) {
+								processedFeatures.push(result);
+								console.log(
+									`Region ${regionName} processed successfully: intensity=${result.properties.intensity}`,
+								);
+							} else {
+								console.log(
+									`Region ${regionName} has null intensity, skipping`,
+								);
+							}
+						} catch (regionError) {
+							console.error(
+								`Error processing region ${regionName}:`,
+								regionError,
+							);
+							hasError = true;
+							break;
+						}
+					}
+
+					if (hasError) {
+						console.error("Processing stopped due to error");
+						setProcessingError(true);
+						setError("Error processing regions");
+						return;
+					}
+
+					console.log(
+						`Processed ${processedFeatures.length} regions with valid temperature data`,
+					);
+
+					const processedGeoJSON = {
+						type: "FeatureCollection" as const,
+						features: processedFeatures,
+					};
+
+					setConvertedWorldwideGeoJSON(processedGeoJSON as WorldwideGeoJSON);
+
+					// Calculate extremes from processed data
+					const temperatures = processedFeatures
+						.map((f) => f.properties.intensity)
+						.filter((t) => t !== null);
+					console.log(
+						"Temperature values for extremes calculation:",
+						temperatures,
+					);
+					if (temperatures.length > 0) {
+						const extremes = {
+							min: Math.min(...temperatures),
+							max: Math.max(...temperatures),
+						};
+						setDataExtremes(extremes);
+						console.log("Set worldwide regions extremes:", extremes);
+						console.log(
+							`Total regions with temperature data: ${temperatures.length}`,
+						);
+					} else {
+						console.warn("No temperature data found for any region!");
+					}
+					setIsProcessingWorldwide(false);
+				} catch (error) {
+					console.error(
+						"Failed to convert grid data to worldwide regions:",
+						error,
+					);
+					setProcessingError(true);
+					setError("Failed to process worldwide regions");
+					setIsProcessingWorldwide(false);
+				}
+			} else if (mapMode === "europe-only") {
+				try {
+					console.log(
+						`DEBUGYEARCHANGE: Converting grid data to Europe-only NUTS regions for year ${currentYear}...`,
+					);
+					console.log(
+						`DEBUGYEARCHANGE: Temperature data length: ${temperatureData.length}`,
+					);
+					console.log(
+						"DEBUGYEARCHANGE: First temperature point:",
+						temperatureData[0],
+					);
+
+					// Clear existing data immediately to prevent stale display
+					setConvertedEuropeOnlyGeoJSON(null);
+					setIsProcessingEuropeOnly(true);
+
+					// Use GridToNutsConverter to process temperature data into NUTS regions
 					const { nutsGeoJSON, extremes } =
 						await gridToNutsConverter.convertGridDataToNuts(temperatureData);
-					setConvertedNutsGeoJSON(nutsGeoJSON);
+
+					console.log(
+						`DEBUGYEARCHANGE: NUTS conversion complete for year ${currentYear}`,
+					);
+					console.log(
+						`DEBUGYEARCHANGE: NUTS features count: ${nutsGeoJSON.features.length}`,
+					);
+					console.log("DEBUGYEARCHANGE: NUTS extremes:", extremes);
+					console.log(
+						"DEBUGYEARCHANGE: First NUTS feature:",
+						nutsGeoJSON.features[0],
+					);
+
+					// Always update state since we're processing the latest data
+					setConvertedEuropeOnlyGeoJSON({ ...nutsGeoJSON });
 					setDataExtremes(extremes);
+					setIsProcessingEuropeOnly(false);
 				} catch (error) {
-					console.error("Failed to convert grid data to NUTS:", error);
+					console.error(
+						"Failed to convert grid data to Europe-only NUTS regions:",
+						error,
+					);
+					setProcessingError(true);
+					setError("Failed to process Europe-only NUTS regions");
+					setIsProcessingEuropeOnly(false);
 				}
 			} else if (mapMode === "grid") {
-				setConvertedNutsGeoJSON(null);
+				setConvertedWorldwideGeoJSON(null);
+				setConvertedEuropeOnlyGeoJSON(null);
 				// Restore original extremes for grid mode
 				if (temperatureData.length > 0) {
 					const temps = temperatureData.map((d) => d.temperature);
@@ -396,11 +875,27 @@ const ClimateMap = ({ onMount = () => true }) => {
 				} else {
 					console.log("No temperature data for grid mode");
 				}
+			} else {
+				// Clear all when switching modes
+				setConvertedWorldwideGeoJSON(null);
+				setConvertedEuropeOnlyGeoJSON(null);
+				setIsProcessingEuropeOnly(false);
+				setIsProcessingWorldwide(false);
 			}
 		};
 
-		convertToNuts();
-	}, [mapMode, temperatureData]);
+		convertToWorldwide();
+	}, [
+		mapMode,
+		temperatureData,
+		worldwideRegionsGeoJSON,
+		processingError,
+		loadworldwideRegions,
+		calculateRegionTemperatureWithCoords,
+		isPointInRegion,
+		sampleTemperatureData,
+		currentYear,
+	]);
 
 	// Cleanup timeouts on unmount
 	useEffect(() => {
@@ -416,97 +911,6 @@ const ClimateMap = ({ onMount = () => true }) => {
 			map.setMaxBounds(dataBounds);
 		}
 	}, [map, dataBounds]);
-
-	const loadNutsData = () => {
-		setLoading(true);
-		setError(null);
-
-		fetch("/data/nutsRegions.csv")
-			.then((response) => response.text())
-			.then((csvData) => {
-				processCSVData(csvData);
-				setLoading(false);
-			})
-			.catch((err: Error) => {
-				console.error("Error loading NUTS data:", err);
-				setError(err.message);
-				setLoading(false);
-				errorStore.showError("NUTS Data Error", err.message);
-			});
-	};
-
-	const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-		const file = event.target.files?.[0];
-		if (!file) return;
-
-		setLoading(true);
-		setError(null);
-		loadingStore.start();
-		console.log("Started loading of file upload store...");
-
-		const reader = new FileReader();
-		reader.onload = (e) => {
-			try {
-				const csvData = e.target?.result as string;
-				processCSVData(csvData);
-			} catch (err: unknown) {
-				const error = err as Error;
-				console.error("Error processing uploaded file:", error);
-				setError(error.message);
-				setLoading(false);
-				loadingStore.complete();
-				errorStore.showError("File Processing Error", error.message);
-			}
-		};
-		reader.onerror = (err) => {
-			console.error("File reading error:", err);
-			setError("Error reading file");
-			setLoading(false);
-			loadingStore.complete();
-			errorStore.showError(
-				"File Reading Error",
-				"Error reading the uploaded file",
-			);
-		};
-		reader.readAsText(file);
-	};
-
-	const processCSVData = (csvData: string) => {
-		try {
-			const nutsMapper = new NutsMapperV5();
-			const geoJSON = nutsMapper.parseNutsCSV(csvData);
-			setNutsGeoJSON(geoJSON as NutsGeoJSON);
-			setStats(nutsMapper.getStats());
-
-			if (geoJSON?.features) {
-				const intensities = geoJSON.features
-					.map((feature) => feature.properties.intensity)
-					.filter(
-						(intensity): intensity is number =>
-							intensity !== null && !Number.isNaN(intensity),
-					);
-
-				if (intensities.length > 0) {
-					const extremes = {
-						min: Math.min(...intensities),
-						max: Math.max(...intensities),
-					};
-					setDataExtremes(extremes);
-				}
-			}
-		} catch (err: unknown) {
-			const error = err as Error;
-			console.error("Error processing CSV data:", error);
-			setError(error.message);
-			errorStore.showError("CSV Processing Error", error.message);
-		} finally {
-			setLoading(false);
-		}
-	};
-
-	const handleUploadClick = () => {
-		fileInputRef.current?.click();
-	};
 
 	const handleViewportChange = useCallback(
 		(newViewport: ViewportChangeData) => {
@@ -644,29 +1048,13 @@ const ClimateMap = ({ onMount = () => true }) => {
 		setIsAboutOpen(true);
 	};
 
-	const style = (feature: GeoJSON.Feature) => {
-		if (!feature || !feature.properties) return {};
-
-		const properties = feature.properties as { intensity?: number };
-
-		return {
-			fillColor: dataExtremes
-				? getColorFromGradient(
-						properties.intensity || 0,
-						dataExtremes,
-						"#8b5cf6",
-						"#cccccc",
-					)
-				: "blue",
-			weight: 1,
-			opacity: 1,
-			color: "white",
-			dashArray: "3",
-			fillOpacity: 0.7,
-		};
+	const handleLoadCurrentYear = () => {
+		const currentYear = new Date().getFullYear();
+		setCurrentYear(currentYear);
+		setLackOfDataModalVisible(false);
 	};
 
-	const nutsStyle = (feature: GeoJSON.Feature) => {
+	const worldwideStyle = (feature: GeoJSON.Feature) => {
 		if (!feature || !feature.properties) return {};
 
 		const properties = feature.properties as { intensity?: number };
@@ -693,27 +1081,21 @@ const ClimateMap = ({ onMount = () => true }) => {
 		};
 	};
 
-	const createCityLabelIcon = (
-		city: { name: string; tier: number; population: number },
-		_zoom: number,
-	) => {
-		const fontSize =
-			city.tier === 1 ? 13 : city.tier === 2 ? 12 : city.tier === 3 ? 11 : 10;
-		const fontWeight = city.tier === 1 ? 600 : city.tier === 2 ? 500 : 400;
+	const nutsStyle = (feature: GeoJSON.Feature) => {
+		if (!feature || !feature.properties) return {};
 
-		return L.divIcon({
-			html: `<span class="city-name" style="font-size: ${fontSize}px; font-weight: ${fontWeight};">${city.name}</span>`,
-			className: "city-label-marker",
-			iconSize: [0, 0],
-			iconAnchor: [0, 0],
-		});
-	};
+		const properties = feature.properties as { intensity?: number };
 
-	const getVisibleCities = (zoom: number) => {
-		if (zoom >= 6) return cities; // Show all cities
-		if (zoom >= 5) return cities.filter((city) => city.tier <= 3); // Show tiers 1-3
-		if (zoom >= 4) return cities.filter((city) => city.tier <= 2); // Show tiers 1-2
-		return cities.filter((city) => city.tier === 1); // Show only tier 1
+		return {
+			fillColor: dataExtremes
+				? getColorFromGradient(properties.intensity || 0, dataExtremes)
+				: "#cccccc",
+			weight: 2,
+			opacity: 1,
+			color: "white",
+			dashArray: "",
+			fillOpacity: 0.8,
+		};
 	};
 
 	const highlightFeature = (e: L.LeafletMouseEvent) => {
@@ -734,10 +1116,12 @@ const ClimateMap = ({ onMount = () => true }) => {
 			const prevLayer = currentHoveredLayer as L.Path & {
 				feature: GeoJSON.Feature;
 			};
-			if (mapMode === "nuts" && convertedNutsGeoJSON) {
+			if (mapMode === "worldwide" && convertedWorldwideGeoJSON) {
+				prevLayer.setStyle(worldwideStyle(prevLayer.feature));
+			} else if (mapMode === "europe-only" && convertedEuropeOnlyGeoJSON) {
 				prevLayer.setStyle(nutsStyle(prevLayer.feature));
-			} else if (nutsGeoJSON) {
-				prevLayer.setStyle(style(prevLayer.feature));
+			} else if (worldGeoJSON) {
+				prevLayer.setStyle(worldStyle());
 			}
 			(prevLayer as L.Layer & { closePopup: () => void }).closePopup();
 		}
@@ -756,8 +1140,8 @@ const ClimateMap = ({ onMount = () => true }) => {
 
 		setCurrentHoveredLayer(layer);
 
-		// Show popup on hover for NUTS mode with slight delay
-		if (mapMode === "nuts") {
+		// Show popup on hover for worldwide and europe-only modes with slight delay
+		if (mapMode === "worldwide" || mapMode === "europe-only") {
 			const timeout = setTimeout(() => {
 				if (currentHoveredLayer === layer) {
 					(layer as L.Layer & { openPopup: () => void }).openPopup();
@@ -778,14 +1162,16 @@ const ClimateMap = ({ onMount = () => true }) => {
 
 		// Only reset if this is the currently hovered layer
 		if (currentHoveredLayer === geoJSONLayer) {
-			if (mapMode === "nuts" && convertedNutsGeoJSON) {
+			if (mapMode === "worldwide" && convertedWorldwideGeoJSON) {
+				geoJSONLayer.setStyle(worldwideStyle(geoJSONLayer.feature));
+			} else if (mapMode === "europe-only" && convertedEuropeOnlyGeoJSON) {
 				geoJSONLayer.setStyle(nutsStyle(geoJSONLayer.feature));
-			} else if (nutsGeoJSON) {
-				geoJSONLayer.setStyle(style(geoJSONLayer.feature));
+			} else if (worldGeoJSON) {
+				geoJSONLayer.setStyle(worldStyle());
 			}
 
-			// Close popup on mouseout for NUTS mode
-			if (mapMode === "nuts") {
+			// Close popup on mouseout for worldwide and europe-only modes
+			if (mapMode === "worldwide" || mapMode === "europe-only") {
 				(geoJSONLayer as L.Layer & { closePopup: () => void }).closePopup();
 			}
 
@@ -793,7 +1179,7 @@ const ClimateMap = ({ onMount = () => true }) => {
 		}
 	};
 
-	const onEachFeature = (feature: GeoJSON.Feature, layer: L.Layer) => {
+	const onEachWorldwideFeature = (feature: GeoJSON.Feature, layer: L.Layer) => {
 		layer.on({
 			mouseover: highlightFeature,
 			mouseout: resetHighlight,
@@ -801,14 +1187,69 @@ const ClimateMap = ({ onMount = () => true }) => {
 
 		if (feature.properties) {
 			const properties = feature.properties as {
-				NUTS_ID?: string;
+				WORLDWIDE_ID?: string;
 				intensity?: number;
+				countryName?: string;
+				pointCount?: number;
+				isFallback?: boolean;
+				currentPosition?: { lat: number; lng: number };
+				nearestDataPoint?: { lat: number; lng: number };
+				dataPoints?: Array<{ lat: number; lng: number; temperature: number }>;
 			};
-			const { NUTS_ID, intensity } = properties;
+			const {
+				WORLDWIDE_ID,
+				intensity,
+				countryName,
+				pointCount,
+				isFallback,
+				currentPosition,
+				nearestDataPoint,
+				dataPoints,
+			} = properties;
+			const displayName = countryName || WORLDWIDE_ID || "Unknown Country";
+
+			const dataSource = isFallback
+				? "Nearest point"
+				: pointCount && pointCount > 0
+					? `${pointCount} data points`
+					: "Calculated";
+
+			// Build coordinate information for fallback case
+			let coordinateInfo = "";
+			if (isFallback && currentPosition && nearestDataPoint) {
+				coordinateInfo = `
+          <p><strong>Current Position:</strong> ${currentPosition.lat.toFixed(3)}, ${currentPosition.lng.toFixed(3)}</p>
+          <p><strong>Nearest Data Point:</strong> ${nearestDataPoint.lat.toFixed(3)}, ${nearestDataPoint.lng.toFixed(3)}</p>
+        `;
+			}
+
+			// Build data points list (first 3)
+			let dataPointsList = "";
+			if (dataPoints && dataPoints.length > 0) {
+				const pointsToShow = dataPoints.slice(0, 3);
+				const pointsListItems = pointsToShow
+					.map(
+						(point) =>
+							`<li>[${point.lat.toFixed(3)}, ${point.lng.toFixed(3)}, ${point.temperature.toFixed(1)}R0]</li>`,
+					)
+					.join("");
+				dataPointsList = `
+          <p><strong>Data Points:</strong></p>
+          <ul style="margin: 0; padding-left: 15px;">
+            ${pointsListItems}
+          </ul>
+        `;
+			}
+
 			const popupContent = `
-        <div class="nuts-popup">
-          <h4>NUTS Region: ${NUTS_ID || "Unknown"}</h4>
-          <p>Value: ${intensity !== null && intensity !== undefined ? `${intensity.toFixed(1)}°C` : "N/A"}</p>
+        <div class="worldwide-popup">
+          <h4>${displayName}</h4>
+          <p><strong>Temperature:</strong> ${intensity !== null && intensity !== undefined ? `${intensity.toFixed(1)}R0` : "N/A"}</p>
+          <p><strong>Data Source:</strong> ${dataSource}</p>
+          ${isFallback ? `<p><small style="color: #666;">⚠️ Using nearest available data point</small></p>` : ""}
+          ${coordinateInfo}
+          ${dataPointsList}
+          <p><small>Region: ${WORLDWIDE_ID || "N/A"}</small></p>
         </div>
       `;
 			(layer as L.Layer & { bindPopup: (content: string) => void }).bindPopup(
@@ -817,7 +1258,10 @@ const ClimateMap = ({ onMount = () => true }) => {
 		}
 	};
 
-	const onEachNutsFeature = (feature: GeoJSON.Feature, layer: L.Layer) => {
+	const onEachEuropeOnlyFeature = (
+		feature: GeoJSON.Feature,
+		layer: L.Layer,
+	) => {
 		layer.on({
 			mouseover: highlightFeature,
 			mouseout: resetHighlight,
@@ -826,14 +1270,36 @@ const ClimateMap = ({ onMount = () => true }) => {
 		if (feature.properties) {
 			const properties = feature.properties as {
 				NUTS_ID?: string;
-				intensity?: number;
+				intensity?: number | null;
 				countryName?: string;
 				pointCount?: number;
+				nutsLevel?: number;
 				isFallback?: boolean;
+				isModelData?: boolean;
+				currentPosition?: { lat: number; lng: number };
+				nearestDataPoint?: { lat: number; lng: number };
+				dataPoints?: Array<{ lat: number; lng: number; temperature: number }>;
 			};
-			const { NUTS_ID, intensity, countryName, pointCount, isFallback } =
-				properties;
-			const displayName = countryName || NUTS_ID || "Unknown Country";
+			const {
+				NUTS_ID,
+				intensity,
+				countryName,
+				pointCount,
+				nutsLevel,
+				isFallback,
+				isModelData,
+				currentPosition,
+				nearestDataPoint,
+				dataPoints,
+			} = properties;
+			const displayName = countryName || NUTS_ID || "Unknown Region";
+
+			const regionType =
+				nutsLevel === 2
+					? "NUTS 2 Region"
+					: nutsLevel === 0
+						? "Country"
+						: "Region";
 
 			const dataSource = isFallback
 				? "Nearest point"
@@ -841,13 +1307,43 @@ const ClimateMap = ({ onMount = () => true }) => {
 					? `${pointCount} data points`
 					: "Calculated";
 
+			// Build coordinate information for fallback case
+			let coordinateInfo = "";
+			if (isFallback && currentPosition && nearestDataPoint) {
+				coordinateInfo = `
+          <p><strong>Current Position:</strong> ${currentPosition.lat.toFixed(3)}, ${currentPosition.lng.toFixed(3)}</p>
+          <p><strong>Nearest Data Point:</strong> ${nearestDataPoint.lat.toFixed(3)}, ${nearestDataPoint.lng.toFixed(3)}</p>
+        `;
+			}
+
+			// Build data points list (first 3)
+			let dataPointsList = "";
+			if (dataPoints && dataPoints.length > 0) {
+				const pointsToShow = dataPoints.slice(0, 3);
+				const pointsListItems = pointsToShow
+					.map(
+						(point) =>
+							`<li>[${point.lat.toFixed(3)}, ${point.lng.toFixed(3)}, ${point.temperature.toFixed(1)}R0]</li>`,
+					)
+					.join("");
+				dataPointsList = `
+          <p><strong>Data Points:</strong></p>
+          <ul style="margin: 0; padding-left: 15px;">
+            ${pointsListItems}
+          </ul>
+        `;
+			}
+
 			const popupContent = `
-        <div class="nuts-popup">
-          <h4>${displayName}</h4>
-          <p><strong>Temperature:</strong> ${intensity !== null && intensity !== undefined ? `${intensity.toFixed(1)}°C` : "N/A"}</p>
+        <div class="europe-only-popup">
+          <h4>${regionType}: ${displayName}</h4>
+          <p><strong>R0:</strong> ${intensity !== null && intensity !== undefined ? `${intensity.toFixed(1)}` : "N/A"}</p>
           <p><strong>Data Source:</strong> ${dataSource}</p>
           ${isFallback ? `<p><small style="color: #666;">⚠️ Using nearest available data point</small></p>` : ""}
-          <p><small>Region: ${NUTS_ID || "N/A"}</small></p>
+          ${isModelData ? `<p><small style="color: #007acc;">📊 Model data</small></p>` : ""}
+          ${coordinateInfo}
+          ${dataPointsList}
+          <p><small>Region ID: ${NUTS_ID || "N/A"}</small></p>
         </div>
       `;
 			(layer as L.Layer & { bindPopup: (content: string) => void }).bindPopup(
@@ -888,12 +1384,6 @@ const ClimateMap = ({ onMount = () => true }) => {
 								width: isMobile ? "100%" : "calc(100% - 140px)",
 							}}
 						>
-							{showTileLayer && (
-								<TileLayer
-									url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-									noWrap={true}
-								/>
-							)}
 							{mapMode === "grid" && (
 								<Pane name="worldPane" style={{ zIndex: 10 }}>
 									{worldGeoJSON && (
@@ -917,44 +1407,81 @@ const ClimateMap = ({ onMount = () => true }) => {
 								</Pane>
 							)}
 
-							{mapMode === "nuts" && (
-								<Pane name="nutsPane" style={{ zIndex: 30, opacity: 0.9 }}>
-									{convertedNutsGeoJSON?.features &&
-										convertedNutsGeoJSON.features.length > 0 && (
+							{mapMode === "worldwide" && (
+								<Pane name="worldwidePane" style={{ zIndex: 30, opacity: 0.9 }}>
+									{convertedWorldwideGeoJSON?.features &&
+										convertedWorldwideGeoJSON.features.length > 0 && (
 											<GeoJSON
-												data={convertedNutsGeoJSON}
-												style={(f) => (f ? nutsStyle(f) : {})}
-												onEachFeature={onEachNutsFeature}
+												data={convertedWorldwideGeoJSON}
+												style={(f) => (f ? worldwideStyle(f) : {})}
+												onEachFeature={onEachWorldwideFeature}
 											/>
 										)}
 								</Pane>
 							)}
 
-							<Pane name="geoJsonPane" style={{ zIndex: 40 }}>
-								{nutsGeoJSON?.features && nutsGeoJSON.features.length > 0 && (
-									<GeoJSON
-										data={nutsGeoJSON}
-										style={(f) => (f ? style(f) : {})}
-										onEachFeature={onEachFeature}
-									/>
-								)}
-							</Pane>
-
-							{mapMode === "grid" && (
-								<Pane name="cityLabelsPane" style={{ zIndex: 350 }}>
-									{viewport &&
-										getVisibleCities(viewport.zoom).map((city) => (
-											<Marker
-												key={`${city.name}-${city.lat}-${city.lng}`}
-												position={[city.lat, city.lng]}
-												icon={createCityLabelIcon(city, viewport.zoom)}
-											/>
-										))}
+							{mapMode === "europe-only" && (
+								<Pane
+									name="europeOnlyPane"
+									style={{ zIndex: 30, opacity: 0.9 }}
+								>
+									{!isProcessingEuropeOnly &&
+										convertedEuropeOnlyGeoJSON?.features &&
+										convertedEuropeOnlyGeoJSON.features.length > 0 && (
+											<div>
+												<div
+													hidden
+													style={{
+														position: "fixed",
+														top: "150px",
+														left: "150px",
+														backgroundColor: "red",
+														color: "white",
+														padding: "50px",
+														zIndex: "92382354",
+													}}
+												>
+													GeoJSON debug:{" "}
+													{
+														convertedEuropeOnlyGeoJSON.features[0].properties
+															.NUTS_ID
+													}
+													:{" "}
+													{
+														convertedEuropeOnlyGeoJSON.features[0].properties
+															.intensity
+													}
+												</div>
+												<GeoJSON
+													data={convertedEuropeOnlyGeoJSON}
+													key={
+														convertedEuropeOnlyGeoJSON.features[0].properties
+															.intensity
+													}
+													style={(f) => (f ? nutsStyle(f) : {})}
+													onEachFeature={onEachEuropeOnlyFeature}
+												/>
+											</div>
+										)}
 								</Pane>
 							)}
 
 							<ViewportMonitor onViewportChange={handleViewportChange} />
 						</MapContainer>
+
+						{/* Loading Skeleton Overlay */}
+						<LoadingSkeleton
+							isProcessing={
+								isProcessingEuropeOnly || isProcessingWorldwide || isLoadingData
+							}
+							message={
+								isProcessingEuropeOnly
+									? "Processing Europe-only data..."
+									: isProcessingWorldwide
+										? "Processing worldwide data..."
+										: "Loading map data..."
+							}
+						/>
 
 						{/* Bottom UI Container - TimelineSelector and ControlBar */}
 						{styleMode === "unchanged" && (
@@ -981,6 +1508,7 @@ const ClimateMap = ({ onMount = () => true }) => {
 										map={map}
 										selectedModel={selectedModel}
 										onModelSelect={handleModelSelect}
+										styleMode={styleMode}
 									/>
 								)}
 
@@ -992,11 +1520,7 @@ const ClimateMap = ({ onMount = () => true }) => {
 									styleMode={styleMode}
 									legend={
 										dataExtremes ? (
-											<Legend
-												extremes={dataExtremes}
-												unit="°C"
-												isMobile={isMobile}
-											/>
+											<Legend extremes={dataExtremes} unit="R0" />
 										) : (
 											<div />
 										)
@@ -1005,8 +1529,8 @@ const ClimateMap = ({ onMount = () => true }) => {
 							</div>
 						)}
 
-						{/* Advanced Timeline Selector - Desktop Only */}
-						{!isMobile && styleMode !== "unchanged" && (
+						{/* Advanced Timeline Selector - Now supports mobile */}
+						{styleMode !== "unchanged" && (
 							<AdvancedTimelineSelector
 								year={currentYear}
 								month={currentMonth}
@@ -1024,11 +1548,7 @@ const ClimateMap = ({ onMount = () => true }) => {
 								screenshoter={screenshoter}
 								legend={
 									dataExtremes ? (
-										<Legend
-											extremes={dataExtremes}
-											unit="°C"
-											isMobile={false}
-										/>
+										<Legend extremes={dataExtremes} unit="R0" />
 									) : (
 										<div />
 									)
@@ -1042,6 +1562,7 @@ const ClimateMap = ({ onMount = () => true }) => {
 								map={map}
 								selectedModel={selectedModel}
 								onModelSelect={handleModelSelect}
+								styleMode={styleMode}
 							/>
 						)}
 					</div>
@@ -1049,59 +1570,43 @@ const ClimateMap = ({ onMount = () => true }) => {
 
 				{/* Desktop-only legend positioned over the map */}
 				{!isMobile && dataExtremes && (
-					<Legend extremes={dataExtremes} unit="°C" isMobile={false} />
+					<Legend extremes={dataExtremes} unit="R0" />
 				)}
 
 				<div className="map-bottom-bar">
 					<div className="control-section">
-						<button
-							type="button"
-							onClick={loadNutsData}
-							disabled={loading}
-							className="primary-button"
-						>
-							<Layers size={18} />
-							{loading ? "Loading..." : "Load NUTS Regions"}
-						</button>
-
-						<button
-							type="button"
-							onClick={handleUploadClick}
-							disabled={loading}
-							className="secondary-button"
-						>
-							Upload NUTS CSV
-						</button>
-
-						<button
-							type="button"
-							onClick={() => setShowTileLayer(!showTileLayer)}
-							className={showTileLayer ? "primary-button" : "secondary-button"}
-							title={
-								showTileLayer ? "Hide map background" : "Show map background"
-							}
-						>
-							🗺️ {showTileLayer ? "Hide" : "Show"} Background
-						</button>
-
-						<input
-							type="file"
-							ref={fileInputRef}
-							onChange={handleFileUpload}
-							accept=".csv"
-							style={{ display: "none" }}
-						/>
+						{processingError && (
+							<button
+								type="button"
+								onClick={() => {
+									setProcessingError(false);
+									setError(null);
+									console.log("Processing error reset");
+								}}
+								className="secondary-button"
+							>
+								Reset Processing Error
+							</button>
+						)}
 					</div>
 
 					{error && (
 						<div className="error-message">
 							<p>{error}</p>
+							{processingError && (
+								<p>
+									<small>
+										Processing has been stopped to prevent infinite errors. Use
+										the reset button to try again.
+									</small>
+								</p>
+							)}
 						</div>
 					)}
 
 					{viewport && (
 						<DebugStatsPanel
-							stats={stats}
+							stats={{ processed: 0, skipped: 0, errors: 0 }}
 							temperatureDataCount={temperatureData.length}
 							currentResolution={resolutionLevel}
 							viewport={viewport}
@@ -1128,6 +1633,14 @@ const ClimateMap = ({ onMount = () => true }) => {
 			>
 				<AboutContent />
 			</Modal>
+
+			<NoDataModal
+				isOpen={lackOfDataModalVisible}
+				onClose={() => setLackOfDataModalVisible(false)}
+				onLoadCurrentYear={handleLoadCurrentYear}
+				requestedYear={requestedYear}
+				errorMessage={apiErrorMessage}
+			/>
 
 			<Footer />
 		</div>

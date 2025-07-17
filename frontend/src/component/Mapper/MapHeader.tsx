@@ -16,8 +16,8 @@ interface MapHeaderProps {
 	selectedOptimism: string;
 	setSelectedOptimism: (optimism: string) => void;
 	getOptimismLevels: () => string[];
-	mapMode?: "grid" | "nuts";
-	onMapModeChange?: (mode: "grid" | "nuts") => void;
+	mapMode?: "grid" | "worldwide" | "europe-only";
+	onMapModeChange?: (mode: "grid" | "worldwide" | "europe-only") => void;
 	styleMode?: "unchanged" | "purple" | "red";
 	onStyleModeChange?: (mode: "unchanged" | "purple" | "red") => void;
 }
@@ -28,7 +28,7 @@ export default ({
 	selectedOptimism,
 	setSelectedOptimism,
 	getOptimismLevels,
-	mapMode = "grid",
+	mapMode = "europe-only",
 	onMapModeChange,
 	styleMode = "unchanged",
 	onStyleModeChange,
@@ -145,7 +145,7 @@ export default ({
 							right: 0,
 							background: colorSchemes[styleMode],
 							boxShadow: "0 8px 32px rgba(0, 0, 0, 0.25)",
-							zIndex: 1000,
+							zIndex: 1001,
 							backdropFilter: "blur(20px)",
 							borderBottom: "1px solid rgba(255, 255, 255, 0.2)",
 							margin: 0,
@@ -155,7 +155,7 @@ export default ({
 							top: 0,
 							left: 0,
 							right: 0,
-							zIndex: 1000,
+							zIndex: 1001,
 							backgroundColor: "white",
 						}
 			}
@@ -300,11 +300,7 @@ export default ({
 					</div>
 					{!areControlsHidden && (
 						<>
-							<button
-								type="button"
-								onClick={() =>
-									onMapModeChange?.(mapMode === "grid" ? "nuts" : "grid")
-								}
+							<div
 								className={styleMode !== "unchanged" ? "glass-button" : ""}
 								style={
 									styleMode !== "unchanged"
@@ -328,11 +324,19 @@ export default ({
 												padding: "8px 12px",
 											}
 								}
-								title={`Switch to ${mapMode === "grid" ? "NUTS" : "Grid"} mode`}
 							>
 								<MapIcon size={styleMode !== "unchanged" ? 20 : 16} />
-								{mapMode === "grid" ? "Grid" : "NUTS"}
-							</button>
+								<Select
+									value={mapMode}
+									onChange={onMapModeChange}
+									style={{ minWidth: 120 }}
+									size="middle"
+								>
+									<Option value="europe-only">Europe-only</Option>
+									<Option value="worldwide">Worldwide</Option>
+									<Option value="grid">Grid</Option>
+								</Select>
+							</div>
 							{!isMobile && (
 								<div
 									className={styleMode !== "unchanged" ? "glass-button" : ""}
@@ -444,7 +448,12 @@ export default ({
 								box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
 							}
 
-							.glass-button .ant-select-selector,
+							.glass-button .ant-select-selector {
+								background: rgba(255, 255, 255, 0.1) !important;
+								border: 1px solid rgba(255, 255, 255, 0.3) !important;
+								color: white !important;
+							}
+
 							.glass-button .ant-select-selection-item,
 							.glass-button .ant-select-arrow,
 							.glass-button .anticon {
@@ -454,11 +463,22 @@ export default ({
 							.glass-button button {
 								background: transparent !important;
 								border: none !important;
-								color: white !important;
+								color: white;
 							}
 
 							.glass-button button:hover {
 								background: rgba(255, 255, 255, 0.1) !important;
+							}
+
+							.glass-button .ant-select-selector:hover {
+								background: rgba(255, 255, 255, 0.2) !important;
+								border-color: rgba(255, 255, 255, 0.4) !important;
+							}
+
+							.glass-button .ant-select-focused .ant-select-selector {
+								background: rgba(255, 255, 255, 0.2) !important;
+								border-color: rgba(255, 255, 255, 0.4) !important;
+								box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.2) !important;
 							}
 						`}
 					</style>

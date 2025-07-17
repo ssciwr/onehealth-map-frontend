@@ -23,3 +23,5 @@ models:
   filename: zikaModel1.yaml
   title: Zika Virus
   model-name: Model F91
+output:
+  - t2m

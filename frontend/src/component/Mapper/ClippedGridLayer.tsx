@@ -125,7 +125,7 @@ const ClippedGridLayer = ({
 		}
 
 		// Sample only 1% of data points for performance
-		const sampleSize = Math.max(1, Math.floor(dataPoints.length * 0.01));
+		const sampleSize = Math.max(1, Math.floor(dataPoints.length * 0.5));
 		const sampledDataPoints = dataPoints
 			.sort(() => Math.random() - 0.5) // Shuffle array
 			.slice(0, sampleSize);
