@@ -59,7 +59,7 @@ const ClimateMap = ({ onMount = () => true }) => {
 	const [selectedOptimism, setSelectedOptimism] =
 		useState<string>("optimistic");
 	const [currentYear, setCurrentYear] = useState<number>(2016);
-	const [currentMonth, setCurrentMonth] = useState<Month>(6);
+	const [currentMonth, setCurrentMonth] = useState<Month>(7);
 	const [currentVariableValue, setCurrentVariableValue] =
 		useState<string>("R0");
 	const [map, setMap] = useState<L.Map | null>(null);
@@ -346,8 +346,8 @@ const ClimateMap = ({ onMount = () => true }) => {
 				loadingStore.start();
 				setIsLoadingData(true);
 
-				// Guard against undefined month - use June as default
-				const safeMonth = month || 6;
+				// Guard against undefined month - use July as default
+				const safeMonth = month || 7;
 				console.log(
 					`DEBUGYEARCHANGE: Starting to load data for year ${year}, month ${safeMonth}`,
 					"Original month:",

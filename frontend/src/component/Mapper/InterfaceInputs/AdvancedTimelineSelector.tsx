@@ -116,6 +116,7 @@ const AdvancedTimelineSelector: React.FC<AdvancedTimelineSelectorProps> = ({
 
 	// Check if we should show year navigation buttons
 	const showYearNavButtons = screenWidth > 1200 && !isMobile;
+	const showMonthNavButtons = screenWidth > 1200 && !isMobile;
 
 	// Year navigation handlers
 	const handlePreviousYear = () => {
@@ -127,6 +128,31 @@ const AdvancedTimelineSelector: React.FC<AdvancedTimelineSelectorProps> = ({
 	const handleNextYear = () => {
 		if (year < 2100) {
 			onYearChange(year + 1);
+		}
+	};
+
+	// Month navigation handlers
+	const handlePreviousMonth = () => {
+		if (month === 1) {
+			// January -> December of previous year
+			if (year > 1960) {
+				onYearChange(year - 1);
+				onMonthChange(12);
+			}
+		} else {
+			onMonthChange((month - 1) as Month);
+		}
+	};
+
+	const handleNextMonth = () => {
+		if (month === 12) {
+			// December -> January of next year
+			if (year < 2100) {
+				onYearChange(year + 1);
+				onMonthChange(1);
+			}
+		} else {
+			onMonthChange((month + 1) as Month);
 		}
 	};
 
@@ -299,7 +325,7 @@ const AdvancedTimelineSelector: React.FC<AdvancedTimelineSelectorProps> = ({
 							>
 								{MONTHS.map((monthInfo) => (
 									<Option key={monthInfo.value} value={monthInfo.value}>
-										{monthInfo.label}
+										{monthInfo.shortLabel}
 									</Option>
 								))}
 							</Select>
@@ -394,10 +420,20 @@ const AdvancedTimelineSelector: React.FC<AdvancedTimelineSelectorProps> = ({
 									<ChevronRight size={20} />
 								</button>
 							)}
-						</div>
-						{/* Right controls */}
-						<div className="control-group">
+							{/* Vertical divider and month selector */}
+							<div hidden={hideMonthSelector} className="year-month-divider" />
 							<div hidden={hideMonthSelector} className="month-selector">
+								{showMonthNavButtons && (
+									<button
+										type="button"
+										onClick={handlePreviousMonth}
+										disabled={year <= 1960 && month <= 1}
+										className="control-btn circular"
+										title="Previous Month"
+									>
+										<ChevronLeft size={20} />
+									</button>
+								)}
 								<select
 									value={month}
 									onChange={(e) =>
@@ -407,11 +443,25 @@ const AdvancedTimelineSelector: React.FC<AdvancedTimelineSelectorProps> = ({
 								>
 									{MONTHS.map((monthInfo) => (
 										<option key={monthInfo.value} value={monthInfo.value}>
-											{monthInfo.label}
+											{monthInfo.shortLabel}
 										</option>
 									))}
 								</select>
+								{showMonthNavButtons && (
+									<button
+										type="button"
+										onClick={handleNextMonth}
+										disabled={year >= 2100 && month >= 12}
+										className="control-btn circular"
+										title="Next Month"
+									>
+										<ChevronRight size={20} />
+									</button>
+								)}
 							</div>
+						</div>
+						{/* Right controls */}
+						<div className="control-group">
 							<button
 								type="button"
 								onClick={handleSaveScreenshot}
@@ -573,7 +623,7 @@ const AdvancedTimelineSelector: React.FC<AdvancedTimelineSelectorProps> = ({
 					.year-display {
 						display: flex;
 						align-items: center;
-						gap: 16px;
+						gap: 8px;
 					}
 
 					.year-text {
@@ -718,8 +768,17 @@ const AdvancedTimelineSelector: React.FC<AdvancedTimelineSelectorProps> = ({
 						border-radius: 1px;
 					}
 
+					.year-month-divider {
+						width: 1px;
+						height: 40px;
+						background: rgba(255, 255, 255, 0.5);
+						margin: 0 16px;
+					}
+
 					.month-selector {
-						margin-right: 8px;
+						display: flex;
+						align-items: center;
+						gap: 8px;
 					}
 
 					.month-select {
