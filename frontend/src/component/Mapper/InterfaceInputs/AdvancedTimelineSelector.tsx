@@ -623,7 +623,7 @@ const AdvancedTimelineSelector: React.FC<AdvancedTimelineSelectorProps> = ({
 					.year-display {
 						display: flex;
 						align-items: center;
-						gap: 8px;
+						gap: 0px;
 					}
 
 					.year-text {
@@ -633,6 +633,7 @@ const AdvancedTimelineSelector: React.FC<AdvancedTimelineSelectorProps> = ({
 						text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 						min-width: 160px;
 						text-align: center;
+						margin:-18px
 					}
 
 

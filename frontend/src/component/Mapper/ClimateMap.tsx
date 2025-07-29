@@ -17,7 +17,6 @@ import { isMobile } from "react-device-detect";
 import { errorStore } from "../../stores/ErrorStore";
 import { loadingStore } from "../../stores/LoadingStore";
 import AdvancedTimelineSelector from "./InterfaceInputs/AdvancedTimelineSelector.tsx";
-import TimelineSelector from "./InterfaceInputs/TimelineSelector.tsx";
 import LoadingSkeleton from "./LoadingSkeleton.tsx";
 import NoDataModal from "./NoDataModal.tsx";
 import type {
@@ -89,11 +88,6 @@ const ClimateMap = ({ onMount = () => true }) => {
 	const [currentHoveredLayer, setCurrentHoveredLayer] =
 		useState<L.Layer | null>(null);
 
-	// Style mode state
-	const [styleMode, setStyleMode] = useState<"unchanged" | "purple" | "red">(
-		"purple",
-	);
-
 	// Screenshoter state
 	const [screenshoter, setScreenshoter] =
 		useState<L.SimpleMapScreenshoter | null>(null);
@@ -102,6 +96,11 @@ const ClimateMap = ({ onMount = () => true }) => {
 	const [lackOfDataModalVisible, setLackOfDataModalVisible] = useState(false);
 	const [requestedYear, setRequestedYear] = useState<number>(2016);
 	const [apiErrorMessage, setApiErrorMessage] = useState<string>("");
+
+	// Set theme to purple
+	useEffect(() => {
+		document.documentElement.setAttribute("data-theme", "purple");
+	}, []);
 
 	// Initialize screenshoter when map is ready
 	useEffect(() => {
@@ -1402,8 +1401,6 @@ const ClimateMap = ({ onMount = () => true }) => {
 					getOptimismLevels={getOptimismLevels}
 					mapMode={mapMode}
 					onMapModeChange={setMapMode}
-					styleMode={styleMode}
-					onStyleModeChange={setStyleMode}
 				/>
 
 				<div className="map-content-wrapper">
@@ -1522,84 +1519,33 @@ const ClimateMap = ({ onMount = () => true }) => {
 							}
 						/>
 
-						{/* Bottom UI Container - TimelineSelector and ControlBar */}
-						{styleMode === "unchanged" && (
-							<div
-								style={
-									isMobile
-										? {}
-										: {
-												position: "fixed",
-												bottom: "10px",
-												left: "50%",
-												transform: "translateX(-50%)",
-												zIndex: 600,
-												pointerEvents: "auto",
-												display: "flex",
-												flexDirection: "column",
-												alignItems: "center",
-												gap: "12px",
-											}
-								}
-							>
-								{!isMobile && (
-									<ControlBar
-										map={map}
-										selectedModel={selectedModel}
-										onModelSelect={handleModelSelect}
-										styleMode={styleMode}
-									/>
-								)}
-
-								<TimelineSelector
-									year={currentYear}
-									month={currentMonth}
-									onYearChange={setCurrentYear}
-									onMonthChange={setCurrentMonth}
-									styleMode={styleMode}
-									legend={
-										dataExtremes ? (
-											<Legend
-												extremes={dataExtremes}
-												unit={getVariableUnit(currentVariableValue)}
-											/>
-										) : (
-											<div />
-										)
-									}
-								/>
-							</div>
-						)}
-
 						{/* Advanced Timeline Selector - Now supports mobile */}
-						{styleMode !== "unchanged" && (
-							<AdvancedTimelineSelector
-								year={currentYear}
-								month={currentMonth}
-								onYearChange={setCurrentYear}
-								onMonthChange={setCurrentMonth}
-								onZoomIn={handleZoomIn}
-								onZoomOut={handleZoomOut}
-								onResetZoom={handleResetZoom}
-								onLocationFind={handleLocationFind}
-								onScreenshot={handleScreenshot}
-								onModelInfo={handleModelInfo}
-								onAbout={handleAbout}
-								colorScheme={styleMode === "purple" ? "purple" : "red"}
-								map={map}
-								screenshoter={screenshoter}
-								legend={
-									dataExtremes ? (
-										<Legend
-											extremes={dataExtremes}
-											unit={getVariableUnit(currentVariableValue)}
-										/>
-									) : (
-										<div />
-									)
-								}
-							/>
-						)}
+						<AdvancedTimelineSelector
+							year={currentYear}
+							month={currentMonth}
+							onYearChange={setCurrentYear}
+							onMonthChange={setCurrentMonth}
+							onZoomIn={handleZoomIn}
+							onZoomOut={handleZoomOut}
+							onResetZoom={handleResetZoom}
+							onLocationFind={handleLocationFind}
+							onScreenshot={handleScreenshot}
+							onModelInfo={handleModelInfo}
+							onAbout={handleAbout}
+							colorScheme="purple"
+							map={map}
+							screenshoter={screenshoter}
+							legend={
+								dataExtremes ? (
+									<Legend
+										extremes={dataExtremes}
+										unit={getVariableUnit(currentVariableValue)}
+									/>
+								) : (
+									<div />
+								)
+							}
+						/>
 
 						{/* Mobile ControlBar stays in original position */}
 						{isMobile && (
@@ -1607,7 +1553,6 @@ const ClimateMap = ({ onMount = () => true }) => {
 								map={map}
 								selectedModel={selectedModel}
 								onModelSelect={handleModelSelect}
-								styleMode={styleMode}
 							/>
 						)}
 					</div>

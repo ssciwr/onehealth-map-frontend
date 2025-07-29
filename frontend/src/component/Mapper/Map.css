@@ -194,6 +194,82 @@
 	transition: all 0.2s;
 }
 
+/* Mobile modal button overrides for purple/red modes */
+@media (max-width: 768px) {
+	/* Make optimism selector full width on mobile */
+	[data-testid="optimism-selector"] .model-selector {
+		width: 100% !important;
+	}
+
+	[data-testid="optimism-selector"] .model-selector-button {
+		width: 100% !important;
+		display: block !important;
+		text-align: left !important;
+	}
+
+	/* Fix ALL model selector buttons - including OptimismSelector */
+	[data-theme="purple"] .model-selector-button,
+	[data-theme="red"] .model-selector-button,
+	[data-theme="purple"]
+		[data-testid="optimism-selector"]
+		.model-selector-button,
+	[data-theme="red"] [data-testid="optimism-selector"] .model-selector-button {
+		background: white !important;
+		color: #172b4d !important;
+		border: 1px solid #dfe1e6 !important;
+	}
+
+	/* Fix chevron color on mobile */
+	[data-theme="purple"] .model-selector-button .chevron,
+	[data-theme="red"] .model-selector-button .chevron,
+	[data-theme="purple"]
+		[data-testid="optimism-selector"]
+		.model-selector-button
+		.chevron,
+	[data-theme="red"]
+		[data-testid="optimism-selector"]
+		.model-selector-button
+		.chevron {
+		color: #172b4d !important;
+	}
+
+	[data-theme="purple"] .model-selector-button:hover,
+	[data-theme="red"] .model-selector-button:hover,
+	[data-theme="purple"]
+		[data-testid="optimism-selector"]
+		.model-selector-button:hover,
+	[data-theme="red"]
+		[data-testid="optimism-selector"]
+		.model-selector-button:hover {
+		background: #f4f5f7 !important;
+		color: #172b4d !important;
+		border-color: #c1c7d0 !important;
+	}
+
+	/* Fix modal dropdown background and items */
+	[data-theme="purple"] .model-dropdown,
+	[data-theme="red"] .model-dropdown {
+		background: white !important;
+	}
+
+	[data-theme="purple"] .virus-item,
+	[data-theme="red"] .virus-item {
+		background: white !important;
+		color: #172b4d !important;
+	}
+
+	[data-theme="purple"] .virus-item:hover,
+	[data-theme="red"] .virus-item:hover {
+		background: #f4f5f7 !important;
+	}
+
+	[data-theme="purple"] .virus-item.selected,
+	[data-theme="red"] .virus-item.selected {
+		background: #deebff !important;
+		color: #172b4d !important;
+	}
+}
+
 .model-selector-button:hover {
 	background: #8a0000 !important;
 	border-color: #c1c7d0;
@@ -219,7 +295,6 @@
 .model-dropdown {
 	position: absolute;
 	top: 100%;
-	right: 0;
 	margin-top: 0.5rem;
 	background: white;
 	border: 1px solid #dfe1e6;

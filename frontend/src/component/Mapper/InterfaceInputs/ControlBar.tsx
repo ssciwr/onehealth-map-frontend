@@ -73,7 +73,6 @@ interface ControlBarProps {
 	position?: ControlBarLocation;
 	selectedModel?: string;
 	onModelSelect?: (modelId: string) => void;
-	styleMode?: "unchanged" | "purple" | "red";
 }
 
 const ControlBar = ({
@@ -81,7 +80,6 @@ const ControlBar = ({
 	position = CONTROL_BAR_LOCATIONS.BOTTOM_RIGHT,
 	selectedModel,
 	onModelSelect,
-	styleMode = "unchanged",
 }: ControlBarProps) => {
 	const [isLocating, setIsLocating] = useState<boolean>(false);
 	const [isSaving, setIsSaving] = useState<boolean>(false);
@@ -363,21 +361,12 @@ const ControlBar = ({
 
 	const circularButtonSize = 24;
 
-	// Get button styles based on styleMode
+	// Get button styles - always purple
 	const getButtonStyle = () => {
-		if (styleMode === "purple") {
-			return {
-				backgroundColor: "#667eea",
-				background: "#6d63c8",
-			};
-		}
-		if (styleMode === "red") {
-			return {
-				backgroundColor: "#ff6b6b",
-				background: "#ff2659",
-			};
-		}
-		return {}; // Default styling from CSS
+		return {
+			backgroundColor: "#667eea",
+			background: "#6d63c8",
+		};
 	};
 
 	const getControlBarClasses = () => {

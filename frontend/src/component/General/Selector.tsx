@@ -64,7 +64,9 @@ const Selector: React.FC<SelectorProps> = ({
 			>
 				<div className="flex items-center gap-sm">
 					{selectedItem?.emoji && (
-						<span className="white-icon-bg"> {selectedItem.emoji}</span>
+						<span className="white-icon-bg">
+							&nbsp;{selectedItem.emoji}&nbsp;
+						</span>
 					)}
 					{selectedItem?.icon && (
 						<selectedItem.icon className="icon" size={18} />

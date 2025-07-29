@@ -21,7 +21,6 @@ interface AntdTimelineSelectorProps {
 	onYearChange: (value: number) => void;
 	onMonthChange: (value: Month) => void;
 	legend?: ReactNode;
-	styleMode?: "unchanged" | "purple" | "red";
 }
 
 const TimelineSelector: React.FC<AntdTimelineSelectorProps> = ({
@@ -30,7 +29,6 @@ const TimelineSelector: React.FC<AntdTimelineSelectorProps> = ({
 	onYearChange,
 	onMonthChange,
 	legend,
-	styleMode = "unchanged",
 }) => {
 	const location = useLocation();
 	const isAdvanced = location.pathname.includes("/advanced");
@@ -157,20 +155,9 @@ const TimelineSelector: React.FC<AntdTimelineSelectorProps> = ({
 											justifyContent: "center",
 											padding: "0",
 											fontSize: "14px",
-											color:
-												year <= 1960
-													? "#bfbfbf"
-													: styleMode !== "unchanged"
-														? "white"
-														: "#595959",
-											borderColor:
-												styleMode !== "unchanged"
-													? "rgba(255, 255, 255, 0.3)"
-													: "#d9d9d9",
-											backgroundColor:
-												styleMode !== "unchanged"
-													? "rgba(255, 255, 255, 0.1)"
-													: "transparent",
+											color: year <= 1960 ? "#bfbfbf" : "white",
+											borderColor: "rgba(255, 255, 255, 0.3)",
+											backgroundColor: "rgba(255, 255, 255, 0.1)",
 										}}
 									/>
 								)}
@@ -198,20 +185,9 @@ const TimelineSelector: React.FC<AntdTimelineSelectorProps> = ({
 											justifyContent: "center",
 											padding: "0",
 											fontSize: "14px",
-											color:
-												year >= 2100
-													? "#bfbfbf"
-													: styleMode !== "unchanged"
-														? "white"
-														: "#595959",
-											borderColor:
-												styleMode !== "unchanged"
-													? "rgba(255, 255, 255, 0.3)"
-													: "#d9d9d9",
-											backgroundColor:
-												styleMode !== "unchanged"
-													? "rgba(255, 255, 255, 0.1)"
-													: "transparent",
+											color: year >= 2100 ? "#bfbfbf" : "white",
+											borderColor: "rgba(255, 255, 255, 0.3)",
+											backgroundColor: "rgba(255, 255, 255, 0.1)",
 										}}
 									/>
 								)}
@@ -262,35 +238,22 @@ const TimelineSelector: React.FC<AntdTimelineSelectorProps> = ({
 											included={false}
 											onChange={onYearChange}
 											trackStyle={{
-												background:
-													styleMode !== "unchanged" ? "white" : "transparent",
+												background: "white",
 											}}
 											railStyle={{
-												background:
-													styleMode !== "unchanged"
-														? "rgba(255, 255, 255, 0.9)"
-														: "var(--primary)",
-												height: styleMode !== "unchanged" ? "8px" : undefined,
-												borderRadius:
-													styleMode !== "unchanged" ? "4px" : undefined,
+												background: "rgba(255, 255, 255, 0.9)",
+												height: "8px",
+												borderRadius: "4px",
 											}}
-											handleStyle={
-												styleMode !== "unchanged"
-													? {
-															borderColor: "rgba(0, 0, 0, 0.2)",
-															backgroundColor: "white",
-															boxShadow:
-																"0 4px 16px rgba(0, 0, 0, 0.3), 0 0 0 2px rgba(0, 0, 0, 0.1)",
-															width: "28px",
-															height: "28px",
-															marginTop: "-10px",
-														}
-													: {
-															borderColor: "#1890ff",
-															backgroundColor: "#1890ff",
-															boxShadow: "0 2px 6px rgba(24, 144, 255, 0.3)",
-														}
-											}
+											handleStyle={{
+												borderColor: "rgba(0, 0, 0, 0.2)",
+												backgroundColor: "white",
+												boxShadow:
+													"0 4px 16px rgba(0, 0, 0, 0.3), 0 0 0 2px rgba(0, 0, 0, 0.1)",
+												width: "28px",
+												height: "28px",
+												marginTop: "-10px",
+											}}
 											style={{ width: "100%" }}
 										/>
 									</Tooltip>
@@ -330,7 +293,7 @@ const TimelineSelector: React.FC<AntdTimelineSelectorProps> = ({
 				</div>
 
 				{/* Custom CSS for styled modes */}
-				{styleMode !== "unchanged" && !isMobile && (
+				{true && !isMobile && (
 					<style>
 						{`
 							/* White slider styling for styled modes */
@@ -380,7 +343,7 @@ const TimelineSelector: React.FC<AntdTimelineSelectorProps> = ({
 				)}
 
 				{/* Default red styling for unchanged mode */}
-				{styleMode === "unchanged" && !isMobile && (
+				{false && !isMobile && (
 					<style>
 						{`
 							/* Red slider styling for unchanged mode */
