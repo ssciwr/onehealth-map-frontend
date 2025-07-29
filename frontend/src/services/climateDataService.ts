@@ -48,9 +48,7 @@ export async function fetchClimateData(
 	);
 
 	try {
-		// Get API URL from environment variable, fallback to localhost
-		const apiBaseUrl = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
-		const apiUrl = `${apiBaseUrl}/cartesian?requested_time_point=${requestedTimePoint}&requested_variable_value=${requestedVariableValue}`;
+		const apiUrl = `/api/cartesian?requested_time_point=${requestedTimePoint}&requested_variable_value=${requestedVariableValue}`;
 
 		console.log(`Calling API: ${apiUrl}`);
 
