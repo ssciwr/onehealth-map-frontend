@@ -1,6 +1,8 @@
 services:
   frontend:
-    image: ghcr.io/ssciwr/onehealth-map-frontend:global_map_with_month_selector
+    build:
+      context: .
+      dockerfile: Dockerfile
     ports:
       - "80:80"
       - "443:443"
