@@ -1,8 +1,6 @@
 services:
   frontend:
-    image: ghcr.io/ssciwr/onehealth-map-frontend:main
-    build:
-      context: ./frontend
+    image: ghcr.io/ssciwr/onehealth-map-frontend:global_map_with_month_selector
     ports:
       - "80:80"
       - "443:443"
