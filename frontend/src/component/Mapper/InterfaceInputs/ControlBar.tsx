@@ -359,7 +359,7 @@ const ControlBar = ({
 		setIsMinimized(!isMinimized);
 	};
 
-	const circularButtonSize = 24;
+	const circularButtonSize = 18;
 
 	// Get button styles - always purple
 	const getButtonStyle = () => {

@@ -102,6 +102,27 @@ const ClimateMap = ({ onMount = () => true }) => {
 		document.documentElement.setAttribute("data-theme", "purple");
 	}, []);
 
+	// Handle popup close button clicks
+	useEffect(() => {
+		const handlePopupClose = (event: Event) => {
+			const target = event.target as HTMLElement;
+			if (target?.classList.contains("popup-close-btn")) {
+				event.preventDefault();
+				event.stopPropagation();
+				if (map) {
+					map.closePopup();
+				}
+			}
+		};
+
+		// Add event listener to document for event delegation
+		document.addEventListener("click", handlePopupClose);
+
+		return () => {
+			document.removeEventListener("click", handlePopupClose);
+		};
+	}, [map]);
+
 	// Initialize screenshoter when map is ready
 	useEffect(() => {
 		if (map && !screenshoter) {
@@ -1246,48 +1267,11 @@ const ClimateMap = ({ onMount = () => true }) => {
 			} = properties;
 			const displayName = countryName || WORLDWIDE_ID || "Unknown Country";
 
-			const dataSource = isFallback
-				? "Nearest point"
-				: pointCount && pointCount > 0
-					? `${pointCount} data points`
-					: "Calculated";
-
-			// Build coordinate information for fallback case
-			let coordinateInfo = "";
-			if (isFallback && currentPosition && nearestDataPoint) {
-				coordinateInfo = `
-          <p><strong>Current Position:</strong> ${currentPosition.lat.toFixed(3)}, ${currentPosition.lng.toFixed(3)}</p>
-          <p><strong>Nearest Data Point:</strong> ${nearestDataPoint.lat.toFixed(3)}, ${nearestDataPoint.lng.toFixed(3)}</p>
-        `;
-			}
-
-			// Build data points list (first 3)
-			let dataPointsList = "";
-			if (dataPoints && dataPoints.length > 0) {
-				const pointsToShow = dataPoints.slice(0, 3);
-				const pointsListItems = pointsToShow
-					.map(
-						(point) =>
-							`<li>[${point.lat.toFixed(3)}, ${point.lng.toFixed(3)}, ${getFormattedVariableValue(currentVariableValue, point.temperature)}]</li>`,
-					)
-					.join("");
-				dataPointsList = `
-          <p><strong>Data Points:</strong></p>
-          <ul style="margin: 0; padding-left: 15px;">
-            ${pointsListItems}
-          </ul>
-        `;
-			}
-
 			const popupContent = `
         <div class="worldwide-popup">
+          <button class="popup-close-btn" aria-label="Close popup">×</button>
           <h4>${displayName}</h4>
           <p><strong>${getVariableDisplayName(currentVariableValue)}:</strong> ${intensity !== null && intensity !== undefined ? getFormattedVariableValue(currentVariableValue, intensity) : "N/A"}</p>
-          <p><strong>Data Source:</strong> ${dataSource}</p>
-          ${isFallback ? `<p><small style="color: #666;">⚠️ Using nearest available data point</small></p>` : ""}
-          ${coordinateInfo}
-          ${dataPointsList}
-          <p><small>Region: ${WORLDWIDE_ID || "N/A"}</small></p>
         </div>
       `;
 			(layer as L.Layer & { bindPopup: (content: string) => void }).bindPopup(
@@ -1339,49 +1323,11 @@ const ClimateMap = ({ onMount = () => true }) => {
 						? "Country"
 						: "Region";
 
-			const dataSource = isFallback
-				? "Nearest point"
-				: pointCount && pointCount > 0
-					? `${pointCount} data points`
-					: "Calculated";
-
-			// Build coordinate information for fallback case
-			let coordinateInfo = "";
-			if (isFallback && currentPosition && nearestDataPoint) {
-				coordinateInfo = `
-          <p><strong>Current Position:</strong> ${currentPosition.lat.toFixed(3)}, ${currentPosition.lng.toFixed(3)}</p>
-          <p><strong>Nearest Data Point:</strong> ${nearestDataPoint.lat.toFixed(3)}, ${nearestDataPoint.lng.toFixed(3)}</p>
-        `;
-			}
-
-			// Build data points list (first 3)
-			let dataPointsList = "";
-			if (dataPoints && dataPoints.length > 0) {
-				const pointsToShow = dataPoints.slice(0, 3);
-				const pointsListItems = pointsToShow
-					.map(
-						(point) =>
-							`<li>[${point.lat.toFixed(3)}, ${point.lng.toFixed(3)}, ${getFormattedVariableValue(currentVariableValue, point.temperature)}]</li>`,
-					)
-					.join("");
-				dataPointsList = `
-          <p><strong>Data Points:</strong></p>
-          <ul style="margin: 0; padding-left: 15px;">
-            ${pointsListItems}
-          </ul>
-        `;
-			}
-
 			const popupContent = `
         <div class="europe-only-popup">
-          <h4>${regionType}: ${displayName}</h4>
+          <button class="popup-close-btn" aria-label="Close popup">×</button>
+          <h4>${displayName}</h4>
           <p><strong>${getVariableDisplayName(currentVariableValue)}:</strong> ${intensity !== null && intensity !== undefined ? getFormattedVariableValue(currentVariableValue, intensity) : "N/A"}</p>
-          <p><strong>Data Source:</strong> ${dataSource}</p>
-          ${isFallback ? `<p><small style="color: #666;">⚠️ Using nearest available data point</small></p>` : ""}
-          ${isModelData ? `<p><small style="color: #007acc;">📊 Model data</small></p>` : ""}
-          ${coordinateInfo}
-          ${dataPointsList}
-          <p><small>Region ID: ${NUTS_ID || "N/A"}</small></p>
         </div>
       `;
 			(layer as L.Layer & { bindPopup: (content: string) => void }).bindPopup(

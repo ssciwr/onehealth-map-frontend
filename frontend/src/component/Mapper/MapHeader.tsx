@@ -55,7 +55,7 @@ export default ({
 					>
 						<img
 							alt="OneHealth Logo - two objects on either side that appear to be holding a circular shape inbetween the them"
-							style={{ height: "42px", width: "42px" }}
+							style={{ height: "30px", width: "30px" }}
 							src="/images/oneHealthLogoOnlySymbols.png"
 						/>
 
