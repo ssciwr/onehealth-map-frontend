@@ -151,8 +151,8 @@ h1 {
 }
 
 .btn-icon {
-	width: 57px;
-	height: 57px;
+	width: 42px;
+	height: 42px;
 	background-color: #db3c1c;
 	border: none;
 	border-radius: var(--radius-full);

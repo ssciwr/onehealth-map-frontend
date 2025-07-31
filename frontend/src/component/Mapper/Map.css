@@ -407,6 +407,34 @@
 .leaflet-popup-content-wrapper {
 	border-radius: 0.5rem;
 	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+	z-index: 10000 !important;
+}
+
+.popup-close-btn {
+	position: absolute;
+	top: 8px;
+	right: 8px;
+	background: rgba(255, 255, 255, 0.9);
+	border: 1px solid #ddd;
+	border-radius: 50%;
+	width: 24px;
+	height: 24px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	font-size: 16px;
+	font-weight: bold;
+	color: #666;
+	transition: all 0.2s ease;
+	z-index: 10001;
+}
+
+.popup-close-btn:hover {
+	background: #fff;
+	color: #333;
+	border-color: #999;
+	transform: scale(1.1);
 }
 
 .leaflet-popup-content {

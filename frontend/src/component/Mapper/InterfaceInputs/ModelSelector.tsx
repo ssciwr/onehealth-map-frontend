@@ -216,7 +216,7 @@ const ModelSelector = ({
 	// Create display text with proper truncation
 	const getDisplayText = (modelData: Model) => {
 		const fullText = `${modelData.title} - ${modelData.modelName}`;
-		return truncateText(fullText, isMobile ? 20 : 30);
+		return truncateText(fullText, isMobile ? 12 : 30);
 	};
 
 	if (isMobile) {
@@ -233,7 +233,7 @@ const ModelSelector = ({
 						borderRadius: "8px",
 						color: "var(--text-primary)",
 						height: "auto",
-						maxWidth: "200px",
+						maxWidth: "140px",
 					}}
 					loading={loading}
 					onClick={() => setIsDetailsModalOpen(true)}
