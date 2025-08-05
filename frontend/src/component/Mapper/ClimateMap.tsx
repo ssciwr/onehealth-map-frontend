@@ -84,6 +84,9 @@ const ClimateMap = ({ onMount = () => true }) => {
 	const [mapMode, setMapMode] = useState<"grid" | "worldwide" | "europe-only">(
 		"europe-only",
 	);
+	const [borderStyle, setBorderStyle] = useState<
+		"white" | "light-gray" | "black" | "half-opacity" | "black-80"
+	>("white");
 	const [hoverTimeout, setHoverTimeout] = useState<NodeJS.Timeout | null>(null);
 	const [currentHoveredLayer, setCurrentHoveredLayer] =
 		useState<L.Layer | null>(null);
@@ -1116,15 +1119,60 @@ const ClimateMap = ({ onMount = () => true }) => {
 	const worldwideStyle = (feature: GeoJSON.Feature) => {
 		if (!feature || !feature.properties) return {};
 
-		const properties = feature.properties as { intensity?: number };
+		const properties = feature.properties as {
+			intensity?: number;
+			type_en?: string;
+			admin?: string;
+			name?: string;
+		};
+
+		// Determine if this is a country or subregion
+		// Countries typically have type_en === "Country" or similar admin level indicators
+		const isCountry =
+			properties.type_en === "Country" ||
+			!properties.admin ||
+			properties.admin === properties.name;
+
+		// Set border weight: countries get thicker borders, subregions get thinner
+		const borderWeight = isCountry ? 3 : 1.5;
+
+		// Get border color and opacity based on selected style
+		let borderColor: string;
+		let borderOpacity: number;
+
+		switch (borderStyle) {
+			case "white":
+				borderColor = "white";
+				borderOpacity = 1;
+				break;
+			case "light-gray":
+				borderColor = "#999999";
+				borderOpacity = 1;
+				break;
+			case "black":
+				borderColor = "#000000";
+				borderOpacity = 1;
+				break;
+			case "half-opacity":
+				borderColor = "white";
+				borderOpacity = 0.5;
+				break;
+			case "black-80":
+				borderColor = "#000000";
+				borderOpacity = 0.8;
+				break;
+			default:
+				borderColor = "white";
+				borderOpacity = 1;
+		}
 
 		return {
 			fillColor: dataExtremes
 				? getColorFromGradient(properties.intensity || 0, dataExtremes)
 				: "#cccccc",
-			weight: 2,
-			opacity: 1,
-			color: "white",
+			weight: borderWeight,
+			opacity: borderOpacity,
+			color: borderColor,
 			dashArray: "",
 			fillOpacity: 0.8,
 		};
@@ -1255,16 +1303,7 @@ const ClimateMap = ({ onMount = () => true }) => {
 				nearestDataPoint?: { lat: number; lng: number };
 				dataPoints?: Array<{ lat: number; lng: number; temperature: number }>;
 			};
-			const {
-				WORLDWIDE_ID,
-				intensity,
-				countryName,
-				pointCount,
-				isFallback,
-				currentPosition,
-				nearestDataPoint,
-				dataPoints,
-			} = properties;
+			const { WORLDWIDE_ID, intensity, countryName } = properties;
 			const displayName = countryName || WORLDWIDE_ID || "Unknown Country";
 
 			const popupContent = `
@@ -1302,26 +1341,8 @@ const ClimateMap = ({ onMount = () => true }) => {
 				nearestDataPoint?: { lat: number; lng: number };
 				dataPoints?: Array<{ lat: number; lng: number; temperature: number }>;
 			};
-			const {
-				NUTS_ID,
-				intensity,
-				countryName,
-				pointCount,
-				nutsLevel,
-				isFallback,
-				isModelData,
-				currentPosition,
-				nearestDataPoint,
-				dataPoints,
-			} = properties;
+			const { NUTS_ID, intensity, countryName } = properties;
 			const displayName = countryName || NUTS_ID || "Unknown Region";
-
-			const regionType =
-				nutsLevel === 2
-					? "NUTS 2 Region"
-					: nutsLevel === 0
-						? "Country"
-						: "Region";
 
 			const popupContent = `
         <div class="europe-only-popup">
@@ -1347,6 +1368,8 @@ const ClimateMap = ({ onMount = () => true }) => {
 					getOptimismLevels={getOptimismLevels}
 					mapMode={mapMode}
 					onMapModeChange={setMapMode}
+					borderStyle={borderStyle}
+					onBorderStyleChange={setBorderStyle}
 				/>
 
 				<div className="map-content-wrapper">

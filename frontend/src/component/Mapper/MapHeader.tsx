@@ -18,6 +18,10 @@ interface MapHeaderProps {
 	getOptimismLevels: () => string[];
 	mapMode?: "grid" | "worldwide" | "europe-only";
 	onMapModeChange?: (mode: "grid" | "worldwide" | "europe-only") => void;
+	borderStyle?: "white" | "light-gray" | "black" | "half-opacity" | "black-80";
+	onBorderStyleChange?: (
+		style: "white" | "light-gray" | "black" | "half-opacity" | "black-80",
+	) => void;
 }
 
 export default ({
@@ -28,6 +32,8 @@ export default ({
 	getOptimismLevels,
 	mapMode = "europe-only",
 	onMapModeChange,
+	borderStyle = "white",
+	onBorderStyleChange,
 }: MapHeaderProps) => {
 	const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
@@ -101,6 +107,23 @@ export default ({
 							/>
 						</div>
 					</div>
+					{mapMode === "worldwide" && onBorderStyleChange && (
+						<div style={{ marginBottom: "24px" }}>
+							<h4>Border Style</h4>
+							<Select
+								value={borderStyle}
+								onChange={onBorderStyleChange}
+								style={{ width: "100%" }}
+								size="large"
+							>
+								<Option value="white">White Borders</Option>
+								<Option value="light-gray">Light Gray Borders</Option>
+								<Option value="black">Black Borders</Option>
+								<Option value="black-80">Black 80% Borders</Option>
+								<Option value="half-opacity">Half Opacity Borders</Option>
+							</Select>
+						</div>
+					)}
 				</div>
 			</Modal>
 		</div>
@@ -269,6 +292,38 @@ export default ({
 							<Option value="grid">Grid</Option>
 						</Select>
 					</div>
+					{mapMode === "worldwide" && onBorderStyleChange && (
+						<div
+							className="glass-button"
+							style={{
+								display: "flex",
+								alignItems: "center",
+								gap: "10px",
+								padding: "12px 16px",
+								background: "rgba(255, 255, 255, 0.2)",
+								border: "1px solid rgba(255, 255, 255, 0.3)",
+								borderRadius: "12px",
+								backdropFilter: "blur(10px)",
+								transition: "all 0.3s ease",
+								color: "white",
+								fontWeight: "500",
+							}}
+						>
+							<span style={{ fontSize: "16px" }}>🖼️</span>
+							<Select
+								value={borderStyle}
+								onChange={onBorderStyleChange}
+								style={{ minWidth: 100 }}
+								size="middle"
+							>
+								<Option value="white">White</Option>
+								<Option value="light-gray">Light Gray</Option>
+								<Option value="black">Black</Option>
+								<Option value="black-80">Black 80%</Option>
+								<Option value="half-opacity">Half Opacity</Option>
+							</Select>
+						</div>
+					)}
 					<small
 						className="tertiary glass-button"
 						style={{
