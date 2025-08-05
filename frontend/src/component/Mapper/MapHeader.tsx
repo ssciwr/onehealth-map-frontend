@@ -137,7 +137,7 @@ export default ({
 				right: 0,
 				background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
 				boxShadow: "0 8px 32px rgba(0, 0, 0, 0.25)",
-				zIndex: 1001,
+				zIndex: 999,
 				backdropFilter: "blur(20px)",
 				borderBottom: "1px solid rgba(255, 255, 255, 0.2)",
 				margin: 0,

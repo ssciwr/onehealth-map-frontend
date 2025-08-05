@@ -1,6 +1,5 @@
 import { ChevronDown, Info } from "lucide-react";
-import type React from "react";
-import { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { isMobile } from "react-device-detect";
 
 interface SelectorItem {
@@ -40,8 +39,37 @@ const Selector: React.FC<SelectorProps> = ({
 	onInfoClick,
 }) => {
 	const [isOpen, setIsOpen] = useState(false);
+	const selectorRef = useRef<HTMLSpanElement>(null);
 
 	const selectedItem = items.find((item) => item.id === selectedId);
+
+	// Handle click outside to close dropdown
+	useEffect(() => {
+		const handleClickOutside = (event: MouseEvent) => {
+			if (
+				selectorRef.current &&
+				!selectorRef.current.contains(event.target as Node)
+			) {
+				setIsOpen(false);
+			}
+		};
+
+		const handleEscapeKey = (event: KeyboardEvent) => {
+			if (event.key === "Escape") {
+				setIsOpen(false);
+			}
+		};
+
+		if (isOpen) {
+			document.addEventListener("mousedown", handleClickOutside);
+			document.addEventListener("keydown", handleEscapeKey);
+		}
+
+		return () => {
+			document.removeEventListener("mousedown", handleClickOutside);
+			document.removeEventListener("keydown", handleEscapeKey);
+		};
+	}, [isOpen]);
 
 	const handleSelect = (id: string) => {
 		onSelect(id);
@@ -55,8 +83,32 @@ const Selector: React.FC<SelectorProps> = ({
 		}
 	};
 
+	// Wrap footerAction to automatically close dropdown when clicked
+	const wrappedFooterAction =
+		footerAction && React.isValidElement(footerAction)
+			? React.cloneElement(
+					footerAction as React.ReactElement<{
+						onClick?: (e: React.MouseEvent) => void;
+					}>,
+					{
+						onClick: (e: React.MouseEvent) => {
+							// Call original onClick if it exists
+							if (footerAction.props.onClick) {
+								footerAction.props.onClick(e);
+							}
+							// Always close the dropdown
+							setIsOpen(false);
+						},
+					},
+				)
+			: footerAction;
+
 	return (
-		<span className={`model-selector ${className}`} style={style}>
+		<span
+			ref={selectorRef}
+			className={`model-selector ${className}`}
+			style={style}
+		>
 			<button
 				type="button"
 				className="model-selector-button header-font-size"
@@ -144,7 +196,7 @@ const Selector: React.FC<SelectorProps> = ({
 					{(footerText || footerAction) && (
 						<div className="model-footer">
 							{footerText && <span>{footerText}</span>}
-							{footerAction}
+							{wrappedFooterAction}
 						</div>
 					)}
 				</div>
