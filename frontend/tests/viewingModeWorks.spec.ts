@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import "./setup/global-setup";
 
 test("Expert mode can be selected from modal on /map", async ({ page }) => {
 	const userAgent = await page.evaluate(() => navigator.userAgent);

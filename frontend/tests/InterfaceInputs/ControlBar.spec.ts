@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import "../setup/global-setup";
 
 test.describe("ControlBar Component", () => {
 	test.beforeEach(async ({ page }) => {

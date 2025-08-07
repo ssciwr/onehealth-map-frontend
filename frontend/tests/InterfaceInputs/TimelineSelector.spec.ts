@@ -1,6 +1,7 @@
 // tests/map-color-change-comprehensive.spec.js
 import { expect, test } from "@playwright/test";
 import { skipIfMobile } from "../utils";
+import "../setup/global-setup";
 
 // Test works locally
 test.describe("Comprehensive Grid Color Analysis - Desktop Only", () => {
