@@ -543,8 +543,8 @@ const ControlBar = ({
 							alignItems: "center",
 							gap: "8px",
 							padding: "8px 20px",
-							backgroundColor: "#db3c1c",
-							border: "1px solid #db3c1c",
+							backgroundColor: "var(--primary)",
+							border: "1px solid var(--primary)",
 							borderRadius: "0.5rem",
 							cursor: "pointer",
 							fontSize: "18px",
@@ -558,12 +558,12 @@ const ControlBar = ({
 						onMouseEnter={(e) => {
 							if (selectedModel && models.length > 0) {
 								e.currentTarget.style.backgroundColor = "#8a0000";
-								e.currentTarget.style.borderColor = "#8a0000";
+								e.currentTarget.style.borderColor = "var(--primary-hover)";
 							}
 						}}
 						onMouseLeave={(e) => {
-							e.currentTarget.style.backgroundColor = "#db3c1c";
-							e.currentTarget.style.borderColor = "#db3c1c";
+							e.currentTarget.style.backgroundColor = "var(--primary)";
+							e.currentTarget.style.borderColor = "var(--primary)";
 						}}
 						title="View detailed information about disease models"
 					>
@@ -580,8 +580,8 @@ const ControlBar = ({
 							alignItems: "center",
 							gap: "8px",
 							padding: "8px 20px",
-							backgroundColor: "#db3c1c",
-							border: "1px solid #db3c1c",
+							backgroundColor: "var(--primary)",
+							border: "1px solid var(--primary)",
 							borderRadius: "0.5rem",
 							cursor: "pointer",
 							fontSize: "18px",
@@ -595,12 +595,12 @@ const ControlBar = ({
 						onMouseEnter={(e) => {
 							if (!isSaving && screenshoter) {
 								e.currentTarget.style.backgroundColor = "#8a0000";
-								e.currentTarget.style.borderColor = "#8a0000";
+								e.currentTarget.style.borderColor = "var(--primary-hover)";
 							}
 						}}
 						onMouseLeave={(e) => {
-							e.currentTarget.style.backgroundColor = "#db3c1c";
-							e.currentTarget.style.borderColor = "#db3c1c";
+							e.currentTarget.style.backgroundColor = "var(--primary)";
+							e.currentTarget.style.borderColor = "var(--primary)";
 						}}
 						title={
 							!screenshoter
@@ -621,8 +621,8 @@ const ControlBar = ({
 							alignItems: "center",
 							gap: "8px",
 							padding: "8px 20px",
-							backgroundColor: "#db3c1c",
-							border: "1px solid #db3c1c",
+							backgroundColor: "var(--primary)",
+							border: "1px solid var(--primary)",
 							borderRadius: "0.5rem",
 							cursor: "pointer",
 							fontSize: "18px",
@@ -634,11 +634,11 @@ const ControlBar = ({
 						}}
 						onMouseEnter={(e) => {
 							e.currentTarget.style.backgroundColor = "#8a0000";
-							e.currentTarget.style.borderColor = "#8a0000";
+							e.currentTarget.style.borderColor = "var(--primary-hover)";
 						}}
 						onMouseLeave={(e) => {
-							e.currentTarget.style.backgroundColor = "#db3c1c";
-							e.currentTarget.style.borderColor = "#db3c1c";
+							e.currentTarget.style.backgroundColor = "var(--primary)";
+							e.currentTarget.style.borderColor = "var(--primary)";
 						}}
 						title="About this application and team"
 					>

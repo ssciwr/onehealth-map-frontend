@@ -139,7 +139,7 @@ const Selector: React.FC<SelectorProps> = ({
 					</div>
 
 					<div className="virus-list">
-						{items.map((item) => (
+						{items.slice(0, 5).map((item) => (
 							<button
 								type="button"
 								key={item.id}

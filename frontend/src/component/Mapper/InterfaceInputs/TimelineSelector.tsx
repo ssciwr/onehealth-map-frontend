@@ -341,46 +341,6 @@ const TimelineSelector: React.FC<AntdTimelineSelectorProps> = ({
 						`}
 					</style>
 				)}
-
-				{/* Default red styling for unchanged mode */}
-				{false && !isMobile && (
-					<style>
-						{`
-							/* Red slider styling for unchanged mode */
-							.ant-slider .ant-slider-rail {
-								background: #db3c1c !important;
-								box-shadow: 0 2px 8px rgba(219, 60, 28, 0.3) !important;
-								border-radius: 10px !important;
-							}
-
-							.ant-slider .ant-slider-track {
-								background-color: transparent !important;
-							}
-
-							.ant-slider .ant-slider-handle {
-								border: none !important;
-								background: #db3c1c !important;
-								box-shadow: 0 3px 12px rgba(165, 39, 78, 0.5) !important;
-								width: 24px !important;
-								height: 24px !important;
-								border-radius: 50% !important;
-								margin-left: -12px !important;
-								margin-top: -7px !important;
-							}
-
-							.ant-slider-handle::before,
-							.ant-slider-handle::after {
-								content: none !important;
-							}
-
-							.ant-slider .ant-slider-handle:hover {
-								background: linear-gradient(45deg, #a5274e, #8b1e3f) !important;
-								box-shadow: 0 4px 16px rgba(165, 39, 78, 0.7) !important;
-								transform: scale(1.1) !important;
-							}
-						`}
-					</style>
-				)}
 			</GeneralCard>
 		</div>
 	);
