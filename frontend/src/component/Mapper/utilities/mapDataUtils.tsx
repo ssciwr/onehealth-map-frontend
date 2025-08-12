@@ -117,7 +117,7 @@ export const Legend = ({
 			return (
 				<>
 					<span style={labelStyle}>
-						{Math.round(extremes.min)}
+						{Math.round(extremes.min)}&nbsp;
 						{unit}
 					</span>
 					{intervals.map((temp) => {
@@ -140,7 +140,7 @@ export const Legend = ({
 						);
 					})}
 					<span style={labelStyle}>
-						{Math.round(extremes.max)}
+						{Math.round(extremes.max)}&nbsp;
 						{unit}
 					</span>
 				</>
@@ -251,8 +251,8 @@ export const Legend = ({
 			return (
 				<>
 					<span style={labelStyle("large")}>
-						{Math.round(extremes.max)}
-						{unit}
+						{Math.round(extremes.max)}&nbsp;
+						<small className="text-gray-800">{unit}</small>
 					</span>
 
 					{sortedIntervals.map((temp) => {
@@ -280,8 +280,8 @@ export const Legend = ({
 							bottom: 0,
 						}}
 					>
-						{Math.round(extremes.min)}
-						{unit}
+						{Math.round(extremes.min)}&nbsp;
+						<small className="text-gray-800">{unit}</small>
 					</span>
 				</>
 			);

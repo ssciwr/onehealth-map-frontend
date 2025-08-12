@@ -551,3 +551,7 @@
 .europe-only-popup {
 	padding: 15px;
 }
+
+.text-gray-800 {
+	color: rgb(110, 110, 110);
+}
