@@ -536,3 +536,65 @@
 .text-gray-800 {
 	color: rgb(110, 110, 110);
 }
+
+/* Mobile Side Buttons */
+.mobile-side-buttons {
+	position: fixed;
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	z-index: 1000;
+	pointer-events: auto;
+}
+
+.mobile-side-buttons-mobile {
+	right: 16px;
+	top: 18%;
+}
+
+.mobile-side-buttons-desktop {
+	right: 16px;
+	top: 18%;
+}
+
+.mobile-side-buttons-bottom-right {
+	right: 16px;
+	top: 18%;
+}
+
+.mobile-side-buttons-top-left {
+	left: 16px;
+	top: 18%;
+}
+
+.mobile-side-buttons .btn-icon {
+	width: 50px;
+	height: 50px;
+	border-radius: 50%;
+	border: none;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+	transition: all 0.2s ease;
+	color: white;
+}
+
+.mobile-side-buttons .btn-icon:hover {
+	transform: scale(1.05);
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.mobile-side-buttons .btn-icon:active {
+	transform: scale(0.95);
+}
+
+.mobile-side-buttons .minimize-button {
+	margin-top: 8px;
+	opacity: 0.8;
+}
+
+.mobile-side-buttons .minimize-button:hover {
+	opacity: 1;
+}

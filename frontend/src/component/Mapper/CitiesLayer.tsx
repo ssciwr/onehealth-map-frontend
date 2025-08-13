@@ -94,11 +94,16 @@ const CitiesLayer = ({ zoom }: CitiesLayerProps) => {
 		const zoomRange = MAX_ZOOM - MIN_ZOOM;
 		const zoomProgress = (zoom - MIN_ZOOM) / zoomRange;
 
-		if (zoomProgress >= 0.9) return 0;
-		if (zoomProgress >= 0.7) return 100000;
-		if (zoomProgress >= 0.5) return 300000;
-		if (zoomProgress >= 0.3) return 1000000;
-		return 5000000;
+		// More granular population thresholds - cities appear earlier
+		if (zoomProgress >= 0.85) return 0; // All cities at highest zoom
+		if (zoomProgress >= 0.75) return 50000; // Small cities (50k+)
+		if (zoomProgress >= 0.65) return 100000; // Medium-small cities (100k+)
+		if (zoomProgress >= 0.55) return 200000; // Medium cities (200k+)
+		if (zoomProgress >= 0.45) return 300000; // Larger cities (300k+)
+		if (zoomProgress >= 0.35) return 500000; // Major cities (500k+) - as requested
+		if (zoomProgress >= 0.25) return 1000000; // Large cities (1M+)
+		if (zoomProgress >= 0.15) return 2000000; // Very large cities (2M+)
+		return 5000000; // Only megacities at furthest zoom
 	};
 
 	const getMarkerSize = (population: number, zoom: number): number => {
@@ -132,7 +137,7 @@ const CitiesLayer = ({ zoom }: CitiesLayerProps) => {
 				<div style="
 					background-color: rgba(255, 255, 255, 0.95);
 					padding: ${paddingVertical}px ${paddingHorizontal}px;
-					border: none;
+					border: 1px solid rgb(32, 32, 32);
 					border-radius: 12px;
 					font-size: ${fontSize}px;
 					font-weight: 600;
@@ -162,11 +167,12 @@ const CitiesLayer = ({ zoom }: CitiesLayerProps) => {
 	const visibleCities = cities.filter((city) => city.population >= threshold);
 
 	return (
-		<Pane name="citiesPane" style={{ zIndex: 100 }}>
-			{visibleCities.map((city) => (
-				<div key={`${city.name}-${city.country}`}>
-					{/* City marker dot */}
+		<>
+			{/* City marker dots - lower z-index */}
+			<Pane name="cityMarkersPane" style={{ zIndex: 100 }}>
+				{visibleCities.map((city) => (
 					<CircleMarker
+						key={`marker-${city.name}-${city.country}`}
 						center={[city.lat, city.lng]}
 						radius={getMarkerSize(city.population, zoom)}
 						fillColor="#ffffff"
@@ -187,15 +193,20 @@ const CitiesLayer = ({ zoom }: CitiesLayerProps) => {
 							</div>
 						</Popup>
 					</CircleMarker>
+				))}
+			</Pane>
 
-					{/* City name label */}
+			{/* City name labels - higher z-index */}
+			<Pane name="cityLabelsPane" style={{ zIndex: 110 }}>
+				{visibleCities.map((city) => (
 					<Marker
+						key={`label-${city.name}-${city.country}`}
 						position={[city.lat, city.lng]}
 						icon={createCityLabelIcon(city.name, zoom)}
 					/>
-				</div>
-			))}
-		</Pane>
+				))}
+			</Pane>
+		</>
 	);
 };
 
