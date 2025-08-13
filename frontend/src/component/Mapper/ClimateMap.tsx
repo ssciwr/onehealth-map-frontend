@@ -7,9 +7,10 @@ import L from "leaflet";
 import ViewportMonitor from "./ViewportMonitor.tsx";
 import "./Map.css";
 import Footer, { AboutContent } from "../../static/Footer.tsx";
+import CitiesLayer from "./CitiesLayer.tsx";
 import ClippedGridLayer from "./ClippedGridLayer.tsx";
 import DebugStatsPanel from "./DebugStatsPanel.tsx";
-import ControlBar from "./InterfaceInputs/ControlBar.tsx";
+import MobileSideButtons from "./InterfaceInputs/MobileSideButtons.tsx";
 import ModelDetailsModal from "./InterfaceInputs/ModelDetailsModal";
 import MapHeader from "./MapHeader.tsx";
 import "leaflet-simple-map-screenshoter";
@@ -75,6 +76,7 @@ const ClimateMap = ({ onMount = () => true }) => {
 	const [isProcessingEuropeOnly, setIsProcessingEuropeOnly] = useState(false);
 	const [isProcessingWorldwide, setIsProcessingWorldwide] = useState(false);
 	const [isLoadingData, setIsLoadingData] = useState(false);
+	const [currentZoom, setCurrentZoom] = useState(3);
 
 	// Natural Earth URL with all countries geometries.
 	const NATURAL_EARTH_URL =
@@ -1013,6 +1015,8 @@ const ClimateMap = ({ onMount = () => true }) => {
 					}
 					return prevResolution;
 				});
+
+				setCurrentZoom(zoom);
 			}
 		},
 		[],
@@ -1471,6 +1475,7 @@ const ClimateMap = ({ onMount = () => true }) => {
 								</Pane>
 							)}
 
+							<CitiesLayer zoom={currentZoom} />
 							<ViewportMonitor onViewportChange={handleViewportChange} />
 						</MapContainer>
 
@@ -1516,9 +1521,9 @@ const ClimateMap = ({ onMount = () => true }) => {
 							}
 						/>
 
-						{/* Mobile ControlBar stays in original position */}
+						{/* Mobile side buttons */}
 						{isMobile && (
-							<ControlBar
+							<MobileSideButtons
 								map={map}
 								selectedModel={selectedModel}
 								onModelSelect={handleModelSelect}

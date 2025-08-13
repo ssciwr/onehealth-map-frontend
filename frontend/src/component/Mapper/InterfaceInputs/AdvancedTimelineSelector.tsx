@@ -249,6 +249,7 @@ const AdvancedTimelineSelector: React.FC<AdvancedTimelineSelectorProps> = ({
 
 	return (
 		<div
+			data-testid="timeline-selector"
 			style={{
 				position: "fixed",
 				bottom: 0,

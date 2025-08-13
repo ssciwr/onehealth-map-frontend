@@ -25,7 +25,8 @@ test.describe("ModelDetailsModal", () => {
 			.or(
 				page.locator('button:has-text("West Nile Virus - Model A17")').first(),
 			) // once loaded
-			.or(page.locator('button:has-text("West Nile Virus - Mo...")').first()); // mobile
+			.or(page.locator('button:has-text("West Nile Virus - Mo...")').first()) // mobile truncation 1
+			.or(page.locator('button:has-text("West Nile Vi...")').first()); // mobile truncation 2
 		// so the data loads in at different speeds when you use parallel tests, the West NIle is the default one.
 		// Data Source only shows until it loads in.
 
