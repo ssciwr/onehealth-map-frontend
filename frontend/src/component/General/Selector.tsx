@@ -93,8 +93,11 @@ const Selector: React.FC<SelectorProps> = ({
 					{
 						onClick: (e: React.MouseEvent) => {
 							// Call original onClick if it exists
-							if (footerAction.props.onClick) {
-								footerAction.props.onClick(e);
+							const typedFooterAction = footerAction as React.ReactElement<{
+								onClick?: (e: React.MouseEvent) => void;
+							}>;
+							if (typedFooterAction.props.onClick) {
+								typedFooterAction.props.onClick(e);
 							}
 							// Always close the dropdown
 							setIsOpen(false);
