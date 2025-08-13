@@ -431,6 +431,7 @@ const MobileSideButtons = ({
 				models={models}
 				selectedModelId={selectedModel || ""}
 				onModelSelect={onModelSelect || (() => {})}
+				showCurrentModelFirst={true}
 			/>
 		</div>
 	);
