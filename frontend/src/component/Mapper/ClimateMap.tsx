@@ -12,7 +12,7 @@ import { useModelData } from "../../hooks/useModelData";
 import { useTemperatureData } from "../../hooks/useTemperatureData";
 import { regionProcessor } from "../../services/RegionProcessor";
 import Footer, { AboutContent } from "../../static/Footer.tsx";
-import { MapInteractionHandlers } from "../../utils/MapInteractionHandlers";
+import * as MapInteractionHandlers from "../../utils/MapInteractionHandlers";
 import DebugStatsPanel from "./DebugStatsPanel.tsx";
 import AdvancedTimelineSelector from "./InterfaceInputs/AdvancedTimelineSelector.tsx";
 import MobileSideButtons from "./InterfaceInputs/MobileSideButtons.tsx";
@@ -21,7 +21,6 @@ import LoadingSkeleton from "./LoadingSkeleton.tsx";
 import MapHeader from "./MapHeader.tsx";
 import MapLayers from "./MapLayers.tsx";
 import NoDataModal from "./NoDataModal.tsx";
-import type { Month } from "./types.ts";
 import { Legend, MAX_ZOOM, MIN_ZOOM } from "./utilities/mapDataUtils";
 import { getVariableUnit } from "./utilities/monthUtils";
 
@@ -100,24 +99,23 @@ const ClimateMap = ({ onMount = () => true }) => {
 	);
 
 	// Use temperature data hook
-	const { handleLoadTemperatureData, loadworldwideRegions } =
-		useTemperatureData({
-			models,
-			selectedModel,
-			currentYear,
-			currentMonth,
-			setTemperatureData,
-			setDataExtremes,
-			setDataBounds,
-			setCurrentVariableValue,
-			setRequestedYear,
-			setLackOfDataModalVisible,
-			setApiErrorMessage,
-			setIsLoadingData,
-			setError,
-			setWorldGeoJSON,
-			setworldwideRegionsGeoJSON,
-		});
+	const { loadworldwideRegions } = useTemperatureData({
+		models,
+		selectedModel,
+		currentYear,
+		currentMonth,
+		setTemperatureData,
+		setDataExtremes,
+		setDataBounds,
+		setCurrentVariableValue,
+		setRequestedYear,
+		setLackOfDataModalVisible,
+		setApiErrorMessage,
+		setIsLoadingData,
+		setError,
+		setWorldGeoJSON,
+		setworldwideRegionsGeoJSON,
+	});
 
 	// Use screenshot hook
 	const { handleScreenshot } = useMapScreenshot({
@@ -257,6 +255,13 @@ const ClimateMap = ({ onMount = () => true }) => {
 		processingError,
 		loadworldwideRegions,
 		currentYear,
+		setConvertedWorldwideGeoJSON,
+		setConvertedEuropeOnlyGeoJSON,
+		setDataExtremes,
+		setIsProcessingEuropeOnly,
+		setIsProcessingWorldwide,
+		setProcessingError,
+		setError,
 	]);
 
 	// Cleanup timeouts on unmount

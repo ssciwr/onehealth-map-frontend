@@ -110,7 +110,6 @@ export class MapStyleService {
 			case "europe-only":
 				return (feature: GeoJSON.Feature | null) =>
 					this.getNutsStyle(feature, dataExtremes);
-			case "grid":
 			default:
 				return () => this.getWorldStyle();
 		}

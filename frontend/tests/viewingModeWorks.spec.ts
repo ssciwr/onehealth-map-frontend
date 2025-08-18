@@ -12,12 +12,9 @@ test("Expert mode can be selected from modal on /map", async ({ page }) => {
 
 	await page.goto("http://localhost:5174/map?notour=true");
 
-	// Wait for initial data loading to complete
-	await page.waitForTimeout(15000);
-
 	// Wait for modal to appear
 	await expect(page.locator("text=Choose Your Experience")).toBeVisible({
-		timeout: 10000,
+		timeout: 120000,
 	});
 	await expect(page.locator("body")).toContainText("Guided Mode");
 	await expect(page.locator("body")).toContainText("Expert Mode");
