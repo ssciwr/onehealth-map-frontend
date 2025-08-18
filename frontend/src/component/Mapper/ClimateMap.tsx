@@ -38,6 +38,7 @@ import {
 } from "./utilities/mapDataUtils";
 import {
 	getFormattedVariableValue,
+	getMonthInfo,
 	getVariableDisplayName,
 	getVariableUnit,
 } from "./utilities/monthUtils";
@@ -1069,37 +1070,108 @@ const ClimateMap = ({ onMount = () => true }) => {
 		}
 	};
 
-	const handleScreenshot = () => {
-		// Type assertion for the screenshoter plugin
-		interface MapWithScreenshoter extends L.Map {
-			simpleMapScreenshoter?: {
-				takeScreen: (format: string) => Promise<Blob>;
-			};
+	const handleScreenshot = async () => {
+		if (!map || !screenshoter) {
+			console.error("Map or screenshoter not initialized");
+			return;
 		}
 
-		const mapWithScreenshoter = map as MapWithScreenshoter;
+		try {
+			// Get model name
+			const selectedModelData = models.find((m) => m.id === selectedModel);
+			const modelName = selectedModelData?.modelName || "Unknown Model";
 
-		if (map && mapWithScreenshoter.simpleMapScreenshoter) {
-			try {
-				mapWithScreenshoter.simpleMapScreenshoter
-					.takeScreen("blob")
-					.then((blob: Blob) => {
-						const url = URL.createObjectURL(blob);
-						const a = document.createElement("a");
-						a.href = url;
-						a.download = `climate-map-${new Date().toISOString().split("T")[0]}.png`;
-						document.body.appendChild(a);
-						a.click();
-						document.body.removeChild(a);
-						URL.revokeObjectURL(url);
-					});
-			} catch (error) {
-				console.error("Screenshot error:", error);
-				errorStore.showError(
-					"Screenshot Error",
-					"Failed to capture screenshot",
-				);
+			// Get month name
+			const monthName = getMonthInfo(currentMonth).label;
+			const timeText = `${monthName} ${currentYear}`;
+			const overlayText = `Model: ${modelName} | Time: ${timeText} | Optimism: ${selectedOptimism}`;
+
+			// Take screenshot first
+			const blob = (await screenshoter.takeScreen("blob", {
+				mimeType: "image/png",
+			})) as Blob;
+
+			// Convert blob to image and add text overlay using canvas
+			const img = new Image();
+			const canvas = document.createElement("canvas");
+			const ctx = canvas.getContext("2d");
+
+			if (!ctx) {
+				throw new Error("Could not get canvas context");
 			}
+
+			// Create promise to handle image loading
+			await new Promise<void>((resolve, reject) => {
+				img.onload = () => {
+					try {
+						canvas.width = img.width;
+						canvas.height = img.height;
+
+						// Draw the screenshot
+						ctx.drawImage(img, 0, 0);
+
+						// Add text overlay at the bottom
+						const fontSize = Math.max(14, Math.floor(img.width / 80)); // Responsive font size
+						const padding = Math.max(8, Math.floor(img.width / 200)); // Responsive padding
+
+						ctx.font = `${fontSize}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
+						ctx.textBaseline = "bottom";
+
+						// Measure text to create background
+						const textMetrics = ctx.measureText(overlayText);
+						const textWidth = textMetrics.width;
+						const textHeight = fontSize + padding * 2;
+
+						// Draw white background
+						ctx.fillStyle = "white";
+						ctx.fillRect(
+							0,
+							img.height - textHeight,
+							textWidth + padding * 2,
+							textHeight,
+						);
+
+						// Draw border line
+						ctx.strokeStyle = "#e0e0e0";
+						ctx.lineWidth = 1;
+						ctx.beginPath();
+						ctx.moveTo(0, img.height - textHeight);
+						ctx.lineTo(textWidth + padding * 2, img.height - textHeight);
+						ctx.stroke();
+
+						// Draw text
+						ctx.fillStyle = "black";
+						ctx.fillText(overlayText, padding, img.height - padding);
+
+						resolve();
+					} catch (err) {
+						reject(err);
+					}
+				};
+				img.onerror = () => reject(new Error("Failed to load image"));
+				img.src = URL.createObjectURL(blob);
+			});
+
+			// Convert canvas to blob and download
+			canvas.toBlob((finalBlob) => {
+				if (finalBlob) {
+					const url = URL.createObjectURL(finalBlob);
+					const a = document.createElement("a");
+					a.href = url;
+					a.download = `climate-map-${new Date().toISOString().split("T")[0]}.png`;
+					document.body.appendChild(a);
+					a.click();
+					document.body.removeChild(a);
+					URL.revokeObjectURL(url);
+					console.log("Screenshot with overlay saved successfully");
+				}
+			}, "image/png");
+
+			// Clean up
+			URL.revokeObjectURL(img.src);
+		} catch (error) {
+			console.error("Screenshot error:", error);
+			errorStore.showError("Screenshot Error", "Failed to capture screenshot");
 		}
 	};
 
@@ -1125,22 +1197,10 @@ const ClimateMap = ({ onMount = () => true }) => {
 
 		const properties = feature.properties as {
 			intensity?: number;
-			type_en?: string;
-			admin?: string;
-			name?: string;
 		};
 
-		// Determine if this is a country or subregion
-		// Countries typically have type_en === "Country" or similar admin level indicators
-		const isCountry =
-			properties.type_en === "Country" ||
-			!properties.admin ||
-			properties.admin === properties.name;
-
-		// Set border weight: countries get thicker borders, subregions get thinner
-		const borderWeight = isCountry ? 3 : 1.5;
-
-		// Get border color and opacity based on selected style
+		// Since this dataset only contains administrative subdivisions (states/provinces),
+		// we'll style them all consistently with the selected border style
 		let borderColor: string;
 		let borderOpacity: number;
 
@@ -1174,7 +1234,7 @@ const ClimateMap = ({ onMount = () => true }) => {
 			fillColor: dataExtremes
 				? getColorFromGradient(properties.intensity || 0, dataExtremes)
 				: "#cccccc",
-			weight: borderWeight,
+			weight: 1.5, // Consistent border weight for all sub-regions
 			opacity: borderOpacity,
 			color: borderColor,
 			dashArray: "",

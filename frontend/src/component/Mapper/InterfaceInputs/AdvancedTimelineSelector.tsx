@@ -49,14 +49,14 @@ const AdvancedTimelineSelector: React.FC<AdvancedTimelineSelectorProps> = ({
 	onZoomOut,
 	onResetZoom,
 	onLocationFind,
+	onScreenshot,
 	onModelInfo,
 	onAbout,
 	colorScheme,
 	legend,
-	map,
+	map: _map,
 	screenshoter,
 }) => {
-	const [isSaving, setIsSaving] = useState(false);
 	const [screenWidth, setScreenWidth] = useState(window.innerWidth);
 	const [isDragging, setIsDragging] = useState(false);
 	const [dragPreviewYear, setDragPreviewYear] = useState(year);
@@ -191,37 +191,6 @@ const AdvancedTimelineSelector: React.FC<AdvancedTimelineSelectorProps> = ({
 		// Snap to nearest year with a slight bias to prevent jittery behavior
 		const rounded = Math.round(year);
 		return Math.max(1960, Math.min(2100, rounded));
-	};
-
-	const handleSaveScreenshot = async () => {
-		if (!map || !screenshoter) {
-			console.error("Map or screenshoter not initialized");
-			return;
-		}
-
-		setIsSaving(true);
-
-		try {
-			// Ensure the map has rendered before taking screenshot
-			await new Promise((resolve) => setTimeout(resolve, 100));
-
-			const blob = (await screenshoter.takeScreen("blob", {
-				mimeType: "image/png",
-			})) as Blob;
-			const url = URL.createObjectURL(blob);
-			const link = document.createElement("a");
-			link.href = url;
-			link.download = `map-screenshot-${Date.now()}.png`;
-			link.click();
-
-			URL.revokeObjectURL(url);
-
-			console.log("Screenshot saved successfully");
-		} catch (error) {
-			console.error("Screenshot failed:", error);
-		} finally {
-			setIsSaving(false);
-		}
 	};
 
 	// months array is now imported from utilities
@@ -465,8 +434,8 @@ const AdvancedTimelineSelector: React.FC<AdvancedTimelineSelectorProps> = ({
 						<div className="control-group">
 							<button
 								type="button"
-								onClick={handleSaveScreenshot}
-								disabled={isSaving || !screenshoter}
+								onClick={onScreenshot}
+								disabled={!screenshoter}
 								className="control-btn"
 								title={
 									!screenshoter
@@ -475,7 +444,7 @@ const AdvancedTimelineSelector: React.FC<AdvancedTimelineSelectorProps> = ({
 								}
 							>
 								<Camera size={20} />
-								{isSaving ? "Saving..." : "Screenshot"}
+								Screenshot
 								<Share size={20} />
 							</button>
 							<button
