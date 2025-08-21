@@ -1,4 +1,4 @@
-import { Select } from "antd";
+import { Modal, Select } from "antd";
 import type L from "leaflet";
 import {
 	Camera,
@@ -15,8 +15,11 @@ import {
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { isMobile } from "react-device-detect";
+import type { Model } from "../../../hooks/useModelData";
+import { AboutContent } from "../../../static/Footer.tsx";
 import type { Month } from "../types";
 import { MONTHS } from "../utilities/monthUtils";
+import ModelDetailsModal from "./ModelDetailsModal";
 
 const { Option } = Select;
 
@@ -30,12 +33,13 @@ interface AdvancedTimelineSelectorProps {
 	onResetZoom: () => void;
 	onLocationFind: () => void;
 	onScreenshot: () => void;
-	onModelInfo: () => void;
-	onAbout: () => void;
 	colorScheme: "purple" | "red";
 	legend?: ReactNode;
 	map?: L.Map | null;
 	screenshoter?: L.SimpleMapScreenshoter | null;
+	models: Model[];
+	selectedModelId: string;
+	onModelSelect: (modelId: string) => void;
 }
 
 const hideMonthSelector = false; // Month selector is now enabled and connected to the API
@@ -50,17 +54,21 @@ const AdvancedTimelineSelector: React.FC<AdvancedTimelineSelectorProps> = ({
 	onResetZoom,
 	onLocationFind,
 	onScreenshot,
-	onModelInfo,
-	onAbout,
 	colorScheme,
 	legend,
 	map: _map,
 	screenshoter,
+	models,
+	selectedModelId,
+	onModelSelect,
 }) => {
 	const [screenWidth, setScreenWidth] = useState(window.innerWidth);
 	const [isDragging, setIsDragging] = useState(false);
 	const [dragPreviewYear, setDragPreviewYear] = useState(year);
 	const [magnifyPosition, setMagnifyPosition] = useState<number | null>(null);
+	// Modal state
+	const [isModelInfoOpen, setIsModelInfoOpen] = useState(false);
+	const [isAboutOpen, setIsAboutOpen] = useState(false);
 
 	// Track screen width for responsive features
 	useEffect(() => {
@@ -154,6 +162,15 @@ const AdvancedTimelineSelector: React.FC<AdvancedTimelineSelectorProps> = ({
 		} else {
 			onMonthChange((month + 1) as Month);
 		}
+	};
+
+	// Modal handlers
+	const handleModelInfo = () => {
+		setIsModelInfoOpen(true);
+	};
+
+	const handleAbout = () => {
+		setIsAboutOpen(true);
 	};
 
 	// New slider event handlers
@@ -449,7 +466,7 @@ const AdvancedTimelineSelector: React.FC<AdvancedTimelineSelectorProps> = ({
 							</button>
 							<button
 								type="button"
-								onClick={onModelInfo}
+								onClick={handleModelInfo}
 								className="control-btn"
 								title="Model Information"
 							>
@@ -458,7 +475,7 @@ const AdvancedTimelineSelector: React.FC<AdvancedTimelineSelectorProps> = ({
 							</button>
 							<button
 								type="button"
-								onClick={onAbout}
+								onClick={handleAbout}
 								className="control-btn"
 								title="About"
 							>
@@ -818,6 +835,25 @@ const AdvancedTimelineSelector: React.FC<AdvancedTimelineSelectorProps> = ({
 					}
 				`}
 			</style>
+
+			{/* Modals */}
+			<ModelDetailsModal
+				isOpen={isModelInfoOpen}
+				onClose={() => setIsModelInfoOpen(false)}
+				models={models}
+				selectedModelId={selectedModelId}
+				onModelSelect={onModelSelect}
+			/>
+
+			<Modal
+				title="About OneHealth Platform"
+				open={isAboutOpen}
+				onCancel={() => setIsAboutOpen(false)}
+				footer={null}
+				width={600}
+			>
+				<AboutContent />
+			</Modal>
 		</div>
 	);
 };

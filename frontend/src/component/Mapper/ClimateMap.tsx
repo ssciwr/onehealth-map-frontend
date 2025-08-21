@@ -1,4 +1,3 @@
-import { Modal } from "antd";
 import { useCallback, useEffect } from "react";
 import { MapContainer } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
@@ -11,12 +10,11 @@ import { useMapScreenshot } from "../../hooks/useMapScreenshot";
 import { useModelData } from "../../hooks/useModelData";
 import { useTemperatureData } from "../../hooks/useTemperatureData";
 import { regionProcessor } from "../../services/RegionProcessor";
-import Footer, { AboutContent } from "../../static/Footer.tsx";
+import Footer from "../../static/Footer.tsx";
 import * as MapInteractionHandlers from "../../utils/MapInteractionHandlers";
 import DebugStatsPanel from "./DebugStatsPanel.tsx";
 import AdvancedTimelineSelector from "./InterfaceInputs/AdvancedTimelineSelector.tsx";
 import MobileSideButtons from "./InterfaceInputs/MobileSideButtons.tsx";
-import ModelDetailsModal from "./InterfaceInputs/ModelDetailsModal";
 import LoadingSkeleton from "./LoadingSkeleton.tsx";
 import MapHeader from "./MapHeader.tsx";
 import MapLayers from "./MapLayers.tsx";
@@ -86,10 +84,6 @@ const ClimateMap = ({ onMount = () => true }) => {
 		setRequestedYear,
 		apiErrorMessage,
 		setApiErrorMessage,
-		isModelInfoOpen,
-		setIsModelInfoOpen,
-		isAboutOpen,
-		setIsAboutOpen,
 	} = state;
 
 	// Use model data hook
@@ -303,14 +297,6 @@ const ClimateMap = ({ onMount = () => true }) => {
 	const handleLocationFind = () =>
 		MapInteractionHandlers.handleLocationFind(map);
 
-	const handleModelInfo = () => {
-		setIsModelInfoOpen(true);
-	};
-
-	const handleAbout = () => {
-		setIsAboutOpen(true);
-	};
-
 	const handleLoadCurrentYear = () => {
 		const currentYear = new Date().getFullYear();
 		setCurrentYear(currentYear);
@@ -433,11 +419,12 @@ const ClimateMap = ({ onMount = () => true }) => {
 							onResetZoom={handleResetZoom}
 							onLocationFind={handleLocationFind}
 							onScreenshot={handleScreenshot}
-							onModelInfo={handleModelInfo}
-							onAbout={handleAbout}
 							colorScheme="purple"
 							map={map}
 							screenshoter={screenshoter}
+							models={models}
+							selectedModelId={selectedModel}
+							onModelSelect={handleModelSelect}
 							legend={
 								dataExtremes ? (
 									<Legend
@@ -510,25 +497,6 @@ const ClimateMap = ({ onMount = () => true }) => {
 					)}
 				</div>
 			</div>
-
-			{/* Modals for Advanced Timeline */}
-			<ModelDetailsModal
-				isOpen={isModelInfoOpen}
-				onClose={() => setIsModelInfoOpen(false)}
-				models={models}
-				selectedModelId={selectedModel}
-				onModelSelect={handleModelSelect}
-			/>
-
-			<Modal
-				title="About OneHealth Platform"
-				open={isAboutOpen}
-				onCancel={() => setIsAboutOpen(false)}
-				footer={null}
-				width={600}
-			>
-				<AboutContent />
-			</Modal>
 
 			<NoDataModal
 				isOpen={lackOfDataModalVisible}
