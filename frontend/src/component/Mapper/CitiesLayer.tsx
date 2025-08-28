@@ -33,7 +33,11 @@ const CitiesLayer = ({ zoom }: CitiesLayerProps) => {
 	useEffect(() => {
 		const loadCities = async () => {
 			try {
-				// Load from CSV data source (MIT licensed) - non-blocking
+				// Load from CSV data source (MIT licensed)
+				/* This data was downloaded in early August 2025, from https://www.simplemaps.aspiringeconomist.com/resources/world-cities-data
+				- the Natural Earth Populated Places 2015 data with 7,300 cities/towns.
+				Importantly the data is from 2015.
+				 */
 				const response = await fetch("/data/world_cities.csv");
 				if (!response.ok) {
 					throw new Error(`HTTP ${response.status}: ${response.statusText}`);
