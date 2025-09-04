@@ -1,9 +1,11 @@
 # Overview
-A project to render a map of NUTs regions with varied intensities, and later, with outbreaks.
+This Climate map renders data from the frontend. It can be configured to request and display NUTS3 regions, or worldwide equivalent regions.
+For the worldwide view, the data is projected from individual points into polygons on the frontend.
+There was a grid view which has been removed from the UI, but still exists in the code presently. Once we confirm we do not want that interface type,
+we will remove that.
 
 # How to run
-- Put "nutsRegions.csv" in the `frontend/data` folder.
-- cd to /frontend
+- First, make sure the `onehealth-db` repository is running with the API accessible. It needs to have generated data for 2016 and 2017.
 - Run `pnpm i`
 - Run `pnpm run dev`
 
@@ -16,19 +18,3 @@ You can also share the link directly to a specific view mode:
 
 # Preview
 ![image](https://github.com/user-attachments/assets/b7273a78-15a7-4304-88ea-d4b537f7c03e)
-
-# Data for the UI
-
-## Future
-In the future, the UI will make API requests to get the Data.
-
-## Presently - Static File / Python
-Python is only used in a tiny way and not necessary for set up. It is used to create fake data for playing with the UI.
-
-If you would like to create that fake data, I would advise setting up a virtual environment for it.
-
-Create a VENV with Python 3.12, activate it.
-```bash
-python3.12 -m venv ~/.venvs/oh
-source ~/.venvs/oh/bin/activate
-```

@@ -289,7 +289,6 @@ export default ({
 						>
 							<Option value="europe-only">Europe-only</Option>
 							<Option value="worldwide">Worldwide</Option>
-							<Option value="grid">Grid</Option>
 						</Select>
 					</div>
 					{mapMode === "worldwide" && onBorderStyleChange && (
