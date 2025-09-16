@@ -13,7 +13,7 @@ import type {
 	TemperatureDataPoint,
 } from "../types";
 
-export class GridToNutsConverter {
+export class NutsConverter {
 	private nutsGeoJSON: FeatureCollection | null = null;
 	private isLoadingNuts = false;
 
@@ -224,7 +224,7 @@ export class GridToNutsConverter {
 		}
 	}
 
-	async convertGridDataToNuts(
+	async convertDataToNuts(
 		temperatureData: TemperatureDataPoint[],
 	): Promise<{ nutsGeoJSON: NutsGeoJSON; extremes: DataExtremes }> {
 		try {
@@ -431,7 +431,7 @@ export class GridToNutsConverter {
 
 			return { nutsGeoJSON, extremes };
 		} catch (error) {
-			console.error("Error in convertGridDataToNuts:", error);
+			console.error("Error in convertDataToNuts:", error);
 			// Return a fallback result to prevent the function from returning undefined
 			return {
 				nutsGeoJSON: { type: "FeatureCollection", features: [] },
@@ -564,8 +564,8 @@ export class GridToNutsConverter {
 	async resetToCalculatedData(
 		temperatureData: TemperatureDataPoint[],
 	): Promise<{ nutsGeoJSON: NutsGeoJSON; extremes: DataExtremes }> {
-		return this.convertGridDataToNuts(temperatureData);
+		return this.convertDataToNuts(temperatureData);
 	}
 }
 
-export const gridToNutsConverter = new GridToNutsConverter();
+export const nutsConverter = new NutsConverter();

@@ -99,7 +99,7 @@ export class MapStyleService {
 
 	// Get style function for a specific map mode
 	public getStyleFunction(
-		mapMode: "grid" | "worldwide" | "europe-only",
+		mapMode: "worldwide" | "europe-only",
 		borderStyle: BorderStyle,
 		dataExtremes: DataExtremes | null,
 	) {

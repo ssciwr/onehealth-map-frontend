@@ -108,7 +108,7 @@ export const handleViewportChange = (
 
 // Feature highlighting for interactive layers
 export const createHighlightFeature = (
-	mapMode: "grid" | "worldwide" | "europe-only",
+	mapMode: "worldwide" | "europe-only",
 	borderStyle: BorderStyle,
 	dataExtremes: DataExtremes | null,
 	convertedWorldwideGeoJSON: WorldwideGeoJSON | null,
@@ -183,7 +183,7 @@ export const createHighlightFeature = (
 
 // Reset feature highlighting
 export const createResetHighlight = (
-	mapMode: "grid" | "worldwide" | "europe-only",
+	mapMode: "worldwide" | "europe-only",
 	borderStyle: BorderStyle,
 	dataExtremes: DataExtremes | null,
 	convertedWorldwideGeoJSON: WorldwideGeoJSON | null,

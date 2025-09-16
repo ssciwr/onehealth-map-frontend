@@ -16,8 +16,8 @@ interface MapHeaderProps {
 	selectedOptimism: string;
 	setSelectedOptimism: (optimism: string) => void;
 	getOptimismLevels: () => string[];
-	mapMode?: "grid" | "worldwide" | "europe-only";
-	onMapModeChange?: (mode: "grid" | "worldwide" | "europe-only") => void;
+	mapMode?: "worldwide" | "europe-only";
+	onMapModeChange?: (mode: "worldwide" | "europe-only") => void;
 	borderStyle?: "white" | "light-gray" | "black" | "half-opacity" | "black-80";
 	onBorderStyleChange?: (
 		style: "white" | "light-gray" | "black" | "half-opacity" | "black-80",

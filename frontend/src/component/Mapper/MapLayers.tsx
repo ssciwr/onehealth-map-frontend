@@ -3,22 +3,11 @@ import { GeoJSON, Pane } from "react-leaflet";
 import { mapStyleService } from "../../services/MapStyleService";
 import type { BorderStyle } from "../../services/MapStyleService";
 import CitiesLayer from "./CitiesLayer";
-import ClippedGridLayer from "./ClippedGridLayer";
-import type {
-	DataExtremes,
-	NutsGeoJSON,
-	TemperatureDataPoint,
-	ViewportBounds,
-	WorldwideGeoJSON,
-} from "./types";
+import type { DataExtremes, NutsGeoJSON, WorldwideGeoJSON } from "./types";
 
 interface MapLayersProps {
-	mapMode: "grid" | "worldwide" | "europe-only";
-	temperatureData: TemperatureDataPoint[];
-	viewport: ViewportBounds | null;
-	resolutionLevel: number;
+	mapMode: "worldwide" | "europe-only";
 	dataExtremes: DataExtremes | null;
-	worldGeoJSON: GeoJSON.FeatureCollection | null;
 	convertedWorldwideGeoJSON: WorldwideGeoJSON | null;
 	convertedEuropeOnlyGeoJSON: NutsGeoJSON | null;
 	isProcessingEuropeOnly: boolean;
@@ -30,11 +19,7 @@ interface MapLayersProps {
 
 const MapLayers: React.FC<MapLayersProps> = ({
 	mapMode,
-	temperatureData,
-	viewport,
-	resolutionLevel,
 	dataExtremes,
-	worldGeoJSON,
 	convertedWorldwideGeoJSON,
 	convertedEuropeOnlyGeoJSON,
 	isProcessingEuropeOnly,
@@ -45,33 +30,6 @@ const MapLayers: React.FC<MapLayersProps> = ({
 }) => {
 	return (
 		<>
-			{/* Grid Mode Layers */}
-			{mapMode === "grid" && (
-				<Pane name="worldPane" style={{ zIndex: 10 }}>
-					{worldGeoJSON && (
-						<GeoJSON
-							data={worldGeoJSON}
-							style={mapStyleService.getWorldStyle}
-						/>
-					)}
-				</Pane>
-			)}
-			{mapMode === "grid" && (
-				<Pane name="gridPane" style={{ zIndex: 20, opacity: 1.0 }}>
-					{temperatureData.length > 0 && viewport && dataExtremes && (
-						<div>
-							<ClippedGridLayer
-								dataPoints={[...temperatureData]}
-								viewport={viewport}
-								resolutionLevel={resolutionLevel}
-								extremes={dataExtremes}
-								countriesGeoJSON={worldGeoJSON || undefined}
-							/>
-						</div>
-					)}
-				</Pane>
-			)}
-
 			{/* Worldwide Mode Layer */}
 			{mapMode === "worldwide" && (
 				<Pane name="worldwidePane" style={{ zIndex: 30, opacity: 0.9 }}>

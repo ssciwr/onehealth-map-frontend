@@ -4,7 +4,7 @@ import type {
 	TemperatureDataPoint,
 	WorldwideGeoJSON,
 } from "../component/Mapper/types";
-import { gridToNutsConverter } from "../component/Mapper/utilities/GridToNutsConverter";
+import { nutsConverter } from "../component/Mapper/utilities/NutsConverter";
 
 export interface RegionTemperatureResult {
 	temperature: number | null;
@@ -366,7 +366,7 @@ export class RegionProcessor {
 		extremes: { min: number; max: number };
 	}> {
 		console.log(
-			`DEBUGYEARCHANGE: Converting grid data to Europe-only NUTS regions for year ${currentYear}...`,
+			`DEBUGYEARCHANGE: Converting data to Europe-only NUTS regions for year ${currentYear}...`,
 		);
 		console.log(
 			`DEBUGYEARCHANGE: Temperature data length: ${temperatureData.length}`,
@@ -376,9 +376,9 @@ export class RegionProcessor {
 			temperatureData[0],
 		);
 
-		// Use GridToNutsConverter to process temperature data into NUTS regions
+		// Use NutsConverter to process temperature data into NUTS regions
 		const { nutsGeoJSON, extremes } =
-			await gridToNutsConverter.convertGridDataToNuts(temperatureData);
+			await nutsConverter.convertDataToNuts(temperatureData);
 
 		console.log(
 			`DEBUGYEARCHANGE: NUTS conversion complete for year ${currentYear}`,

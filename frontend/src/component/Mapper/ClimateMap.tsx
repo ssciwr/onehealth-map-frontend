@@ -188,10 +188,7 @@ const ClimateMap = ({ onMount = () => true }) => {
 					}
 					setIsProcessingWorldwide(false);
 				} catch (error) {
-					console.error(
-						"Failed to convert grid data to worldwide regions:",
-						error,
-					);
+					console.error("Failed to convert data to worldwide regions:", error);
 					setProcessingError(true);
 					setError("Failed to process worldwide regions");
 					setIsProcessingWorldwide(false);
@@ -214,24 +211,13 @@ const ClimateMap = ({ onMount = () => true }) => {
 					setIsProcessingEuropeOnly(false);
 				} catch (error) {
 					console.error(
-						"Failed to convert grid data to Europe-only NUTS regions:",
+						"Failed to convert data to Europe-only NUTS regions:",
 						error,
 					);
 					setProcessingError(true);
 					setError("Failed to process Europe-only NUTS regions");
 					setIsProcessingEuropeOnly(false);
 				}
-			} else if (mapMode === "grid" && temperatureData.length > 0) {
-				setConvertedWorldwideGeoJSON(null);
-				setConvertedEuropeOnlyGeoJSON(null);
-				// Restore original extremes for grid mode
-				const temps = temperatureData.map((d) => d.temperature);
-				const extremes = {
-					min: Math.min(...temps),
-					max: Math.max(...temps),
-				};
-				console.log("Setting grid extremes:", extremes);
-				setDataExtremes(extremes);
 			} else {
 				// Clear all when switching modes
 				setConvertedWorldwideGeoJSON(null);
@@ -378,11 +364,7 @@ const ClimateMap = ({ onMount = () => true }) => {
 						>
 							<MapLayers
 								mapMode={mapMode}
-								temperatureData={temperatureData}
-								viewport={viewport}
-								resolutionLevel={resolutionLevel}
 								dataExtremes={dataExtremes}
-								worldGeoJSON={worldGeoJSON}
 								convertedWorldwideGeoJSON={convertedWorldwideGeoJSON}
 								convertedEuropeOnlyGeoJSON={convertedEuropeOnlyGeoJSON}
 								isProcessingEuropeOnly={isProcessingEuropeOnly}
