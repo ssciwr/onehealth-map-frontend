@@ -1,7 +1,6 @@
 import { observer } from "mobx-react-lite";
 import { Route, Routes } from "react-router-dom";
 import "./App.css";
-import GeoJSONTester from "./GeoJSONTester";
 import GlobalErrorModal from "./component/General/GlobalErrorModal";
 import GlobalLoadingBar from "./component/General/GlobalLoadingBar";
 import OnboardingTour from "./component/General/OnboardingTour";
@@ -47,7 +46,6 @@ const App = observer(() => {
 					}
 				/>
 				<Route path="/map" element={<MapWithExpertiseModal />} />
-				<Route path="/GeoJSONTester" element={<GeoJSONTester />} />
 				<Route path="/" element={<ClimateMap />} />
 				<Route path="*" element={<NotFound />} />
 			</Routes>
