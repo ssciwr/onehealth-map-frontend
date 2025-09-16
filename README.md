@@ -11,8 +11,14 @@ It can be configured to request and display NUTS3 regions, or worldwide equivale
 ## Background context on the view types (technically specific)
 For the worldwide view, the data is projected from individual points into polygons on the frontend.
 
+## Main components diagram:
+<img width="1370" height="847" alt="image" src="https://github.com/user-attachments/assets/bb7daba0-d421-477b-9005-d5a116a119b2" />
 
-## Example
+## Example: Worldwide Simple R0 example:
+<img width="3700" height="1648" alt="image" src="https://github.com/user-attachments/assets/625d4432-faad-4e5f-b60f-4af96d6848b1" />
+
+
+## Example: NUTS version:
 ![image](https://github.com/user-attachments/assets/b7273a78-15a7-4304-88ea-d4b537f7c03e)
 
 
