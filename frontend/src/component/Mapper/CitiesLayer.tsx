@@ -1,6 +1,9 @@
+import * as turf from "@turf/turf";
+import type { MultiPolygon, Polygon } from "geojson";
 import L from "leaflet";
 import { useEffect, useState } from "react";
 import { CircleMarker, Marker, Pane, Popup } from "react-leaflet";
+import type { NutsGeoJSON, WorldwideGeoJSON } from "./types";
 import { MAX_ZOOM, MIN_ZOOM } from "./utilities/mapDataUtils.tsx";
 
 interface City {
@@ -25,9 +28,10 @@ interface CityCSV {
 
 interface CitiesLayerProps {
 	zoom: number;
+	dataRegions?: NutsGeoJSON | WorldwideGeoJSON | null;
 }
 
-const CitiesLayer = ({ zoom }: CitiesLayerProps) => {
+const CitiesLayer = ({ zoom, dataRegions }: CitiesLayerProps) => {
 	const [cities, setCities] = useState<City[]>([]);
 
 	useEffect(() => {
@@ -50,7 +54,6 @@ const CitiesLayer = ({ zoom }: CitiesLayerProps) => {
 					"Cities layer failed to load, continuing without cities:",
 					error,
 				);
-				// Don't block map rendering if cities fail to load
 				setCities([]);
 			}
 		};
@@ -167,8 +170,44 @@ const CitiesLayer = ({ zoom }: CitiesLayerProps) => {
 		});
 	};
 
+	// Filter cities that fall within data regions
+	const filterCitiesByDataRegions = (cities: City[]): City[] => {
+		// If no data regions provided, show all cities (fallback)
+		if (
+			!dataRegions ||
+			!dataRegions.features ||
+			dataRegions.features.length === 0
+		) {
+			return cities;
+		}
+
+		return cities.filter((city) => {
+			const cityPoint = turf.point([city.lng, city.lat]);
+
+			for (const feature of dataRegions.features) {
+				// these are all the geoJSON regions (e.g. NUT3/World subregions)
+				try {
+					if (
+						turf.booleanPointInPolygon(
+							cityPoint,
+							feature.geometry as Polygon | MultiPolygon,
+						)
+					) {
+						return true;
+					}
+				} catch (error) {
+					// ignore weird geoJSON situations (like impropoer enclaves)
+				}
+			}
+			return false;
+		});
+	};
+
 	const threshold = getPopulationThreshold(zoom);
-	const visibleCities = cities.filter((city) => city.population >= threshold);
+	const citiesInDataRegions = filterCitiesByDataRegions(cities);
+	const visibleCities = citiesInDataRegions.filter(
+		(city) => city.population >= threshold,
+	);
 
 	return (
 		<>

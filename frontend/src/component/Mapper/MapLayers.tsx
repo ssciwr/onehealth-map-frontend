@@ -90,8 +90,15 @@ const MapLayers: React.FC<MapLayersProps> = ({
 				</Pane>
 			)}
 
-			{/* Cities Layer - always rendered */}
-			<CitiesLayer zoom={currentZoom} />
+			{/* Cities Layer - always rendered, but filtered by data regions, and only over the rendered regions */}
+			<CitiesLayer
+				zoom={currentZoom}
+				dataRegions={
+					mapMode === "europe-only"
+						? convertedEuropeOnlyGeoJSON
+						: convertedWorldwideGeoJSON
+				}
+			/>
 		</>
 	);
 };
