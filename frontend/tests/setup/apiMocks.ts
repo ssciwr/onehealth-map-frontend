@@ -5,7 +5,6 @@ const MOCK_2017_FILE_PATH = "/tests/setup/MockResponse4823.json";
 
 // Helper function to create route handler that loads mock data
 async function createMockHandlerForYear(mockFilePath: string) {
-	console.log("Now using normal mocks");
 	const fs = await import("node:fs");
 	const path = await import("node:path");
 	return async (route) => {
@@ -24,10 +23,6 @@ async function createMockHandlerForYear(mockFilePath: string) {
 			}
 
 			const mockData = JSON.parse(fs.default.readFileSync(filePath, "utf-8"));
-			console.log(
-				"[DEBUG] Successfully loaded mock data, keys:",
-				Object.keys(mockData),
-			);
 
 			await route.fulfill({
 				status: 200,
@@ -35,10 +30,6 @@ async function createMockHandlerForYear(mockFilePath: string) {
 				body: JSON.stringify(mockData),
 			});
 		} catch (error) {
-			console.error(
-				`[DEBUG] Error in mock handler for ${mockFilePath}:`,
-				error,
-			);
 			await route.continue();
 		}
 	};
