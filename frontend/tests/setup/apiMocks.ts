@@ -44,7 +44,7 @@ async function createMockHandlerForYear(mockFilePath: string) {
 	};
 }
 
-// SEts up mocks for all routes
+// Sets up mocks for all routes
 export async function setupApiMocksWithFs(page: Page) {
 	const mock2016Handler = await createMockHandlerForYear(MOCK_2016_FILE_PATH);
 	const mock2017Handler = await createMockHandlerForYear(MOCK_2017_FILE_PATH);
