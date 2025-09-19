@@ -1,4 +1,3 @@
-import type L from "leaflet";
 import { useCallback, useEffect } from "react";
 import type {
 	DataExtremes,
@@ -26,7 +25,9 @@ interface UseTemperatureDataProps {
 	currentMonth: Month;
 	setTemperatureData: (data: TemperatureDataPoint[]) => void;
 	setDataExtremes: (extremes: DataExtremes | null) => void;
-	setDataBounds: (bounds: L.LatLngBounds | null) => void;
+	setDataBounds: (
+		bounds: import("../component/Mapper/types").ViewportBounds | null,
+	) => void;
 	setCurrentVariableValue: (value: string) => void;
 	setRequestedYear: (year: number) => void;
 	setLackOfDataModalVisible: (visible: boolean) => void;
@@ -34,7 +35,9 @@ interface UseTemperatureDataProps {
 	setIsLoadingData: (loading: boolean) => void;
 	setError: (error: string | null) => void;
 	setWorldGeoJSON: (data: GeoJSON.FeatureCollection | null) => void;
-	setworldwideRegionsGeoJSON: (data: GeoJSON.FeatureCollection | null) => void;
+	setworldwideRegionsGeoJSON: (
+		data: import("../component/Mapper/types").WorldwideGeoJSON | null,
+	) => void;
 }
 
 export const useTemperatureData = ({
@@ -100,7 +103,16 @@ export const useTemperatureData = ({
 				setTemperatureData(dataPoints);
 				setDataExtremes(extremes);
 				if (bounds) {
-					setDataBounds(bounds);
+					const viewportBounds: import(
+						"../component/Mapper/types",
+					).ViewportBounds = {
+						north: bounds.getNorth(),
+						south: bounds.getSouth(),
+						east: bounds.getEast(),
+						west: bounds.getWest(),
+						zoom: 10, // default zoom
+					};
+					setDataBounds(viewportBounds);
 				}
 				console.log(
 					`DEBUGYEARCHANGE: Finished loading store for year ${year}, month ${safeMonth}`,
@@ -157,9 +169,13 @@ export const useTemperatureData = ({
 				);
 			});
 
-			const globalRegions = {
+			const globalRegions: import(
+				"../component/Mapper/types",
+			).WorldwideGeoJSON = {
 				type: "FeatureCollection" as const,
-				features: allFeatures,
+				features: allFeatures as import(
+					"../component/Mapper/types",
+				).WorldwideFeature[],
 			};
 
 			setworldwideRegionsGeoJSON(globalRegions);

@@ -1,5 +1,5 @@
 import type { FeatureCollection, GeoJsonProperties, Geometry } from "geojson";
-import { useState } from "react";
+import { type Dispatch, type SetStateAction, useState } from "react";
 import type {
 	DataExtremes,
 	NutsGeoJSON,
@@ -13,7 +13,7 @@ export interface DataProcessingState {
 	temperatureData: TemperatureDataPoint[];
 	setTemperatureData: (data: TemperatureDataPoint[]) => void;
 	resolutionLevel: number;
-	setResolutionLevel: (level: number) => void;
+	setResolutionLevel: Dispatch<SetStateAction<number>>;
 	dataExtremes: DataExtremes | null;
 	setDataExtremes: (extremes: DataExtremes | null) => void;
 	dataBounds: ViewportBounds | null;

@@ -17,6 +17,9 @@ export interface WorldwideProperties {
 	worldwideLevel?: number;
 	isFallback?: boolean;
 	isModelData?: boolean;
+	name?: string;
+	name_en?: string;
+	admin?: string;
 }
 
 export interface WorldwideGeometry {

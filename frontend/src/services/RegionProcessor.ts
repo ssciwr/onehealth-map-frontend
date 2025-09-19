@@ -233,7 +233,7 @@ export class RegionProcessor {
 	// Process worldwide regions
 	public async processWorldwideRegions(
 		temperatureData: TemperatureDataPoint[],
-		worldwideRegionsGeoJSON: GeoJSON.FeatureCollection,
+		worldwideRegionsGeoJSON: WorldwideGeoJSON,
 	): Promise<{
 		processedGeoJSON: WorldwideGeoJSON;
 		extremes: { min: number; max: number } | null;
@@ -285,7 +285,7 @@ export class RegionProcessor {
 				console.log(`Processing region ${index + 1}: ${regionName}`);
 
 				const tempResult = this.calculateRegionTemperatureWithCoords(
-					feature,
+					feature as GeoJSON.Feature,
 					sampledTemperatureData,
 				);
 				const result = {
@@ -299,7 +299,11 @@ export class RegionProcessor {
 							"Unknown",
 						countryName: feature.properties?.admin || "Unknown Country",
 						pointCount: sampledTemperatureData.filter((point) =>
-							this.isPointInRegion(point.lat, point.lng, feature.geometry),
+							this.isPointInRegion(
+								point.lat,
+								point.lng,
+								feature.geometry as GeoJSON.Geometry,
+							),
 						).length,
 						isFallback: tempResult.isFallback,
 						currentPosition: tempResult.currentPosition,

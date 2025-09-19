@@ -255,7 +255,11 @@ const ClimateMap = ({ onMount = () => true }) => {
 
 	useEffect(() => {
 		if (map && dataBounds) {
-			map.setMaxBounds(dataBounds);
+			const leafletBounds: L.LatLngBoundsExpression = [
+				[dataBounds.south, dataBounds.west],
+				[dataBounds.north, dataBounds.east],
+			];
+			map.setMaxBounds(leafletBounds);
 		}
 	}, [map, dataBounds]);
 
