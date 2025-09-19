@@ -1,34 +1,49 @@
-# Overview
-A project to render a map of NUTs regions with varied intensities, and later, with outbreaks.
+# OneHealth Frontend Mapping application
 
-# How to run
-- Put "nutsRegions.csv" in the `frontend/data` folder.
-- cd to /frontend
-- Run `pnpm i`
-- Run `pnpm run dev`
 
-# How to use
+# Description
+The OneHealth Mapping project shows the predictions and predicted susceptibility in the future of different diseases by Infectious disease/Climate models from the group, across different regions in the map.
+
+This repository contains the frontend for the Climate Map. The user can browse for models with the Model Selector, and change the year to see future suspcetibility predictions
+
+It can be configured to request and display NUTS3 regions, or worldwide equivalent regions, which is dependent upon the underlying model.
+
+## Background context on the view types (technically specific)
+For the worldwide view, the data is projected from individual points into polygons on the frontend.
+
+## Main components diagram:
+<img width="1370" height="847" alt="image" src="https://github.com/user-attachments/assets/bb7daba0-d421-477b-9005-d5a116a119b2" />
+
+## Example: Worldwide Simple R0 example:
+<img width="3700" height="1648" alt="image" src="https://github.com/user-attachments/assets/625d4432-faad-4e5f-b60f-4af96d6848b1" />
+
+
+## Example: NUTS version:
+![image](https://github.com/user-attachments/assets/b7273a78-15a7-4304-88ea-d4b537f7c03e)
+
+
+
+# Installation guide
+- First, make sure the `onehealth-db` repository is running with the API accessible. The API must be able to return generated data for 2016 and 2017.
+- Run `pnpm i` to install dependencies
+- Run `pnpm run dev` to launch the application
+
+# Usage examples
 The website can be used by visiting `http://localhost:5173/map`, which will present the user with two view modes.
 
 You can also share the link directly to a specific view mode:
 - Citizen: `http://localhost:5173/map/citizen`
 - Expert:  `http://localhost:5173/map/expert`
 
-# Preview
-![image](https://github.com/user-attachments/assets/b7273a78-15a7-4304-88ea-d4b537f7c03e)
+# Support, contributing and authors
+Create an issue in the repository.
 
-# Data for the UI
+# Roadmap
+A) Future development will pull the models for model browsing from a live API
+B) Regions will be determined by the backend, not interpreted into GeoJSON regions by the frontend processing grid lat/lng data into GeoJSON regions (as they are presently for the world view)
 
-## Future
-In the future, the UI will make API requests to get the Data.
+# License
+MIT, see LICENSE.md
 
-## Presently - Static File / Python
-Python is only used in a tiny way and not necessary for set up. It is used to create fake data for playing with the UI.
-
-If you would like to create that fake data, I would advise setting up a virtual environment for it.
-
-Create a VENV with Python 3.12, activate it.
-```bash
-python3.12 -m venv ~/.venvs/oh
-source ~/.venvs/oh/bin/activate
-```
+# Project status
+Under development

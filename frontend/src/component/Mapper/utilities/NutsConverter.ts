@@ -1,7 +1,7 @@
 import * as turf from "@turf/turf";
 import type {
-	Feature,
 	FeatureCollection,
+	Feature as GeoJSONFeature,
 	MultiPolygon,
 	Polygon,
 } from "geojson";
@@ -9,49 +9,13 @@ import type {
 	DataExtremes,
 	NutsFeature,
 	NutsGeoJSON,
+	NutsGeometry,
 	TemperatureDataPoint,
 } from "../types";
 
-interface CountryData {
-	temperatureSum: number;
-	pointCount: number;
-	avgTemperature: number;
-}
-
-interface CountryTemperatureMap {
-	[countryCode: string]: CountryData;
-}
-
-export class GridToNutsConverter {
-	private countriesGeoJSON: FeatureCollection | null = null;
+export class NutsConverter {
 	private nutsGeoJSON: FeatureCollection | null = null;
-	private isLoading = false;
 	private isLoadingNuts = false;
-
-	async loadCountriesGeoJSON(): Promise<void> {
-		if (this.countriesGeoJSON || this.isLoading) return;
-
-		this.isLoading = true;
-		try {
-			const response = await fetch(
-				"https://raw.githubusercontent.com/datasets/geo-countries/main/data/countries.geojson",
-			);
-			const data = await response.json();
-			this.countriesGeoJSON = data;
-			console.log(
-				"Countries GeoJSON loaded for NUTS conversion, features:",
-				data.features.length,
-			);
-		} catch (error) {
-			console.error(
-				"Failed to load countries GeoJSON for NUTS conversion:",
-				error,
-			);
-			throw error;
-		} finally {
-			this.isLoading = false;
-		}
-	}
 
 	async loadNutsGeoJSON(): Promise<void> {
 		if (this.nutsGeoJSON || this.isLoadingNuts) return;
@@ -66,7 +30,7 @@ export class GridToNutsConverter {
 
 			// Filter to only NUTS 2 level regions (level code "2")
 			const nuts2Features = nutsData.features.filter(
-				(feature: Feature) => feature.properties?.LEVL_CODE === 2,
+				(feature: GeoJSONFeature) => feature.properties?.LEVL_CODE === 2,
 			);
 
 			this.nutsGeoJSON = {
@@ -77,7 +41,9 @@ export class GridToNutsConverter {
 			console.log(`NUTS 2 GeoJSON loaded: ${nuts2Features.length} regions`);
 			console.log(
 				"Sample regions:",
-				nuts2Features.slice(0, 5).map((f: Feature) => f.properties?.NUTS_ID),
+				nuts2Features
+					.slice(0, 5)
+					.map((f: GeoJSONFeature) => f.properties?.NUTS_ID),
 			);
 		} catch (error) {
 			console.error("Failed to load NUTS data from Eurostat:", error);
@@ -86,21 +52,6 @@ export class GridToNutsConverter {
 		} finally {
 			this.isLoadingNuts = false;
 		}
-	}
-
-	private getCountriesWithNutsData(): Set<string> {
-		const nutsCountries = new Set<string>();
-		if (this.nutsGeoJSON?.features) {
-			for (const feature of this.nutsGeoJSON.features) {
-				const nutsId =
-					feature.properties?.NUTS_ID || feature.properties?.nuts_id;
-				if (nutsId) {
-					const countryCode = nutsId.substring(0, 2);
-					nutsCountries.add(countryCode);
-				}
-			}
-		}
-		return nutsCountries;
 	}
 
 	private createSpatialIndex(
@@ -139,7 +90,7 @@ export class GridToNutsConverter {
 		return index;
 	}
 
-	private getPolygonBounds(polygon: Feature<Polygon | MultiPolygon>): {
+	private getPolygonBounds(polygon: GeoJSONFeature<Polygon | MultiPolygon>): {
 		minLat: number;
 		maxLat: number;
 		minLng: number;
@@ -254,35 +205,9 @@ export class GridToNutsConverter {
 		return nearestPoint;
 	}
 
-	private getCountryIdentifier(feature: Feature): string | null {
-		if (!feature.properties) return null;
-		const countryCode =
-			feature.properties["ISO3166-1-Alpha-3"] ||
-			feature.properties["ISO3166-1-Alpha-2"] ||
-			feature.properties?.ISO3 ||
-			feature.properties?.ISO2 ||
-			feature.properties.code ||
-			feature.properties.id;
-
-		const countryName =
-			feature.properties?.name || feature.properties?.NAME || "";
-		return countryCode || countryName || null;
-	}
-
-	private getCountryDisplayName(feature: Feature): string {
-		console.log("Getting country names etc...", feature, feature.properties);
-		return (
-			feature.properties?.name ||
-			feature.properties?.NAME ||
-			feature.properties?.["ISO3166-1-Alpha-3"] ||
-			feature.properties?.["ISO3166-1-Alpha-2"] ||
-			"Unknown Country"
-		);
-	}
-
 	private createPolygonFromFeature(
-		feature: Feature,
-	): Feature<Polygon | MultiPolygon> | null {
+		feature: GeoJSONFeature,
+	): GeoJSONFeature<Polygon | MultiPolygon> | null {
 		try {
 			if (feature.geometry?.type === "Polygon") {
 				return turf.polygon((feature.geometry as Polygon).coordinates);
@@ -299,20 +224,16 @@ export class GridToNutsConverter {
 		}
 	}
 
-	async convertGridDataToNuts(
+	async convertDataToNuts(
 		temperatureData: TemperatureDataPoint[],
 	): Promise<{ nutsGeoJSON: NutsGeoJSON; extremes: DataExtremes }> {
 		try {
-			console.log("Starting NUTS conversion...");
-			await Promise.all([this.loadCountriesGeoJSON(), this.loadNutsGeoJSON()]);
+			console.log("Starting Europe-only NUTS conversion...");
+			await this.loadNutsGeoJSON(); // Only load NUTS data, not countries
 
-			if (!this.countriesGeoJSON) {
-				throw new Error("Countries GeoJSON not loaded");
-			}
-
-			console.log("GeoJSON loaded successfully, starting processing...");
+			console.log("NUTS GeoJSON loaded successfully, starting processing...");
 			console.log(
-				`Processing all ${temperatureData.length} temperature points for NUTS conversion with spatial indexing...`,
+				`Processing all ${temperatureData.length} temperature points for Europe-only NUTS conversion with spatial indexing...`,
 			);
 
 			// Validate temperature data structure
@@ -333,15 +254,8 @@ export class GridToNutsConverter {
 			const nutsFeatures: NutsFeature[] = [];
 			const temperatures: number[] = [];
 
-			// Identify countries that have NUTS 2 data
-			const nutsCountries = this.getCountriesWithNutsData();
-			console.log(
-				"Countries with NUTS 2 regions:",
-				Array.from(nutsCountries).sort(),
-			);
-
-			// Process NUTS 2 regions for EU countries
-			console.log("About to process NUTS regions...");
+			// Process NUTS 2 regions for EU countries ONLY
+			console.log("Processing NUTS regions for Europe-only mode...");
 			if (this.nutsGeoJSON && this.nutsGeoJSON.features.length > 0) {
 				console.log(
 					`Processing ${this.nutsGeoJSON.features.length} NUTS 2 regions...`,
@@ -363,7 +277,7 @@ export class GridToNutsConverter {
 					const polygonBounds = this.getPolygonBounds(polygon);
 					const relevantBuckets = this.getRelevantBuckets(polygonBounds, 5);
 
-					const pointsInRegion: number[] = [];
+					const pointsInRegion: TemperatureDataPoint[] = [];
 					let totalCandidatePoints = 0;
 
 					// Only check points in relevant buckets
@@ -383,7 +297,7 @@ export class GridToNutsConverter {
 									continue;
 								}
 								if (turf.booleanPointInPolygon(dataPoint.point, polygon)) {
-									pointsInRegion.push(dataPoint.temperature);
+									pointsInRegion.push(dataPoint);
 								}
 							} catch (error) {
 								console.warn(
@@ -398,10 +312,20 @@ export class GridToNutsConverter {
 
 					// Calculate average temperature if we have points
 					if (pointsInRegion.length > 0) {
-						const temperatureSum = pointsInRegion.reduce((a, b) => a + b, 0);
+						const temperatureSum = pointsInRegion.reduce(
+							(sum, point) => sum + point.temperature,
+							0,
+						);
 						const avgTemperature = temperatureSum / pointsInRegion.length;
 
 						temperatures.push(avgTemperature);
+
+						// Get centroid for current position
+						const centroid = turf.centroid(polygon);
+						const currentPosition = {
+							lat: centroid.geometry.coordinates[1],
+							lng: centroid.geometry.coordinates[0],
+						};
 
 						const nutsFeatureResult: NutsFeature = {
 							type: "Feature",
@@ -411,8 +335,14 @@ export class GridToNutsConverter {
 								countryName: this.getNutsDisplayName(nutsId),
 								pointCount: pointsInRegion.length,
 								nutsLevel: 2,
+								currentPosition,
+								dataPoints: pointsInRegion.slice(0, 3).map((point) => ({
+									lat: point.lat,
+									lng: point.lng,
+									temperature: point.temperature,
+								})),
 							},
-							geometry: nutsFeature.geometry as Polygon | MultiPolygon,
+							geometry: nutsFeature.geometry as NutsGeometry,
 						};
 
 						nutsFeatures.push(nutsFeatureResult);
@@ -423,6 +353,10 @@ export class GridToNutsConverter {
 							number,
 							number,
 						];
+						const currentPosition = {
+							lat: centroidCoords[1],
+							lng: centroidCoords[0],
+						};
 						const nearestPoint = this.findNearestDataPoint(
 							centroidCoords,
 							spatialIndex,
@@ -444,8 +378,20 @@ export class GridToNutsConverter {
 									pointCount: 0, // Mark as fallback
 									nutsLevel: 2,
 									isFallback: true,
+									currentPosition,
+									nearestDataPoint: {
+										lat: nearestPoint.lat,
+										lng: nearestPoint.lng,
+									},
+									dataPoints: [
+										{
+											lat: nearestPoint.lat,
+											lng: nearestPoint.lng,
+											temperature: nearestPoint.temperature,
+										},
+									],
 								},
-								geometry: nutsFeature.geometry as Polygon | MultiPolygon,
+								geometry: nutsFeature.geometry as NutsGeometry,
 							};
 
 							nutsFeatures.push(nutsFeatureResult);
@@ -456,144 +402,6 @@ export class GridToNutsConverter {
 						}
 					}
 				}
-			}
-
-			// Then, process remaining countries that don't have detailed NUTS data
-			console.log("Processing remaining countries...");
-			const countryTemperatures: CountryTemperatureMap = {};
-
-			for (const feature of this.countriesGeoJSON.features) {
-				if (!feature || !feature.properties) {
-					console.warn("Skipping invalid country feature:", feature);
-					continue;
-				}
-				const countryId = this.getCountryIdentifier(feature);
-				if (!countryId) continue;
-
-				// Skip countries that already have detailed NUTS regions
-				const countryCode = this.getCountryCode(countryId);
-
-				// Hardcoded exclusion for problematic countries that show both NUTS and whole country
-				const hardcodedExclusions = [
-					"FRO",
-					"NOR",
-					"FR",
-					"GB",
-					"NO",
-					"DE",
-					"IT",
-					"ES",
-					"AT",
-					"BE",
-					"NL",
-					"PL",
-					"SE",
-					"DK",
-					"FI",
-				];
-
-				if (
-					nutsCountries.has(countryCode) ||
-					hardcodedExclusions.includes(countryCode)
-				) {
-					console.log(
-						`Skipping whole country ${countryId} (${countryCode}) - has NUTS 2 regions or hardcoded exclusion`,
-					);
-					continue;
-				}
-
-				const polygon = this.createPolygonFromFeature(feature);
-				if (!polygon) continue;
-
-				const pointsInCountry: number[] = [];
-
-				// Get polygon bounds and relevant buckets for efficient spatial query
-				const polygonBounds = this.getPolygonBounds(polygon);
-				const relevantBuckets = this.getRelevantBuckets(polygonBounds, 5);
-
-				// Only check points in relevant buckets
-				for (const bucketKey of relevantBuckets) {
-					const bucketPoints = spatialIndex[bucketKey];
-					if (!bucketPoints) continue;
-
-					for (const dataPoint of bucketPoints) {
-						try {
-							if (!dataPoint || !dataPoint.point) {
-								console.warn(
-									"Invalid data point in country bucketPoints:",
-									dataPoint,
-								);
-								continue;
-							}
-							if (turf.booleanPointInPolygon(dataPoint.point, polygon)) {
-								pointsInCountry.push(dataPoint.temperature);
-							}
-						} catch (error) {
-							console.warn(
-								"Error in country point-in-polygon check:",
-								error,
-								dataPoint,
-							);
-							// Skip points that cause errors
-						}
-					}
-				}
-
-				// Calculate average temperature if we have points
-				if (pointsInCountry.length > 0) {
-					const temperatureSum = pointsInCountry.reduce((a, b) => a + b, 0);
-					const avgTemperature = temperatureSum / pointsInCountry.length;
-
-					countryTemperatures[countryId] = {
-						temperatureSum,
-						pointCount: pointsInCountry.length,
-						avgTemperature,
-					};
-				}
-			}
-
-			// Add country-level features for countries without detailed NUTS data
-			console.log("Adding country-level features...");
-			for (const feature of this.countriesGeoJSON.features) {
-				if (!feature || !feature.properties) {
-					console.warn(
-						"Skipping invalid country feature in second loop:",
-						feature,
-					);
-					continue;
-				}
-				const countryId = this.getCountryIdentifier(feature);
-				if (!countryId || !countryTemperatures[countryId]) continue;
-
-				const countryData = countryTemperatures[countryId];
-				const displayName = this.getCountryDisplayName(feature);
-
-				temperatures.push(countryData.avgTemperature);
-
-				const nutsFeature: NutsFeature = {
-					type: "Feature",
-					properties: {
-						NUTS_ID: countryId,
-						intensity: countryData.avgTemperature,
-						countryName: displayName,
-						pointCount: countryData.pointCount,
-						nutsLevel: 0,
-					},
-					geometry: {
-						type:
-							feature.geometry?.type === "Polygon" ||
-							feature.geometry?.type === "MultiPolygon"
-								? feature.geometry.type
-								: "Polygon",
-						coordinates:
-							feature.geometry?.type === "Polygon" ||
-							feature.geometry?.type === "MultiPolygon"
-								? (feature.geometry as Polygon | MultiPolygon).coordinates
-								: [],
-					},
-				};
-
-				nutsFeatures.push(nutsFeature);
 			}
 
 			// Calculate extremes
@@ -615,7 +423,7 @@ export class GridToNutsConverter {
 			};
 
 			console.log(
-				`NUTS conversion complete: ${nutsFeatures.length} regions with temperature data`,
+				`Europe-only NUTS conversion complete: ${nutsFeatures.length} regions with temperature data`,
 			);
 			console.log(
 				`Temperature range: ${extremes.min.toFixed(1)}°C to ${extremes.max.toFixed(1)}°C`,
@@ -623,7 +431,7 @@ export class GridToNutsConverter {
 
 			return { nutsGeoJSON, extremes };
 		} catch (error) {
-			console.error("Error in convertGridDataToNuts:", error);
+			console.error("Error in convertDataToNuts:", error);
 			// Return a fallback result to prevent the function from returning undefined
 			return {
 				nutsGeoJSON: { type: "FeatureCollection", features: [] },
@@ -632,125 +440,50 @@ export class GridToNutsConverter {
 		}
 	}
 
-	private getCountryCode(countryId: string): string {
-		// Extract 2-letter country code from various country identifier formats
-		if (countryId.length === 2) return countryId.toUpperCase();
-
-		// Map ISO3 codes to ISO2 codes
-		const iso3ToIso2: { [key: string]: string } = {
-			AUT: "AT",
-			BEL: "BE",
-			BGR: "BG",
-			CHE: "CH",
-			CYP: "CY",
-			CZE: "CZ",
-			DEU: "DE",
-			DNK: "DK",
-			ESP: "ES",
-			EST: "EE",
-			FIN: "FI",
-			GRC: "EL",
-			HRV: "HR",
-			HUN: "HU",
-			IRL: "IE",
-			ISL: "IS",
-			ITA: "IT",
-			LTU: "LT",
-			LUX: "LU",
-			LVA: "LV",
-			NLD: "NL",
-			POL: "PL",
-			PRT: "PT",
-			ROU: "RO",
-			SVK: "SK",
-			SVN: "SI",
-			SWE: "SE",
-			TUR: "TR",
-			UKR: "UA",
-			ALB: "AL",
-			BIH: "BA",
-			MKD: "MK",
-			MNE: "ME",
-			SRB: "RS",
-			XKX: "XK",
-			GBR: "GB",
-			FRA: "FR",
-			NOR: "NO",
-		};
-
-		if (countryId.length === 3 && iso3ToIso2[countryId.toUpperCase()]) {
-			return iso3ToIso2[countryId.toUpperCase()];
-		}
-
-		// Map some common country names to codes
-		const countryNameMap: { [key: string]: string } = {
-			Germany: "DE",
-			France: "FR",
-			Italy: "IT",
-			Spain: "ES",
-			Austria: "AT",
-			Belgium: "BE",
-			Netherlands: "NL",
-			Poland: "PL",
-			Slovenia: "SI",
-			Slovakia: "SK",
-			"Czech Republic": "CZ",
-			Czechia: "CZ",
-			Hungary: "HU",
-			Croatia: "HR",
-			Bulgaria: "BG",
-			Romania: "RO",
-			Portugal: "PT",
-			Greece: "EL",
-			Finland: "FI",
-			Sweden: "SE",
-			Denmark: "DK",
-			Norway: "NO",
-			Switzerland: "CH",
-			Ireland: "IE",
-			Estonia: "EE",
-			Latvia: "LV",
-			Lithuania: "LT",
-			Luxembourg: "LU",
-			Cyprus: "CY",
-			Malta: "MT",
-			Iceland: "IS",
-			Turkey: "TR",
-			Ukraine: "UA",
-			Albania: "AL",
-			"Bosnia and Herzegovina": "BA",
-			"North Macedonia": "MK",
-			Montenegro: "ME",
-			Serbia: "RS",
-			Kosovo: "XK",
-			"United Kingdom": "GB",
-			"Great Britain": "GB",
-		};
-
-		const mapped = countryNameMap[countryId];
-		if (mapped) return mapped;
-
-		// Fallback: try to extract first 2 characters if longer than 2
-		if (countryId.length > 2) {
-			return countryId.substring(0, 2).toUpperCase();
-		}
-
-		return countryId.toUpperCase();
-	}
-
 	private getNutsDisplayName(nutsId: string): string {
-		// Map NUTS IDs to more readable names
+		// Map NUTS IDs to more readable names for European countries
 		const nutsNames: { [key: string]: string } = {
 			AT: "Austria",
 			BE: "Belgium",
+			BG: "Bulgaria",
+			CH: "Switzerland",
+			CY: "Cyprus",
+			CZ: "Czech Republic",
 			DE: "Germany",
-			FR: "France",
-			IT: "Italy",
+			DK: "Denmark",
+			EE: "Estonia",
+			EL: "Greece",
 			ES: "Spain",
+			FI: "Finland",
+			FR: "France",
+			HR: "Croatia",
+			HU: "Hungary",
+			IE: "Ireland",
+			IS: "Iceland",
+			IT: "Italy",
+			LI: "Liechtenstein",
+			LT: "Lithuania",
+			LU: "Luxembourg",
+			LV: "Latvia",
+			MT: "Malta",
 			NL: "Netherlands",
+			NO: "Norway",
 			PL: "Poland",
+			PT: "Portugal",
+			RO: "Romania",
+			SE: "Sweden",
 			SI: "Slovenia",
 			SK: "Slovakia",
+			TR: "Turkey",
+			UK: "United Kingdom",
+			GB: "United Kingdom",
+			// Balkan countries
+			AL: "Albania",
+			BA: "Bosnia and Herzegovina",
+			ME: "Montenegro",
+			MK: "North Macedonia",
+			RS: "Serbia",
+			XK: "Kosovo",
 		};
 
 		const countryCode = nutsId.substring(0, 2);
@@ -777,8 +510,7 @@ export class GridToNutsConverter {
 
 		// Update features with model data where available
 		for (const feature of this.nutsGeoJSON.features) {
-			if (!feature.properties) continue;
-			const nutsId = feature.properties.NUTS_ID;
+			const nutsId = feature.properties?.NUTS_ID;
 			const modelTemperature = modelData[nutsId];
 
 			if (modelTemperature !== undefined) {
@@ -788,25 +520,25 @@ export class GridToNutsConverter {
 					...feature,
 					properties: {
 						...feature.properties,
-						NUTS_ID: nutsId,
+						NUTS_ID: feature.properties?.NUTS_ID || "",
 						intensity: modelTemperature,
 						isModelData: true,
 					},
-					geometry: feature.geometry as Polygon | MultiPolygon,
+					geometry: feature.geometry as NutsGeometry,
 				});
 			} else {
 				// Keep calculated data
-				if (feature.properties && feature.properties.intensity !== undefined) {
+				if (feature.properties?.intensity !== undefined) {
 					temperatures.push(feature.properties.intensity);
 					updatedFeatures.push({
 						...feature,
 						properties: {
 							...feature.properties,
 							NUTS_ID: feature.properties?.NUTS_ID || "",
-							intensity: feature.properties?.intensity || 0,
+							intensity: feature.properties.intensity,
 							isModelData: false,
 						},
-						geometry: feature.geometry as Polygon | MultiPolygon,
+						geometry: feature.geometry as NutsGeometry,
 					});
 				}
 			}
@@ -832,8 +564,8 @@ export class GridToNutsConverter {
 	async resetToCalculatedData(
 		temperatureData: TemperatureDataPoint[],
 	): Promise<{ nutsGeoJSON: NutsGeoJSON; extremes: DataExtremes }> {
-		return this.convertGridDataToNuts(temperatureData);
+		return this.convertDataToNuts(temperatureData);
 	}
 }
 
-export const gridToNutsConverter = new GridToNutsConverter();
+export const nutsConverter = new NutsConverter();

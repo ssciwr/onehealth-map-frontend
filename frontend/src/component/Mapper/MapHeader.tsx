@@ -1,6 +1,6 @@
 import { SettingOutlined } from "@ant-design/icons";
 import { Button, Modal, Select } from "antd";
-import { EyeOff, Map as MapIcon, Palette } from "lucide-react";
+import { Map as MapIcon } from "lucide-react";
 
 const { Option } = Select;
 import { useState } from "react";
@@ -16,10 +16,12 @@ interface MapHeaderProps {
 	selectedOptimism: string;
 	setSelectedOptimism: (optimism: string) => void;
 	getOptimismLevels: () => string[];
-	mapMode?: "grid" | "nuts";
-	onMapModeChange?: (mode: "grid" | "nuts") => void;
-	styleMode?: "unchanged" | "purple" | "red";
-	onStyleModeChange?: (mode: "unchanged" | "purple" | "red") => void;
+	mapMode?: "worldwide" | "europe-only";
+	onMapModeChange?: (mode: "worldwide" | "europe-only") => void;
+	borderStyle?: "white" | "light-gray" | "black" | "half-opacity" | "black-80";
+	onBorderStyleChange?: (
+		style: "white" | "light-gray" | "black" | "half-opacity" | "black-80",
+	) => void;
 }
 
 export default ({
@@ -28,19 +30,12 @@ export default ({
 	selectedOptimism,
 	setSelectedOptimism,
 	getOptimismLevels,
-	mapMode = "grid",
+	mapMode = "europe-only",
 	onMapModeChange,
-	styleMode = "unchanged",
-	onStyleModeChange,
+	borderStyle = "white",
+	onBorderStyleChange,
 }: MapHeaderProps) => {
 	const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-	const [areControlsHidden, setAreControlsHidden] = useState(false);
-
-	// Color schemes for styling
-	const colorSchemes = {
-		purple: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-		red: "linear-gradient(135deg, #ff6b6b 0%, #ffa726 100%)",
-	};
 
 	return isMobile ? (
 		<div className="map-header">
@@ -66,7 +61,7 @@ export default ({
 					>
 						<img
 							alt="OneHealth Logo - two objects on either side that appear to be holding a circular shape inbetween the them"
-							style={{ height: "42px", width: "42px" }}
+							style={{ height: "30px", width: "30px" }}
 							src="/images/oneHealthLogoOnlySymbols.png"
 						/>
 
@@ -97,98 +92,84 @@ export default ({
 				title="Settings"
 				open={isSettingsOpen}
 				onCancel={() => setIsSettingsOpen(false)}
-				footer={
-					<Button
-						type="primary"
-						block
-						onClick={() => setIsSettingsOpen(false)}
-						style={{
-							backgroundColor: "#0052CC",
-							borderColor: "#0052CC",
-						}}
-					>
-						Close
-					</Button>
-				}
+				footer={null}
 				width="90vw"
 				style={{ top: 20 }}
 			>
 				<div style={{ padding: "20px 0" }}>
 					<div style={{ marginBottom: "24px" }}>
-						<h4>Disease Model</h4>
-						<ModelSelector
-							selectedModel={selectedModel}
-							onModelSelect={handleModelSelect}
-						/>
-					</div>
-
-					<div style={{ marginBottom: "24px" }}>
 						<h4>Optimism Level</h4>
-						<OptimismLevelSelector
-							availableOptimismLevels={getOptimismLevels()}
-							selectedOptimism={selectedOptimism}
-							setOptimism={setSelectedOptimism}
-						/>
+						<div style={{ background: "white" }}>
+							<OptimismLevelSelector
+								availableOptimismLevels={getOptimismLevels()}
+								selectedOptimism={selectedOptimism}
+								setOptimism={setSelectedOptimism}
+							/>
+						</div>
 					</div>
+					{mapMode === "worldwide" && onBorderStyleChange && (
+						<div style={{ marginBottom: "24px" }}>
+							<h4>Border Style</h4>
+							<Select
+								value={borderStyle}
+								onChange={onBorderStyleChange}
+								style={{ width: "100%" }}
+								size="large"
+							>
+								<Option value="white">White Borders</Option>
+								<Option value="light-gray">Light Gray Borders</Option>
+								<Option value="black">Black Borders</Option>
+								<Option value="black-80">Black 80% Borders</Option>
+								<Option value="half-opacity">Half Opacity Borders</Option>
+							</Select>
+						</div>
+					)}
 				</div>
 			</Modal>
 		</div>
 	) : (
 		<div
 			className="map-header header-section center min-w-100"
-			style={
-				styleMode !== "unchanged"
-					? {
-							position: "fixed",
-							top: 0,
-							left: 0,
-							right: 0,
-							background: colorSchemes[styleMode],
-							boxShadow: "0 8px 32px rgba(0, 0, 0, 0.25)",
-							zIndex: 1000,
-							backdropFilter: "blur(20px)",
-							borderBottom: "1px solid rgba(255, 255, 255, 0.2)",
-							margin: 0,
-						}
-					: {
-							position: "fixed",
-							top: 0,
-							left: 0,
-							right: 0,
-							zIndex: 1000,
-							backgroundColor: "white",
-						}
-			}
+			style={{
+				position: "fixed",
+				top: 0,
+				left: 0,
+				right: 0,
+				background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+				boxShadow: "0 8px 32px rgba(0, 0, 0, 0.25)",
+				zIndex: 999,
+				backdropFilter: "blur(20px)",
+				borderBottom: "1px solid rgba(255, 255, 255, 0.2)",
+				margin: 0,
+			}}
 		>
-			{/* Glass morphism overlay for styled modes */}
-			{styleMode !== "unchanged" && (
-				<div
-					style={{
-						position: "absolute",
-						top: 0,
-						left: 0,
-						right: 0,
-						bottom: 0,
-						background: "rgba(255, 255, 255, 0.1)",
-						backdropFilter: "blur(10px)",
-						pointerEvents: "none",
-						color: "white",
-					}}
-				/>
-			)}
+			{/* Glass morphism overlay */}
+			<div
+				style={{
+					position: "absolute",
+					top: 0,
+					left: 0,
+					right: 0,
+					bottom: 0,
+					background: "rgba(255, 255, 255, 0.1)",
+					backdropFilter: "blur(10px)",
+					pointerEvents: "none",
+					color: "white",
+				}}
+			/>
 
 			<GeneralCard
 				style={{
 					border: "0px solid",
 					marginBottom: "0px",
-					marginTop: styleMode !== "unchanged" ? "0px" : "10px",
-					background: styleMode !== "unchanged" ? "transparent" : undefined,
+					marginTop: "0px",
+					background: "transparent",
 					position: "relative",
 					zIndex: 1,
 				}}
 				bodyStyle={{
-					paddingTop: styleMode !== "unchanged" ? "16px" : "20px",
-					paddingBottom: styleMode !== "unchanged" ? "16px" : "20px",
+					paddingTop: "16px",
+					paddingBottom: "16px",
 				}}
 			>
 				<div className="logo-section">
@@ -217,33 +198,25 @@ export default ({
 							marginRight: "10px",
 						}}
 						alt="OneHealth Logo - two objects on either side that appear to be holding a circular shape inbetween the them"
-						src={
-							styleMode !== "unchanged"
-								? "/images/oneHealthWhite.png"
-								: "/images/oneHealthLogoFullLight.png"
-						}
+						src="/images/oneHealthWhite.png"
 					/>
 					<div
-						style={
-							styleMode !== "unchanged"
-								? {
-										background: "rgba(255, 255, 255, 0.2)",
-										border: "1px solid rgba(255, 255, 255, 0.3)",
-										borderRadius: "12px",
-										padding: "10px 16px",
-										backdropFilter: "blur(10px)",
-										transition: "all 0.3s ease",
-										display: "flex",
-										alignItems: "center",
-										gap: "4px",
-									}
-								: {}
-						}
-						className={styleMode !== "unchanged" ? "glass-button" : ""}
+						className="glass-button"
+						style={{
+							background: "rgba(255, 255, 255, 0.2)",
+							border: "1px solid rgba(255, 255, 255, 0.3)",
+							borderRadius: "12px",
+							padding: "10px 16px",
+							backdropFilter: "blur(10px)",
+							transition: "all 0.3s ease",
+							display: "flex",
+							alignItems: "center",
+							gap: "4px",
+						}}
 					>
 						<span
 							style={{
-								color: styleMode === "unchanged" ? "rgb(30,30,30)" : "white",
+								color: "white",
 								fontWeight: "500",
 							}}
 						>
@@ -256,33 +229,26 @@ export default ({
 					</div>
 					<span
 						style={{
-							color: styleMode !== "unchanged" ? "white" : "inherit",
-							fontWeight: styleMode !== "unchanged" ? "500" : "normal",
-							textShadow:
-								styleMode !== "unchanged"
-									? "0 2px 4px rgba(0, 0, 0, 0.2)"
-									: "none",
+							color: "white",
+							fontWeight: "500",
+							textShadow: "0 2px 4px rgba(0, 0, 0, 0.2)",
 						}}
 					>
 						with
 					</span>
 					<div
-						style={
-							styleMode !== "unchanged"
-								? {
-										background: "rgba(255, 255, 255, 0.2)",
-										border: "1px solid rgba(255, 255, 255, 0.3)",
-										borderRadius: "12px",
-										padding: "10px 16px",
-										backdropFilter: "blur(10px)",
-										transition: "all 0.3s ease",
-										display: "flex",
-										alignItems: "center",
-										gap: "4px",
-									}
-								: {}
-						}
-						className={styleMode !== "unchanged" ? "glass-button" : ""}
+						className="glass-button"
+						style={{
+							background: "rgba(255, 255, 255, 0.2)",
+							border: "1px solid rgba(255, 255, 255, 0.3)",
+							borderRadius: "12px",
+							padding: "10px 16px",
+							backdropFilter: "blur(10px)",
+							transition: "all 0.3s ease",
+							display: "flex",
+							alignItems: "center",
+							gap: "4px",
+						}}
 					>
 						<OptimismLevelSelector
 							availableOptimismLevels={getOptimismLevels()}
@@ -291,178 +257,149 @@ export default ({
 						/>
 						<span
 							style={{
-								color: styleMode === "unchanged" ? "rgb(30,30,30)" : "white",
+								color: "white",
 								fontWeight: "500",
 							}}
 						>
 							&nbsp;predictions
 						</span>
 					</div>
-					{!areControlsHidden && (
-						<>
-							<button
-								type="button"
-								onClick={() =>
-									onMapModeChange?.(mapMode === "grid" ? "nuts" : "grid")
-								}
-								className={styleMode !== "unchanged" ? "glass-button" : ""}
-								style={
-									styleMode !== "unchanged"
-										? {
-												display: "flex",
-												alignItems: "center",
-												gap: "10px",
-												padding: "12px 16px",
-												background: "rgba(255, 255, 255, 0.2)",
-												border: "1px solid rgba(255, 255, 255, 0.3)",
-												borderRadius: "12px",
-												backdropFilter: "blur(10px)",
-												transition: "all 0.3s ease",
-												color: "white",
-												fontWeight: "500",
-											}
-										: {
-												display: "flex",
-												alignItems: "center",
-												gap: "8px",
-												padding: "8px 12px",
-											}
-								}
-								title={`Switch to ${mapMode === "grid" ? "NUTS" : "Grid"} mode`}
+					<div
+						className="glass-button"
+						style={{
+							display: "flex",
+							alignItems: "center",
+							gap: "10px",
+							padding: "12px 16px",
+							background: "rgba(255, 255, 255, 0.2)",
+							border: "1px solid rgba(255, 255, 255, 0.3)",
+							borderRadius: "12px",
+							backdropFilter: "blur(10px)",
+							transition: "all 0.3s ease",
+							color: "white",
+							fontWeight: "500",
+						}}
+					>
+						<MapIcon size={20} />
+						<Select
+							value={mapMode}
+							onChange={onMapModeChange}
+							style={{ minWidth: 120 }}
+							size="middle"
+						>
+							<Option value="europe-only">Europe-only</Option>
+							<Option value="worldwide">Worldwide</Option>
+						</Select>
+					</div>
+					{mapMode === "worldwide" && onBorderStyleChange && (
+						<div
+							className="glass-button"
+							style={{
+								display: "flex",
+								alignItems: "center",
+								gap: "10px",
+								padding: "12px 16px",
+								background: "rgba(255, 255, 255, 0.2)",
+								border: "1px solid rgba(255, 255, 255, 0.3)",
+								borderRadius: "12px",
+								backdropFilter: "blur(10px)",
+								transition: "all 0.3s ease",
+								color: "white",
+								fontWeight: "500",
+							}}
+						>
+							<span style={{ fontSize: "16px" }}>🖼️</span>
+							<Select
+								value={borderStyle}
+								onChange={onBorderStyleChange}
+								style={{ minWidth: 100 }}
+								size="middle"
 							>
-								<MapIcon size={styleMode !== "unchanged" ? 20 : 16} />
-								{mapMode === "grid" ? "Grid" : "NUTS"}
-							</button>
-							{!isMobile && (
-								<div
-									className={styleMode !== "unchanged" ? "glass-button" : ""}
-									style={
-										styleMode !== "unchanged"
-											? {
-													display: "flex",
-													alignItems: "center",
-													gap: "10px",
-													padding: "12px 16px",
-													background: "rgba(255, 255, 255, 0.2)",
-													border: "1px solid rgba(255, 255, 255, 0.3)",
-													borderRadius: "12px",
-													backdropFilter: "blur(10px)",
-													transition: "all 0.3s ease",
-												}
-											: {
-													display: "flex",
-													alignItems: "center",
-													gap: "8px",
-												}
-									}
-								>
-									<Palette
-										size={styleMode !== "unchanged" ? 20 : 16}
-										color={styleMode !== "unchanged" ? "white" : "inherit"}
-									/>
-									<Select
-										value={styleMode}
-										onChange={onStyleModeChange}
-										style={{ minWidth: 140 }}
-										size="middle"
-									>
-										<Option value="unchanged">Unchanged</Option>
-										<Option value="purple">Style Purple</Option>
-										<Option value="red">Style Red</Option>
-									</Select>
-								</div>
-							)}
-							<button
-								type="button"
-								onClick={() => setAreControlsHidden(true)}
-								className={styleMode !== "unchanged" ? "glass-button" : ""}
-								style={
-									styleMode !== "unchanged"
-										? {
-												display: "flex",
-												alignItems: "center",
-												gap: "8px",
-												padding: "12px 16px",
-												background: "rgba(255, 255, 255, 0.2)",
-												border: "1px solid rgba(255, 255, 255, 0.3)",
-												borderRadius: "12px",
-												backdropFilter: "blur(10px)",
-												transition: "all 0.3s ease",
-												color: "white",
-												fontWeight: "500",
-											}
-										: {
-												display: "flex",
-												alignItems: "center",
-												gap: "8px",
-												padding: "8px 12px",
-											}
-								}
-								title="Hide controls (reload page to restore)"
-							>
-								<EyeOff size={styleMode !== "unchanged" ? 20 : 16} />
-								Hide
-							</button>
-						</>
+								<Option value="white">White</Option>
+								<Option value="light-gray">Light Gray</Option>
+								<Option value="black">Black</Option>
+								<Option value="black-80">Black 80%</Option>
+								<Option value="half-opacity">Half Opacity</Option>
+							</Select>
+						</div>
 					)}
 					<small
-						className={
-							styleMode !== "unchanged" ? "tertiary glass-button" : "tertiary"
-						}
-						style={
-							styleMode !== "unchanged"
-								? {
-										background: "rgba(255, 255, 255, 0.2)",
-										border: "1px solid rgba(255, 255, 255, 0.3)",
-										borderRadius: "12px",
-										padding: "8px 12px",
-										backdropFilter: "blur(10px)",
-										transition: "all 0.3s ease",
-										color: "white",
-										fontWeight: "500",
-									}
-								: {
-										border: "1px solid lightgray",
-										padding: "2px 4px",
-										borderRadius: "4px",
-									}
-						}
+						className="tertiary glass-button"
+						style={{
+							background: "rgba(255, 255, 255, 0.2)",
+							border: "1px solid rgba(255, 255, 255, 0.3)",
+							borderRadius: "12px",
+							padding: "8px 12px",
+							backdropFilter: "blur(10px)",
+							transition: "all 0.3s ease",
+							color: "white",
+							fontWeight: "500",
+						}}
 						hidden={viewingMode.isExpert === false}
 					>
 						Expert Mode
 					</small>
 				</div>
 
-				{/* Custom CSS for styled modes */}
-				{styleMode !== "unchanged" && (
-					<style>
-						{`
-							.glass-button:hover {
-								background: rgba(255, 255, 255, 0.3) !important;
-								border-color: rgba(255, 255, 255, 0.5) !important;
-								transform: translateY(-1px);
-								box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
-							}
+				{/* Custom CSS for glass effects */}
+				<style>
+					{`
+						.glass-button:hover {
+							background: rgba(255, 255, 255, 0.3) !important;
+							border-color: rgba(255, 255, 255, 0.5) !important;
+							transform: translateY(-1px);
+							box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+						}
 
-							.glass-button .ant-select-selector,
-							.glass-button .ant-select-selection-item,
-							.glass-button .ant-select-arrow,
-							.glass-button .anticon {
-								color: white !important;
-							}
+						.glass-button .ant-select-selector {
+							background: rgba(255, 255, 255, 0.1) !important;
+							border: 1px solid rgba(255, 255, 255, 0.3) !important;
+							color: white !important;
+						}
 
-							.glass-button button {
-								background: transparent !important;
-								border: none !important;
-								color: white !important;
-							}
+						.glass-button .ant-select-selection-item,
+						.glass-button .ant-select-arrow,
+						.glass-button .anticon {
+							color: white !important;
+						}
 
-							.glass-button button:hover {
-								background: rgba(255, 255, 255, 0.1) !important;
-							}
-						`}
-					</style>
-				)}
+						.glass-button button {
+							background: transparent !important;
+							border: none !important;
+							color: white;
+						}
+
+						.glass-button button:hover {
+							background: rgba(255, 255, 255, 0.1) !important;
+						}
+
+						.glass-button .ant-select-selector:hover {
+							background: rgba(255, 255, 255, 0.2) !important;
+							border-color: rgba(255, 255, 255, 0.4) !important;
+						}
+
+						.glass-button .ant-select-focused .ant-select-selector {
+							background: rgba(255, 255, 255, 0.2) !important;
+							border-color: rgba(255, 255, 255, 0.4) !important;
+							box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.2) !important;
+						}
+
+						.glass-button .model-selector-button {
+							background: rgba(255, 255, 255, 0.1) !important;
+							border: 1px solid rgba(255, 255, 255, 0.3) !important;
+							color: white !important;
+						}
+
+						.glass-button .model-selector-button:hover {
+							background: rgba(255, 255, 255, 0.2) !important;
+							border-color: rgba(255, 255, 255, 0.4) !important;
+						}
+
+						.glass-button .model-selector-button .chevron {
+							color: white !important;
+						}
+					`}
+				</style>
 			</GeneralCard>
 		</div>
 	);

@@ -4,10 +4,7 @@ import {
 	Camera,
 	ChevronDown,
 	ChevronUp,
-	Database,
-	ExternalLink,
 	FileText,
-	HelpCircle,
 	Info,
 	MapPin,
 	Minus,
@@ -60,27 +57,27 @@ declare module "leaflet" {
 	): SimpleMapScreenshoter;
 }
 
-export const CONTROL_BAR_LOCATIONS = {
+export const MOBILE_SIDE_BUTTONS_LOCATIONS = {
 	BOTTOM_RIGHT: "bottom-right",
 	TOP_LEFT: "top-left",
 } as const;
 
-type ControlBarLocation =
-	(typeof CONTROL_BAR_LOCATIONS)[keyof typeof CONTROL_BAR_LOCATIONS];
+type MobileSideButtonsLocation =
+	(typeof MOBILE_SIDE_BUTTONS_LOCATIONS)[keyof typeof MOBILE_SIDE_BUTTONS_LOCATIONS];
 
-interface ControlBarProps {
+interface MobileSideButtonsProps {
 	map: L.Map | null;
-	position?: ControlBarLocation;
+	position?: MobileSideButtonsLocation;
 	selectedModel?: string;
 	onModelSelect?: (modelId: string) => void;
 }
 
-const ControlBar = ({
+const MobileSideButtons = ({
 	map,
-	position = CONTROL_BAR_LOCATIONS.BOTTOM_RIGHT,
+	position = MOBILE_SIDE_BUTTONS_LOCATIONS.BOTTOM_RIGHT,
 	selectedModel,
 	onModelSelect,
-}: ControlBarProps) => {
+}: MobileSideButtonsProps) => {
 	const [isLocating, setIsLocating] = useState<boolean>(false);
 	const [isSaving, setIsSaving] = useState<boolean>(false);
 	const [showInfo, setShowInfo] = useState<boolean>(false);
@@ -107,6 +104,10 @@ const ControlBar = ({
 			details: string;
 		}>
 	>([]);
+
+	useEffect(() => {
+		console.log("Show info:", showInfo);
+	}, [showInfo]);
 
 	// Apply theme to document root
 	useEffect(() => {
@@ -209,8 +210,6 @@ const ControlBar = ({
 		loadModels();
 	}, []);
 
-	// todo: Make this call a callback to set resolution to high detail right before screenshot (Artificially increase
-	// zoom to cause this perhaps (a bit hacky but logical).
 	useEffect(() => {
 		if (map && !screenshoter) {
 			if (typeof L.simpleMapScreenshoter === "function") {
@@ -220,7 +219,7 @@ const ControlBar = ({
 							hidden: true,
 							preventDownload: true,
 							cropImageByInnerWH: true,
-							hideElementsWithSelectors: [], // css classes, not needed fro now.
+							hideElementsWithSelectors: [], // css classes, not needed for now.
 							mimeType: "image/png",
 							screenName: () => `map-screenshot-${Date.now()}`,
 						});
@@ -355,244 +354,28 @@ const ControlBar = ({
 		setIsMinimized(!isMinimized);
 	};
 
-	const circularButtonSize = 24;
+	const circularButtonSize = 18;
 
-	const getControlBarClasses = () => {
-		const baseClass = isMobile
-			? "control-bar control-bar-mobile"
-			: "control-bar control-bar-desktop";
-		if (isMobile) return baseClass;
-		return position === CONTROL_BAR_LOCATIONS.BOTTOM_RIGHT
-			? `${baseClass} control-bar-bottom-right`
-			: `${baseClass} control-bar-top-left`;
+	// Get button styles - always purple
+	const getButtonStyle = () => {
+		return {
+			backgroundColor: "#667eea",
+			background: "#6d63c8",
+		};
 	};
 
-	if (isMobile) {
-		// Mobile: circular buttons with minimize functionality
-		return (
-			<>
-				<div data-testid="control-bar" className={getControlBarClasses()}>
-					{!isMinimized ? (
-						<>
-							<button type="button" onClick={handleZoomIn} className="btn-icon">
-								<Plus size={circularButtonSize} />
-							</button>
+	const getMobileSideButtonsClasses = () => {
+		const baseClass = isMobile
+			? "mobile-side-buttons mobile-side-buttons-mobile"
+			: "mobile-side-buttons mobile-side-buttons-desktop";
+		if (isMobile) return baseClass;
+		return position === MOBILE_SIDE_BUTTONS_LOCATIONS.BOTTOM_RIGHT
+			? `${baseClass} mobile-side-buttons-bottom-right`
+			: `${baseClass} mobile-side-buttons-top-left`;
+	};
 
-							<button
-								type="button"
-								onClick={handleZoomOut}
-								className="btn-icon"
-							>
-								<Minus size={circularButtonSize} />
-							</button>
-
-							<button
-								type="button"
-								onClick={handleLocationRequest}
-								disabled={isLocating}
-								className="btn-icon"
-							>
-								<MapPin size={circularButtonSize} />
-							</button>
-
-							<button
-								type="button"
-								onClick={handleSaveScreenshot}
-								disabled={isSaving || !screenshoter}
-								className="btn-icon"
-								title={
-									!screenshoter
-										? "Screenshot plugin not loaded"
-										: "Take screenshot"
-								}
-							>
-								<Camera size={circularButtonSize} />
-							</button>
-							<button
-								type="button"
-								onClick={() => setShowInfo(true)}
-								className="btn-icon"
-							>
-								<Info size={circularButtonSize} />
-							</button>
-
-							<button
-								type="button"
-								onClick={() => setShowModelDetails(true)}
-								className="btn-icon"
-								disabled={!selectedModel || models.length === 0}
-							>
-								<FileText size={circularButtonSize} />
-							</button>
-						</>
-					) : null}
-
-					<button
-						type="button"
-						onClick={handleToggleMinimize}
-						className="btn-icon minimize-button"
-					>
-						{isMinimized ? (
-							<ChevronDown size={circularButtonSize} />
-						) : (
-							<ChevronUp size={circularButtonSize} />
-						)}
-					</button>
-				</div>
-				{/* Mobile modals remain the same */}
-			</>
-		);
-	}
-
-	// Desktop: horizontal layout with red buttons
-	return (
-		<>
-			<div data-testid="control-bar" className="desktop-control-container">
-				{/* Center buttons */}
-				<div className="desktop-control-buttons">
-					<button
-						type="button"
-						onClick={() => setShowModelDetails(true)}
-						disabled={!selectedModel || models.length === 0}
-						style={{
-							display: "flex",
-							alignItems: "center",
-							gap: "8px",
-							padding: "8px 20px",
-							backgroundColor: "#db3c1c",
-							border: "1px solid #db3c1c",
-							borderRadius: "0.5rem",
-							cursor: "pointer",
-							fontSize: "18px",
-							fontWeight: "500",
-							color: "white",
-							transition: "all 0.2s ease",
-							opacity: !selectedModel || models.length === 0 ? 0.5 : 1,
-							whiteSpace: "nowrap",
-							minWidth: "fit-content",
-						}}
-						onMouseEnter={(e) => {
-							if (selectedModel && models.length > 0) {
-								e.currentTarget.style.backgroundColor = "#8a0000";
-								e.currentTarget.style.borderColor = "#8a0000";
-							}
-						}}
-						onMouseLeave={(e) => {
-							e.currentTarget.style.backgroundColor = "#db3c1c";
-							e.currentTarget.style.borderColor = "#db3c1c";
-						}}
-						title="View detailed information about disease models"
-					>
-						<Database size={16} />
-						Model Info
-					</button>
-
-					<button
-						type="button"
-						onClick={handleSaveScreenshot}
-						disabled={isSaving || !screenshoter}
-						style={{
-							display: "flex",
-							alignItems: "center",
-							gap: "8px",
-							padding: "8px 20px",
-							backgroundColor: "#db3c1c",
-							border: "1px solid #db3c1c",
-							borderRadius: "0.5rem",
-							cursor: "pointer",
-							fontSize: "18px",
-							fontWeight: "500",
-							color: "white",
-							transition: "all 0.2s ease",
-							opacity: isSaving || !screenshoter ? 0.5 : 1,
-							whiteSpace: "nowrap",
-							minWidth: "fit-content",
-						}}
-						onMouseEnter={(e) => {
-							if (!isSaving && screenshoter) {
-								e.currentTarget.style.backgroundColor = "#8a0000";
-								e.currentTarget.style.borderColor = "#8a0000";
-							}
-						}}
-						onMouseLeave={(e) => {
-							e.currentTarget.style.backgroundColor = "#db3c1c";
-							e.currentTarget.style.borderColor = "#db3c1c";
-						}}
-						title={
-							!screenshoter
-								? "Screenshot plugin not loaded"
-								: "Capture map as image"
-						}
-					>
-						<Camera size={16} />
-						{isSaving ? "Saving..." : "Screenshot"}
-						<ExternalLink size={16} />
-					</button>
-
-					<button
-						type="button"
-						onClick={() => setShowInfo(true)}
-						style={{
-							display: "flex",
-							alignItems: "center",
-							gap: "8px",
-							padding: "8px 20px",
-							backgroundColor: "#db3c1c",
-							border: "1px solid #db3c1c",
-							borderRadius: "0.5rem",
-							cursor: "pointer",
-							fontSize: "18px",
-							fontWeight: "500",
-							color: "white",
-							transition: "all 0.2s ease",
-							whiteSpace: "nowrap",
-							minWidth: "fit-content",
-						}}
-						onMouseEnter={(e) => {
-							e.currentTarget.style.backgroundColor = "#8a0000";
-							e.currentTarget.style.borderColor = "#8a0000";
-						}}
-						onMouseLeave={(e) => {
-							e.currentTarget.style.backgroundColor = "#db3c1c";
-							e.currentTarget.style.borderColor = "#db3c1c";
-						}}
-						title="About this application and team"
-					>
-						<HelpCircle size={16} />
-						About
-					</button>
-				</div>
-
-				{/* Zoom controls on the right */}
-				<div className="desktop-zoom-controls">
-					<button
-						type="button"
-						onClick={handleZoomOut}
-						className="desktop-control-btn desktop-zoom-btn desktop-zoom-left"
-						title="Zoom Out"
-					>
-						<Minus size={18} />
-					</button>
-					<button
-						type="button"
-						onClick={handleLocationRequest}
-						disabled={isLocating}
-						className="desktop-control-btn desktop-zoom-btn desktop-zoom-center"
-						title="My Location"
-					>
-						<MapPin size={18} />
-					</button>
-					<button
-						type="button"
-						onClick={handleZoomIn}
-						className="desktop-control-btn desktop-zoom-btn desktop-zoom-right"
-						title="Zoom In"
-					>
-						<Plus size={18} />
-					</button>
-				</div>
-			</div>
-
+	const modals = (
+		<div>
 			<Modal
 				title=""
 				open={showInfo}
@@ -648,9 +431,99 @@ const ControlBar = ({
 				models={models}
 				selectedModelId={selectedModel || ""}
 				onModelSelect={onModelSelect || (() => {})}
+				showCurrentModelFirst={true}
 			/>
+		</div>
+	);
+
+	// Mobile: circular buttons with minimize functionality
+	return (
+		<>
+			<div
+				data-testid="mobile-side-buttons"
+				className={getMobileSideButtonsClasses()}
+			>
+				{!isMinimized ? (
+					<>
+						<button
+							type="button"
+							onClick={handleZoomIn}
+							className="btn-icon"
+							style={getButtonStyle()}
+						>
+							<Plus size={circularButtonSize} />
+						</button>
+
+						<button
+							type="button"
+							onClick={handleZoomOut}
+							className="btn-icon"
+							style={getButtonStyle()}
+						>
+							<Minus size={circularButtonSize} />
+						</button>
+
+						<button
+							type="button"
+							onClick={handleLocationRequest}
+							disabled={isLocating}
+							className="btn-icon"
+							style={getButtonStyle()}
+						>
+							<MapPin size={circularButtonSize} />
+						</button>
+
+						<button
+							type="button"
+							onClick={handleSaveScreenshot}
+							disabled={isSaving || !screenshoter}
+							className="btn-icon"
+							style={getButtonStyle()}
+							title={
+								!screenshoter
+									? "Screenshot plugin not loaded"
+									: "Take screenshot"
+							}
+						>
+							<Camera size={circularButtonSize} />
+						</button>
+						<button
+							type="button"
+							onClick={() => setShowInfo(true)}
+							className="btn-icon"
+							style={getButtonStyle()}
+						>
+							<Info size={circularButtonSize} />
+						</button>
+
+						<button
+							type="button"
+							onClick={() => setShowModelDetails(true)}
+							className="btn-icon"
+							disabled={!selectedModel || models.length === 0}
+							style={getButtonStyle()}
+						>
+							<FileText size={circularButtonSize} />
+						</button>
+					</>
+				) : null}
+
+				<button
+					type="button"
+					onClick={handleToggleMinimize}
+					className="btn-icon minimize-button"
+					style={getButtonStyle()}
+				>
+					{isMinimized ? (
+						<ChevronDown size={circularButtonSize} />
+					) : (
+						<ChevronUp size={circularButtonSize} />
+					)}
+				</button>
+			</div>
+			{modals}
 		</>
 	);
 };
 
-export default ControlBar;
+export default MobileSideButtons;

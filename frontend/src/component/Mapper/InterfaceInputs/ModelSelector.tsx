@@ -21,17 +21,28 @@ interface YamlData {
 		paperTitle?: string;
 		url?: string;
 	};
+	output?: string[];
 }
 
 const parseYamlText = (yamlText: string): YamlData => {
 	const lines = yamlText.split("\n");
-	const result: Record<string, string> = {};
+	const result: Record<string, string | string[]> = {};
+	let currentKey = "";
+	let isInArray = false;
+	let arrayItems: string[] = [];
 
 	for (const line of lines) {
 		const trimmed = line.trim();
 		if (trimmed && !trimmed.startsWith("#")) {
 			const colonIndex = trimmed.indexOf(":");
 			if (colonIndex > 0) {
+				// If we were in an array, save it
+				if (isInArray && currentKey) {
+					result[currentKey] = arrayItems;
+					arrayItems = [];
+					isInArray = false;
+				}
+
 				const key = trimmed.substring(0, colonIndex).trim();
 				let value = trimmed.substring(colonIndex + 1).trim();
 
@@ -42,9 +53,23 @@ const parseYamlText = (yamlText: string): YamlData => {
 					value = value.slice(1, -1);
 				}
 
-				result[key] = value;
+				if (value === "") {
+					// This might be the start of an array
+					currentKey = key;
+					isInArray = true;
+				} else {
+					result[key] = value;
+				}
+			} else if (trimmed.startsWith("- ") && isInArray) {
+				// This is an array item
+				arrayItems.push(trimmed.substring(2).trim());
 			}
 		}
+	}
+
+	// Handle any remaining array
+	if (isInArray && currentKey) {
+		result[currentKey] = arrayItems;
 	}
 
 	return result as YamlData;
@@ -60,6 +85,7 @@ interface Model {
 	icon: string;
 	color: string;
 	details: string;
+	output: string[];
 }
 
 const loadModels = async (): Promise<Model[]> => {
@@ -95,6 +121,7 @@ const loadModels = async (): Promise<Model[]> => {
 				icon: yamlData.icon || "",
 				color: yamlData.color || "",
 				details: yamlData.details || "",
+				output: yamlData.output || ["R0"],
 			};
 
 			models.push(model);
@@ -153,6 +180,7 @@ const ModelSelector = ({
 						color: "#754910",
 						details:
 							"Advanced climate model incorporating temperature, humidity, and precipitation data from NOAA weather stations.",
+						output: ["R0"],
 					},
 				]);
 			} finally {
@@ -188,7 +216,7 @@ const ModelSelector = ({
 	// Create display text with proper truncation
 	const getDisplayText = (modelData: Model) => {
 		const fullText = `${modelData.title} - ${modelData.modelName}`;
-		return truncateText(fullText, isMobile ? 20 : 30);
+		return truncateText(fullText, isMobile ? 12 : 30);
 	};
 
 	if (isMobile) {
@@ -205,7 +233,7 @@ const ModelSelector = ({
 						borderRadius: "8px",
 						color: "var(--text-primary)",
 						height: "auto",
-						maxWidth: "200px",
+						maxWidth: "140px",
 					}}
 					loading={loading}
 					onClick={() => setIsDetailsModalOpen(true)}
@@ -267,7 +295,7 @@ const ModelSelector = ({
 						type="link"
 						size="small"
 						onClick={handleViewDetailsClick}
-						style={{ padding: 0, height: "auto", color: "var(--primary)" }}
+						style={{ padding: 0, height: "auto", color: "blue" }}
 						disabled={loading}
 					>
 						View Details & Compare Models

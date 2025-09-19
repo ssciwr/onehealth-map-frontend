@@ -1,6 +1,40 @@
 import type { Feature, Point as PointGeometry } from "geojson";
 import type L from "leaflet";
 
+export type Month = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12;
+
+export interface MonthInfo {
+	value: Month;
+	label: string;
+	shortLabel: string;
+}
+
+export interface WorldwideProperties {
+	WORLDWIDE_ID: string;
+	intensity: number | null;
+	countryName?: string;
+	pointCount?: number;
+	worldwideLevel?: number;
+	isFallback?: boolean;
+	isModelData?: boolean;
+}
+
+export interface WorldwideGeometry {
+	type: "Polygon" | "MultiPolygon";
+	coordinates: number[][][] | number[][][][]; // Proper coordinate typing
+}
+
+export interface WorldwideFeature {
+	type: "Feature";
+	properties: WorldwideProperties;
+	geometry: WorldwideGeometry;
+}
+
+export interface WorldwideGeoJSON {
+	type: "FeatureCollection";
+	features: WorldwideFeature[];
+}
+
 export interface NutsProperties {
 	NUTS_ID: string;
 	intensity: number | null;
@@ -9,11 +43,14 @@ export interface NutsProperties {
 	nutsLevel?: number;
 	isFallback?: boolean;
 	isModelData?: boolean;
+	currentPosition?: { lat: number; lng: number };
+	nearestDataPoint?: { lat: number; lng: number };
+	dataPoints?: Array<{ lat: number; lng: number; temperature: number }>;
 }
 
 export interface NutsGeometry {
 	type: "Polygon" | "MultiPolygon";
-	coordinates: number[][][] | number[][][][]; // Proper coordinate typing
+	coordinates: number[][][] | number[][][][];
 }
 
 export interface NutsFeature {
@@ -73,10 +110,3 @@ export interface TemperatureDataPoint {
 	date?: string;
 	id?: string;
 }
-
-export const COLOR_SCHEMES = {
-	default: {
-		low: "#2656ac",
-		high: "#ef4444",
-	},
-} as const; // preserve literal types

@@ -1,20 +1,26 @@
-import { CalendarOutlined } from "@ant-design/icons";
-import { Select, Slider, Tooltip } from "antd";
+import {
+	CalendarOutlined,
+	LeftOutlined,
+	RightOutlined,
+} from "@ant-design/icons";
+import { Button, Select, Slider, Tooltip } from "antd";
 import type { ReactNode } from "react";
+import { useEffect, useState } from "react";
 import { isMobile } from "react-device-detect";
 import { useLocation } from "react-router-dom";
 import { viewingMode } from "../../../stores/ViewingModeStore.ts";
 import GeneralCard from "../../General/GeneralCard.tsx";
+import type { Month } from "../types";
+import { MONTHS } from "../utilities/monthUtils";
 
 const { Option } = Select;
 
 interface AntdTimelineSelectorProps {
 	year: number;
-	month: number;
+	month: Month;
 	onYearChange: (value: number) => void;
-	onMonthChange: (value: number) => void;
+	onMonthChange: (value: Month) => void;
 	legend?: ReactNode;
-	styleMode?: "unchanged" | "purple" | "red";
 }
 
 const TimelineSelector: React.FC<AntdTimelineSelectorProps> = ({
@@ -23,25 +29,38 @@ const TimelineSelector: React.FC<AntdTimelineSelectorProps> = ({
 	onYearChange,
 	onMonthChange,
 	legend,
-	styleMode = "unchanged",
 }) => {
 	const location = useLocation();
 	const isAdvanced = location.pathname.includes("/advanced");
+	const [screenWidth, setScreenWidth] = useState(window.innerWidth);
 
-	const months = [
-		"January",
-		"February",
-		"March",
-		"April",
-		"May",
-		"June",
-		"July",
-		"August",
-		"September",
-		"October",
-		"November",
-		"December",
-	];
+	// Track screen width for responsive features
+	useEffect(() => {
+		const handleResize = () => {
+			setScreenWidth(window.innerWidth);
+		};
+
+		window.addEventListener("resize", handleResize);
+		return () => window.removeEventListener("resize", handleResize);
+	}, []);
+
+	// Check if we should show year navigation buttons
+	const showYearNavButtons = screenWidth > 1200 && !isMobile;
+
+	// Year navigation handlers
+	const handlePreviousYear = () => {
+		if (year > 1960) {
+			onYearChange(year - 1);
+		}
+	};
+
+	const handleNextYear = () => {
+		if (year < 2100) {
+			onYearChange(year + 1);
+		}
+	};
+
+	// months array is now imported from utilities
 
 	const marks = {
 		1960: "1960",
@@ -112,13 +131,66 @@ const TimelineSelector: React.FC<AntdTimelineSelectorProps> = ({
 							<div
 								hidden={isMobile}
 								style={{
-									fontSize: "2rem",
 									borderRight: "1px solid lightgray",
 									paddingRight: "20px",
 									marginRight: "10px",
+									display: "flex",
+									alignItems: "center",
+									gap: showYearNavButtons ? "12px" : "0px",
 								}}
 							>
-								{year}
+								{showYearNavButtons && (
+									<Button
+										type="text"
+										icon={<LeftOutlined />}
+										onClick={handlePreviousYear}
+										disabled={year <= 1960}
+										style={{
+											border: "1px solid #d9d9d9",
+											borderRadius: "6px",
+											width: "32px",
+											height: "32px",
+											display: "flex",
+											alignItems: "center",
+											justifyContent: "center",
+											padding: "0",
+											fontSize: "14px",
+											color: year <= 1960 ? "#bfbfbf" : "white",
+											borderColor: "rgba(255, 255, 255, 0.3)",
+											backgroundColor: "rgba(255, 255, 255, 0.1)",
+										}}
+									/>
+								)}
+								<div
+									style={{
+										fontSize: "2rem",
+										minWidth: showYearNavButtons ? "auto" : "unset",
+									}}
+								>
+									{year}
+								</div>
+								{showYearNavButtons && (
+									<Button
+										type="text"
+										icon={<RightOutlined />}
+										onClick={handleNextYear}
+										disabled={year >= 2100}
+										style={{
+											border: "1px solid #d9d9d9",
+											borderRadius: "6px",
+											width: "32px",
+											height: "32px",
+											display: "flex",
+											alignItems: "center",
+											justifyContent: "center",
+											padding: "0",
+											fontSize: "14px",
+											color: year >= 2100 ? "#bfbfbf" : "white",
+											borderColor: "rgba(255, 255, 255, 0.3)",
+											backgroundColor: "rgba(255, 255, 255, 0.1)",
+										}}
+									/>
+								)}
 							</div>
 
 							{/* Year input - slider on desktop, dropdown on mobile */}
@@ -166,35 +238,22 @@ const TimelineSelector: React.FC<AntdTimelineSelectorProps> = ({
 											included={false}
 											onChange={onYearChange}
 											trackStyle={{
-												background:
-													styleMode !== "unchanged" ? "white" : "transparent",
+												background: "white",
 											}}
 											railStyle={{
-												background:
-													styleMode !== "unchanged"
-														? "rgba(255, 255, 255, 0.9)"
-														: "var(--primary)",
-												height: styleMode !== "unchanged" ? "8px" : undefined,
-												borderRadius:
-													styleMode !== "unchanged" ? "4px" : undefined,
+												background: "rgba(255, 255, 255, 0.9)",
+												height: "8px",
+												borderRadius: "4px",
 											}}
-											handleStyle={
-												styleMode !== "unchanged"
-													? {
-															borderColor: "rgba(0, 0, 0, 0.2)",
-															backgroundColor: "white",
-															boxShadow:
-																"0 4px 16px rgba(0, 0, 0, 0.3), 0 0 0 2px rgba(0, 0, 0, 0.1)",
-															width: "28px",
-															height: "28px",
-															marginTop: "-10px",
-														}
-													: {
-															borderColor: "#1890ff",
-															backgroundColor: "#1890ff",
-															boxShadow: "0 2px 6px rgba(24, 144, 255, 0.3)",
-														}
-											}
+											handleStyle={{
+												borderColor: "rgba(0, 0, 0, 0.2)",
+												backgroundColor: "white",
+												boxShadow:
+													"0 4px 16px rgba(0, 0, 0, 0.3), 0 0 0 2px rgba(0, 0, 0, 0.1)",
+												width: "28px",
+												height: "28px",
+												marginTop: "-10px",
+											}}
 											style={{ width: "100%" }}
 										/>
 									</Tooltip>
@@ -208,12 +267,9 @@ const TimelineSelector: React.FC<AntdTimelineSelectorProps> = ({
 									style={{ minWidth: 140, flexShrink: 0 }}
 									suffixIcon={<CalendarOutlined />}
 								>
-									{months.map((monthName, index) => (
-										<Option
-											key={index.toString() + monthName}
-											value={index + 1}
-										>
-											{monthName}
+									{MONTHS.map((monthInfo) => (
+										<Option key={monthInfo.value} value={monthInfo.value}>
+											{monthInfo.label}
 										</Option>
 									))}
 								</Select>
@@ -237,7 +293,7 @@ const TimelineSelector: React.FC<AntdTimelineSelectorProps> = ({
 				</div>
 
 				{/* Custom CSS for styled modes */}
-				{styleMode !== "unchanged" && !isMobile && (
+				{true && !isMobile && (
 					<style>
 						{`
 							/* White slider styling for styled modes */
@@ -281,46 +337,6 @@ const TimelineSelector: React.FC<AntdTimelineSelectorProps> = ({
 								font-size: 16px !important;
 								font-weight: 600 !important;
 								text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
-							}
-						`}
-					</style>
-				)}
-
-				{/* Default red styling for unchanged mode */}
-				{styleMode === "unchanged" && !isMobile && (
-					<style>
-						{`
-							/* Red slider styling for unchanged mode */
-							.ant-slider .ant-slider-rail {
-								background: #db3c1c !important;
-								box-shadow: 0 2px 8px rgba(219, 60, 28, 0.3) !important;
-								border-radius: 10px !important;
-							}
-
-							.ant-slider .ant-slider-track {
-								background-color: transparent !important;
-							}
-
-							.ant-slider .ant-slider-handle {
-								border: none !important;
-								background: #db3c1c !important;
-								box-shadow: 0 3px 12px rgba(165, 39, 78, 0.5) !important;
-								width: 24px !important;
-								height: 24px !important;
-								border-radius: 50% !important;
-								margin-left: -12px !important;
-								margin-top: -7px !important;
-							}
-
-							.ant-slider-handle::before,
-							.ant-slider-handle::after {
-								content: none !important;
-							}
-
-							.ant-slider .ant-slider-handle:hover {
-								background: linear-gradient(45deg, #a5274e, #8b1e3f) !important;
-								box-shadow: 0 4px 16px rgba(165, 39, 78, 0.7) !important;
-								transform: scale(1.1) !important;
 							}
 						`}
 					</style>

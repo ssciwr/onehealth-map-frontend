@@ -1,14 +1,19 @@
 // tests/map-color-change-comprehensive.spec.js
 import { expect, test } from "@playwright/test";
 import { skipIfMobile } from "../utils";
+import "../setup/global-setup";
+import { setupGlobalMocks } from "../setup/global-setup";
 
 // Test works locally
-test.describe.skip("Comprehensive Grid Color Analysis - Desktop Only", () => {
+test.describe("Comprehensive Grid Color Analysis - Desktop Only", () => {
 	test.setTimeout(1500000); // (25 minutes - yes it does take a long time (3.5 min on dev machine) due to
 	// geoJSON processing of country boundries + sampling many points )
 
 	test.beforeEach(async ({ page }) => {
 		await page.setViewportSize({ width: 1280, height: 720 });
+
+		// Set up API mocks BEFORE navigating to the page
+		await setupGlobalMocks(page);
 
 		// Disable animations and transitions for test stability
 		await page.addStyleTag({
@@ -46,52 +51,31 @@ test.describe.skip("Comprehensive Grid Color Analysis - Desktop Only", () => {
 
 		// Helper function to wait for slider stability
 		async function waitForSliderStability() {
-			await page.waitForFunction(
-				() => {
-					const handle = document.querySelector(
-						'[data-testid="timeline-selector"] .ant-slider-handle',
-					);
-					if (!handle) return false;
-
-					const rect = handle.getBoundingClientRect();
-					return rect.width > 0 && rect.height > 0;
-				},
-				{ timeout: 30000 },
+			// Simply wait for slider handle to be visible
+			const sliderHandle = page.locator(
+				'[data-testid="timeline-selector"] .timeline-slider-handle',
 			);
+			await expect(sliderHandle).toBeVisible({ timeout: 30000 });
 
-			// Additional wait to ensure no movement
-			await page.waitForTimeout(2000);
+			// Short wait for stability
+			await page.waitForTimeout(1000);
 		}
 
 		// Helper function to wait for map data to load and stabilize
 		async function waitForMapDataStability() {
-			// Wait for grid data to be fully loaded
-			await page.waitForFunction(
-				() => {
-					const paths = document.querySelectorAll('path[fill*="#"]');
-					return paths.length > 0;
-				},
-				{ timeout: 60000 },
-			);
+			// Wait for leaflet container to be present
+			await page.waitForSelector(".leaflet-container", { timeout: 30000 });
 
-			// Wait for map tiles and data to finish loading
-			await page.waitForFunction(
-				() => {
-					const leafletContainer = document.querySelector(".leaflet-container");
-					if (!leafletContainer) return false;
+			// Wait for some map content to appear (either paths or tiles)
+			try {
+				await page.waitForSelector('path[fill*="#"]', { timeout: 15000 });
+			} catch (e) {
+				// If no paths, just wait for leaflet to be ready
+				console.log("No paths found, continuing...");
+			}
 
-					// Check if leaflet is still loading
-					const loadingIndicators = leafletContainer.querySelectorAll(
-						".leaflet-tile-loading",
-					);
-					return loadingIndicators.length === 0;
-				},
-				{ timeout: 30000 },
-			);
-
-			// Pause for 20 seconds to allow map data to fully stabilize
-			console.log("Pausing for 20 seconds to allow map data to stabilize...");
-			await page.waitForTimeout(20000);
+			// Reasonable wait for map to stabilize
+			await page.waitForTimeout(5000);
 		}
 
 		// Helper function to get colors from grid path elements
@@ -138,12 +122,12 @@ test.describe.skip("Comprehensive Grid Color Analysis - Desktop Only", () => {
 			await waitForSliderStability();
 
 			const sliderHandle = page.locator(
-				'[data-testid="timeline-selector"] .ant-slider-handle',
+				'[data-testid="timeline-selector"] .timeline-slider-handle',
 			);
 			await expect(sliderHandle).toBeVisible();
 
 			const yearSlider = page.locator(
-				'[data-testid="timeline-selector"] .ant-slider',
+				'[data-testid="timeline-selector"] .timeline-slider',
 			);
 			await expect(yearSlider).toBeVisible();
 
@@ -176,7 +160,7 @@ test.describe.skip("Comprehensive Grid Color Analysis - Desktop Only", () => {
 		await waitForMapDataStability();
 
 		// Test multiple years
-		const testYears = [2030, 2025, 2035];
+		const testYears = [2016, 2017];
 		const yearColorMaps = new Map();
 
 		for (const year of testYears) {
@@ -188,12 +172,10 @@ test.describe.skip("Comprehensive Grid Color Analysis - Desktop Only", () => {
 		}
 
 		// Assert colors are different between years
-		const colors2030 = yearColorMaps.get(2030);
-		const colors2025 = yearColorMaps.get(2025);
-		const colors2035 = yearColorMaps.get(2035);
+		const colors2016 = yearColorMaps.get(2016);
+		const colors2017 = yearColorMaps.get(2017);
 
-		expect(JSON.stringify(colors2030)).not.toBe(JSON.stringify(colors2025));
-		expect(JSON.stringify(colors2025)).not.toBe(JSON.stringify(colors2035));
+		expect(JSON.stringify(colors2016)).not.toBe(JSON.stringify(colors2017));
 
 		// Validate hex color format
 		yearColorMaps.forEach((colors, year) => {

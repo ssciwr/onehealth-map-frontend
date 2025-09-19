@@ -98,6 +98,7 @@ body {
 	place-items: center;
 	min-width: 320px;
 	min-height: 100vh;
+	overflow-x: hidden;
 }
 
 h1 {
@@ -151,8 +152,8 @@ h1 {
 }
 
 .btn-icon {
-	width: 57px;
-	height: 57px;
+	width: 42px;
+	height: 42px;
 	background-color: #db3c1c;
 	border: none;
 	border-radius: var(--radius-full);
@@ -465,7 +466,7 @@ button:focus-visible {
 	border-radius: 30px;
 	padding: 4px;
 	gap: 4px;
-	background-color: rgba(255, 255, 255, 0.85) !important;
+	background-color: rgba(255, 255, 255, 0.76) !important;
 }
 
 .control-bar-bottom-right {
@@ -515,33 +516,6 @@ button:focus-visible {
 	background: linear-gradient(45deg, #a5274e, #8b1e3f) !important;
 	box-shadow: 0 4px 16px rgba(165, 39, 78, 0.7) !important;
 	transform: scale(1.1) !important;
-}
-
-/* Select Components - Branded Theme */
-[data-theme="branded"] .ant-select-selector {
-	background: #db3c1c !important;
-	border: none !important;
-	border-radius: 8px !important;
-	box-shadow: none !important;
-	margin-top: 6px !important;
-	padding-top: 6px !important;
-	padding-bottom: 6px !important;
-	transition: all 0.1s ease !important;
-	color: white !important;
-}
-
-[data-theme="branded"] .ant-select-selection-item,
-[data-theme="branded"] .ant-select-arrow,
-[data-theme="branded"] .ant-select .anticon {
-	color: white !important;
-}
-
-[data-theme="branded"] .ant-select:hover .ant-select-selector {
-	background: #efe9eb !important;
-	color: #db3c1c !important;
-	border: none !important;
-	box-shadow: none !important;
-	transform: translateY(-1px) !important;
 }
 
 /* Emoji Container */

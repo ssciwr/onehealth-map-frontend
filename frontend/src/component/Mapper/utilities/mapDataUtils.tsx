@@ -1,22 +1,12 @@
 import * as turf from "@turf/turf";
 import L from "leaflet";
+import { isMobile } from "react-device-detect";
+import { fetchClimateData } from "../../../services/climateDataService.ts";
 import type { DataExtremes, TemperatureDataPoint } from "../types.ts";
 
 export const MIN_ZOOM = 3.4;
-export const MAX_ZOOM = 7;
+export const MAX_ZOOM = 10;
 
-/* Blue-red-red:
-const TEMP_COLORS = [
-	"#2c7bd4",
-	"#5a9ee8",
-	"#87c1f2",
-	"#b8d8f5",
-	"#f0c45a",
-	"#e89c35",
-	"#d67220",
-	"#c44020",
-];
- */
 export const TEMP_COLORS = [
 	"#4c1d4b", // Deep purple
 	"#663399", // Purple
@@ -52,179 +42,263 @@ const generateIntervals = (
 
 export const Legend = ({
 	extremes,
-	unit = "°C",
-	isMobile = false,
-}: { extremes: DataExtremes; unit?: string; isMobile?: boolean }) => {
+	unit = "R0",
+}: { extremes: DataExtremes; unit?: string }) => {
 	if (!extremes) return null;
 
 	const intervals = generateIntervals(
 		extremes.min,
 		extremes.max,
-		isMobile ? 2.5 : 10,
+		isMobile ? 6 : 10,
 	);
 	const totalRange = extremes.max - extremes.min;
-	const isVertical = !isMobile;
 
-	// Wrapper styles for positioning
-	const wrapperStyle: React.CSSProperties = isMobile
-		? {
-				minWidth: "100%",
-				marginTop: "12px",
-			}
-		: {
-				position: "fixed",
-				top: "20%",
-				bottom: "20%",
-				left: "32px",
-				zIndex: 700,
+	// Mobile timeline styles - full width, integrated with timeline
+	if (isMobile) {
+		const containerStyle: React.CSSProperties = {
+			width: "100%",
+			padding: "12px 16px",
+			backgroundColor: "transparent",
+			display: "flex",
+			flexDirection: "column",
+			gap: "8px",
+			margin: 0,
+		};
+
+		const barStyle: React.CSSProperties = {
+			height: "24px",
+			width: "100%",
+			borderRadius: "12px",
+			position: "relative",
+			display: "flex",
+			flexDirection: "row",
+			overflow: "hidden",
+		};
+
+		const labelsStyle: React.CSSProperties = {
+			display: "flex",
+			justifyContent: "space-between",
+			alignItems: "center",
+			width: "100%",
+			position: "relative",
+			marginTop: "6px",
+		};
+
+		const renderMobileColorBlocks = () =>
+			TEMP_COLORS.map((color, i) => {
+				const isFirst = i === 0;
+				const isLast = i === TEMP_COLORS.length - 1;
+				const borderRadius = isFirst
+					? "12px 0 0 12px"
+					: isLast
+						? "0 12px 12px 0"
+						: "0";
+
+				return (
+					<div
+						key={color}
+						style={{
+							width: `${100 / TEMP_COLORS.length}%`,
+							height: "100%",
+							backgroundColor: color,
+							borderRadius,
+						}}
+					/>
+				);
+			});
+
+		const renderMobileLabels = () => {
+			const labelStyle = {
+				fontSize: "10px",
+				fontWeight: "600",
+				color: "rgb(60,60,60)",
 			};
 
-	// Container styles
-	const containerStyle: React.CSSProperties = {
-		backgroundColor: "white",
-		borderRadius: "12px",
-		padding: isMobile ? "12px" : "16px",
-		boxShadow: `0 ${isMobile ? 2 : 4}px ${isMobile ? 8 : 12}px rgba(0, 0, 0, ${isMobile ? 0.1 : 0.15})`,
-		display: "flex",
-		flexDirection: isVertical ? "row" : "column",
-		alignItems: "center",
-		gap: isVertical ? "15px" : "12px",
-		height: isVertical ? "100%" : "auto",
-	};
+			return (
+				<>
+					<span style={labelStyle}>
+						{Math.round(extremes.min)}&nbsp;
+						{unit}
+					</span>
+					{intervals.map((temp) => {
+						const position = ((temp - extremes.min) / totalRange) * 100;
+						return (
+							<span
+								key={temp}
+								style={{
+									position: "absolute",
+									left: `${position}%`,
+									transform: "translateX(-50%)",
+									...labelStyle,
+									fontSize: "9px",
+									fontWeight: "500",
+								}}
+							>
+								{temp}
+								{unit}
+							</span>
+						);
+					})}
+					<span style={labelStyle}>
+						{Math.round(extremes.max)}&nbsp;
+						{unit}
+					</span>
+				</>
+			);
+		};
 
-	const barStyle: React.CSSProperties = {
-		borderRadius: "8px",
-		position: "relative",
-		display: "flex",
-		flexDirection: isVertical ? "column" : "row",
-		...(isVertical
-			? { width: "40px", height: "100%" }
-			: { width: "100%", height: "30px" }),
-	};
+		return (
+			<div style={containerStyle}>
+				<div style={barStyle}>{renderMobileColorBlocks()}</div>
+				<div style={labelsStyle}>{renderMobileLabels()}</div>
+			</div>
+		);
+	}
 
-	const labelsStyle: React.CSSProperties = {
-		display: "flex",
-		flexDirection: isVertical ? "column" : "row",
-		justifyContent: "space-between",
-		alignItems: isVertical ? "flex-start" : "center",
-		position: "relative",
-		...(isVertical ? { height: "100%" } : { width: "100%" }),
-	};
+	// Desktop vertical legend styles (unchanged)
+	if (!isMobile) {
+		const wrapperStyle: React.CSSProperties = {
+			position: "fixed",
+			top: "20%",
+			bottom: "20%",
+			left: "32px",
+			zIndex: 700,
+		};
 
-	// Color blocks with proper orientation
-	const colors = isVertical ? [...TEMP_COLORS].reverse() : TEMP_COLORS;
-	const numBlocks = colors.length;
+		const containerStyle: React.CSSProperties = {
+			backgroundColor: "white",
+			borderRadius: "12px",
+			padding: "16px",
+			boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
+			display: "flex",
+			flexDirection: "row",
+			alignItems: "center",
+			gap: "15px",
+			height: "100%",
+		};
 
-	const renderColorBlocks = () =>
-		colors.map((color, i) => {
-			const isFirst = i === 0;
-			const isLast = i === numBlocks - 1;
-			const borderRadius = isVertical
-				? isFirst
+		const barStyle: React.CSSProperties = {
+			borderRadius: "8px",
+			position: "relative",
+			display: "flex",
+			flexDirection: "column",
+			width: "40px",
+			height: "100%",
+		};
+
+		const labelsStyle: React.CSSProperties = {
+			display: "flex",
+			flexDirection: "column",
+			justifyContent: "space-between",
+			alignItems: "flex-start",
+			position: "relative",
+			height: "100%",
+		};
+
+		const renderColorBlocks = () => {
+			const colors = [...TEMP_COLORS].reverse();
+			return colors.map((color, i) => {
+				const isFirst = i === 0;
+				const isLast = i === colors.length - 1;
+				const borderRadius = isFirst
 					? "8px 8px 0 0"
 					: isLast
 						? "0 0 8px 8px"
-						: "0"
-				: isFirst
-					? "8px 0 0 8px"
-					: isLast
-						? "0 8px 8px 0"
 						: "0";
 
+				return (
+					<div
+						key={color}
+						style={{
+							height: `${100 / colors.length}%`,
+							width: "100%",
+							backgroundColor: color,
+							borderRadius,
+						}}
+					/>
+				);
+			});
+		};
+
+		const renderIntervalMarkers = () =>
+			intervals.map((temp) => {
+				const position = ((temp - extremes.min) / totalRange) * 100;
+				return (
+					<div
+						key={temp}
+						style={{
+							position: "absolute",
+							bottom: `${position}%`,
+							right: "100%",
+							width: "12px",
+							height: "2px",
+							backgroundColor: "#f8f9fa",
+							transform: "translateY(50%)",
+						}}
+					/>
+				);
+			});
+
+		const renderLabels = () => {
+			const labelStyle = (size: "small" | "large") => ({
+				fontSize: size === "small" ? "11px" : "13px",
+				fontWeight: size === "small" ? "500" : "bold",
+				color: "rgb(80,80,80)",
+			});
+
+			const sortedIntervals = [...intervals].reverse();
+
 			return (
-				<div
-					key={`${color}`}
-					style={{
-						[isVertical ? "height" : "width"]: `${100 / numBlocks}%`,
-						[isVertical ? "width" : "height"]: "100%",
-						backgroundColor: color,
-						borderRadius,
-					}}
-				/>
+				<>
+					<span style={labelStyle("large")}>
+						{Math.round(extremes.max)}&nbsp;
+						<small className="text-gray-800">{unit}</small>
+					</span>
+
+					{sortedIntervals.map((temp) => {
+						const position = ((temp - extremes.min) / totalRange) * 100;
+						return (
+							<span
+								key={temp}
+								style={{
+									position: "absolute",
+									bottom: `${position}%`,
+									transform: "translateY(50%)",
+									...labelStyle("small"),
+								}}
+							>
+								{temp}
+								{unit}
+							</span>
+						);
+					})}
+
+					<span
+						style={{
+							...labelStyle("large"),
+							position: "absolute",
+							bottom: 0,
+						}}
+					>
+						{Math.round(extremes.min)}&nbsp;
+						<small className="text-gray-800">{unit}</small>
+					</span>
+				</>
 			);
-		});
-
-	const renderIntervalMarkers = () =>
-		intervals.map((temp) => {
-			const position = ((temp - extremes.min) / totalRange) * 100;
-			return (
-				<div
-					key={temp}
-					style={{
-						position: "absolute",
-						[isVertical ? "bottom" : "left"]: `${position}%`,
-						[isVertical ? "right" : "top"]: "100%",
-						[isVertical ? "width" : "height"]: isVertical ? "12px" : "8px",
-						[isVertical ? "height" : "width"]: "2px",
-						backgroundColor: "#f8f9fa",
-						transform: isVertical ? "translateY(50%)" : "translateX(-50%)",
-					}}
-				/>
-			);
-		});
-
-	const renderLabels = () => {
-		const labelStyle = (size: "small" | "large") => ({
-			fontSize: size === "small" ? "11px" : "13px",
-			fontWeight: size === "small" ? "500" : "bold",
-			color: "rgb(80,80,80)",
-		});
-
-		const sortedIntervals = isVertical ? [...intervals].reverse() : intervals;
+		};
 
 		return (
-			<>
-				{/* Min/Max extremes */}
-				<span style={labelStyle("large")}>
-					{isVertical ? Math.round(extremes.max) : Math.round(extremes.min)}
-					{unit}
-				</span>
-
-				{/* Interval labels */}
-				{sortedIntervals.map((temp) => {
-					const position = ((temp - extremes.min) / totalRange) * 100;
-					return (
-						<span
-							key={temp}
-							style={{
-								position: "absolute",
-								[isVertical ? "bottom" : "left"]: `${position}%`,
-								transform: isVertical ? "translateY(50%)" : "translateX(-50%)",
-								...labelStyle("small"),
-							}}
-						>
-							{temp}
-							{unit}
-						</span>
-					);
-				})}
-
-				{/* Opposite extreme */}
-				<span
-					style={{
-						...labelStyle("large"),
-						position: "absolute",
-						[isVertical ? "bottom" : "right"]: 0,
-					}}
-				>
-					{isVertical ? Math.round(extremes.min) : Math.round(extremes.max)}
-					{unit}
-				</span>
-			</>
-		);
-	};
-
-	return (
-		<div style={wrapperStyle}>
-			<div style={containerStyle}>
-				<div style={barStyle}>
-					{renderColorBlocks()}
-					{renderIntervalMarkers()}
+			<div style={wrapperStyle}>
+				<div style={containerStyle}>
+					<div style={barStyle}>
+						{renderColorBlocks()}
+						{renderIntervalMarkers()}
+					</div>
+					<div style={labelsStyle}>{renderLabels()}</div>
 				</div>
-				<div style={labelsStyle}>{renderLabels()}</div>
 			</div>
-		</div>
-	);
+		);
+	}
 };
 
 export const calculateExtremes = (
@@ -258,62 +332,75 @@ export const calculateExtremes = (
 
 export const loadTemperatureData = async (
 	year: number,
+	month: number,
+	requestedVariableValue = "R0",
+	outputFormat?: string[],
 ): Promise<{
 	dataPoints: TemperatureDataPoint[];
 	extremes: DataExtremes;
 	bounds: L.LatLngBounds | null;
 }> => {
-	const dataPath = `${year.toString()}_data_january_05res.csv`;
-	console.log("DataPath:", dataPath);
-	const response = await fetch(`/${dataPath}`);
-	const text = await response.text();
-	const rows = text
-		.split("\n")
-		.slice(1)
-		.filter((row) => row.trim() !== "");
+	console.log(
+		"Loading climate data for year:",
+		year,
+		"month:",
+		month,
+		"variable:",
+		requestedVariableValue,
+	);
 
-	const sampleRate = 1;
-	const dataPoints: TemperatureDataPoint[] = [];
+	// Additional validation here too
+	if (month === undefined || month === null) {
+		throw new Error(
+			`loadTemperatureData: Month parameter is ${month}. Expected a number between 1-12.`,
+		);
+	}
 
-	for (let i = 0; i < rows.length; i++) {
-		if (i % Math.floor(1 / sampleRate) === 0) {
-			const row = rows[i];
-			const values = row.split(",");
-			if (values.length >= 4) {
-				const temperature = Number.parseFloat(values[3]) || 0;
-				const lat = Number.parseFloat(values[1]) || 0;
-				const lng = Number.parseFloat(values[2]) || 0;
-				if (i % 100000 === 0) {
-					console.log("Lat:", lat, "Long: ", lng, "Temp:", temperature);
-				}
+	try {
+		const apiData = await fetchClimateData(
+			year,
+			month,
+			requestedVariableValue,
+			outputFormat,
+		);
+		const dataPoints: TemperatureDataPoint[] = [];
 
-				if (
-					!Number.isNaN(lat) &&
-					!Number.isNaN(lng) &&
-					!Number.isNaN(temperature)
-				) {
-					dataPoints.push({
-						point: turf.point([lng, lat]),
-						temperature: temperature,
-						lat: lat,
-						lng: lng,
-					});
-				}
+		for (let i = 0; i < apiData.length; i++) {
+			const { latitude: lat, longitude: lng, temperature } = apiData[i];
+
+			if (i % 100000 === 0) {
+				console.log("Lat:", lat, "Long: ", lng, "Temp:", temperature);
+			}
+
+			if (
+				!Number.isNaN(lat) &&
+				!Number.isNaN(lng) &&
+				!Number.isNaN(temperature)
+			) {
+				dataPoints.push({
+					point: turf.point([lng, lat]),
+					temperature: temperature,
+					lat: lat,
+					lng: lng,
+				});
 			}
 		}
+
+		const extremes = calculateExtremes(dataPoints);
+
+		let bounds: L.LatLngBounds | null = null;
+		if (dataPoints.length > 0) {
+			const lats = dataPoints.map((p) => p.lat);
+			const lngs = dataPoints.map((p) => p.lng);
+			bounds = L.latLngBounds([
+				[Math.min(...lats) - 15, Math.min(...lngs) - 15],
+				[Math.max(...lats) + 15, Math.max(...lngs) + 15],
+			]);
+		}
+
+		return { dataPoints, extremes, bounds };
+	} catch (error) {
+		console.error("Failed to load temperature data:", error);
+		throw error;
 	}
-
-	const extremes = calculateExtremes(dataPoints);
-
-	let bounds: L.LatLngBounds | null = null;
-	if (dataPoints.length > 0) {
-		const lats = dataPoints.map((p) => p.lat);
-		const lngs = dataPoints.map((p) => p.lng);
-		bounds = L.latLngBounds([
-			[Math.min(...lats), Math.min(...lngs)],
-			[Math.max(...lats), Math.max(...lngs)],
-		]);
-	}
-
-	return { dataPoints, extremes, bounds };
 };

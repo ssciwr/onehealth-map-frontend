@@ -50,16 +50,27 @@ interface ModelDetailsModalProps {
 	models: Model[];
 	selectedModelId: string;
 	onModelSelect: (modelId: string) => void;
+	showCurrentModelFirst?: boolean; // New prop to show current model details first
 }
 
 const ModelDetailsModal: React.FC<ModelDetailsModalProps> = React.memo(
-	({ isOpen, onClose, models, selectedModelId, onModelSelect }) => {
+	({
+		isOpen,
+		onClose,
+		models,
+		selectedModelId,
+		onModelSelect,
+		showCurrentModelFirst = false,
+	}) => {
 		const [selectedDetailModelId, setSelectedDetailModelId] =
 			useState(selectedModelId);
 
-		const [sidebarHidden, setSidebarHidden] = useState(false);
-		const [singleModelDetailsHidden, setSingleModelDetailsHidden] =
-			useState(isMobile); // Hide details on mobile initially
+		const [sidebarHidden, setSidebarHidden] = useState(
+			isMobile && showCurrentModelFirst,
+		);
+		const [singleModelDetailsHidden, setSingleModelDetailsHidden] = useState(
+			isMobile && !showCurrentModelFirst,
+		); // Show current model details if requested
 
 		// Cache for model chart data
 		const modelDataCache = useRef<Map<string, ModelChartData>>(new Map());
@@ -108,11 +119,11 @@ const ModelDetailsModal: React.FC<ModelDetailsModalProps> = React.memo(
 		// Reset view state when modal opens/closes
 		useEffect(() => {
 			if (isOpen) {
-				setSidebarHidden(false);
-				setSingleModelDetailsHidden(isMobile); // Show list view on mobile when opening
+				setSidebarHidden(isMobile && showCurrentModelFirst);
+				setSingleModelDetailsHidden(isMobile && !showCurrentModelFirst); // Show current model if requested
 				setSelectedDetailModelId(selectedModelId);
 			}
-		}, [isOpen, selectedModelId]);
+		}, [isOpen, selectedModelId, showCurrentModelFirst]);
 
 		const selectedDetailModel =
 			models.find((m) => m.id === selectedDetailModelId) || models[0];
