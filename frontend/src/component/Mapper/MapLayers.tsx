@@ -2,11 +2,12 @@ import type React from "react";
 import { GeoJSON, Pane } from "react-leaflet";
 import { mapStyleService } from "../../services/MapStyleService";
 import type { BorderStyle } from "../../services/MapStyleService";
+import AdaptiveGridLayer from "./AdaptiveGridLayer";
 import CitiesLayer from "./CitiesLayer";
 import type { DataExtremes, NutsGeoJSON, WorldwideGeoJSON } from "./types";
 
 interface MapLayersProps {
-	mapMode: "worldwide" | "europe-only";
+	mapMode: "worldwide" | "europe-only" | "grid";
 	dataExtremes: DataExtremes | null;
 	convertedWorldwideGeoJSON: WorldwideGeoJSON | null;
 	convertedEuropeOnlyGeoJSON: NutsGeoJSON | null;
@@ -90,13 +91,22 @@ const MapLayers: React.FC<MapLayersProps> = ({
 				</Pane>
 			)}
 
+			{/* Grid Mode Layer */}
+			{mapMode === "grid" && (
+				<Pane name="gridPane" style={{ zIndex: 340, opacity: 1.0 }}>
+					{dataExtremes && <AdaptiveGridLayer extremes={dataExtremes} />}
+				</Pane>
+			)}
+
 			{/* Cities Layer - always rendered, but filtered by data regions, and only over the rendered regions */}
 			<CitiesLayer
 				zoom={currentZoom}
 				dataRegions={
 					mapMode === "europe-only"
 						? convertedEuropeOnlyGeoJSON
-						: convertedWorldwideGeoJSON
+						: mapMode === "grid"
+							? null
+							: convertedWorldwideGeoJSON
 				}
 			/>
 		</>

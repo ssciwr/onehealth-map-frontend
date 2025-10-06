@@ -108,7 +108,7 @@ export const useTemperatureData = ({
 						east: bounds.getEast(),
 						west: bounds.getWest(),
 						zoom: 10, // default zoom
-					};
+					}; // this is perfect for Ingas API!!
 					setDataBounds(viewportBounds);
 				}
 				console.log(
