@@ -1,116 +1,157 @@
 import type React from "react";
+import { memo, useCallback } from "react";
 import { GeoJSON, Pane } from "react-leaflet";
+import { useMapDataState } from "../../hooks/useMapDataState";
+import { useMapUIInteractions } from "../../hooks/useMapUIInteractions";
+import { useUserSelections } from "../../hooks/useUserSelections";
 import { mapStyleService } from "../../services/MapStyleService";
-import type { BorderStyle } from "../../services/MapStyleService";
+import * as MapInteractionHandlers from "../../utils/MapInteractionHandlers";
 import AdaptiveGridLayer from "./AdaptiveGridLayer";
 import CitiesLayer from "./CitiesLayer";
-import type { DataExtremes, NutsGeoJSON, WorldwideGeoJSON } from "./types";
 
 interface MapLayersProps {
-	mapMode: "worldwide" | "europe-only" | "grid";
-	dataExtremes: DataExtremes | null;
-	convertedWorldwideGeoJSON: WorldwideGeoJSON | null;
-	convertedEuropeOnlyGeoJSON: NutsGeoJSON | null;
-	isProcessingEuropeOnly: boolean;
-	currentZoom: number;
-	borderStyle: BorderStyle;
-	onEachWorldwideFeature: (feature: GeoJSON.Feature, layer: L.Layer) => void;
-	onEachEuropeOnlyFeature: (feature: GeoJSON.Feature, layer: L.Layer) => void;
+	processedEuropeNutsRegions?: any;
+	processedWorldwideRegions?: any;
+	processedDataExtremes?: any;
 }
 
-const MapLayers: React.FC<MapLayersProps> = ({
-	mapMode,
-	dataExtremes,
-	convertedWorldwideGeoJSON,
-	convertedEuropeOnlyGeoJSON,
-	isProcessingEuropeOnly,
-	currentZoom,
-	borderStyle,
-	onEachWorldwideFeature,
-	onEachEuropeOnlyFeature,
-}) => {
-	return (
-		<>
-			{/* Worldwide Mode Layer */}
-			{mapMode === "worldwide" && (
-				<Pane name="worldwidePane" style={{ zIndex: 30, opacity: 0.9 }}>
-					{convertedWorldwideGeoJSON?.features &&
-						convertedWorldwideGeoJSON.features.length > 0 && (
-							<GeoJSON
-								data={convertedWorldwideGeoJSON}
-								style={(f) =>
-									f
-										? mapStyleService.getWorldwideStyle(
-												f,
-												borderStyle,
-												dataExtremes,
-											)
-										: {}
-								}
-								onEachFeature={onEachWorldwideFeature}
-							/>
-						)}
-				</Pane>
-			)}
+const MapLayers: React.FC<MapLayersProps> = memo(
+	({
+		processedEuropeNutsRegions: propsProcessedEuropeNutsRegions,
+		processedWorldwideRegions: propsProcessedWorldwideRegions,
+		processedDataExtremes: propsProcessedDataExtremes,
+	}) => {
+		// Use hooks for UI state and some data, but get processed data from props
+		const { mapMode, currentVariableValue } = useUserSelections();
+		const {
+			borderStyle,
+			mapHoverTimeout,
+			setMapHoverTimeout,
+			mapHoveredLayer,
+			setMapHoveredLayer,
+		} = useMapUIInteractions();
+		const { baseWorldGeoJSON, isProcessingEuropeNutsData, mapZoomLevel } =
+			useMapDataState();
 
-			{/* Europe-only Mode Layer */}
-			{mapMode === "europe-only" && (
-				<Pane name="europeOnlyPane" style={{ zIndex: 30, opacity: 0.9 }}>
-					{!isProcessingEuropeOnly &&
-						convertedEuropeOnlyGeoJSON?.features &&
-						convertedEuropeOnlyGeoJSON.features.length > 0 && (
-							<div>
-								<div
-									hidden
-									style={{
-										position: "fixed",
-										top: "150px",
-										left: "150px",
-										backgroundColor: "red",
-										color: "white",
-										padding: "50px",
-										zIndex: "92382354",
-									}}
-								>
-									GeoJSON debug:{" "}
-									{convertedEuropeOnlyGeoJSON.features[0].properties.NUTS_ID}:{" "}
-									{convertedEuropeOnlyGeoJSON.features[0].properties.intensity}
-								</div>
+		// Use processed data from props (from ClimateMap) rather than hook instances
+		const processedDataExtremes = propsProcessedDataExtremes;
+		const processedWorldwideRegions = propsProcessedWorldwideRegions;
+		const processedEuropeNutsRegions = propsProcessedEuropeNutsRegions;
+
+		// Create interaction handlers
+		const highlightFeature = MapInteractionHandlers.createHighlightFeature(
+			mapMode,
+			borderStyle,
+			processedDataExtremes,
+			processedWorldwideRegions,
+			processedEuropeNutsRegions,
+			baseWorldGeoJSON,
+			mapHoverTimeout,
+			setMapHoverTimeout,
+			mapHoveredLayer,
+			setMapHoveredLayer,
+		);
+
+		const resetHighlight = MapInteractionHandlers.createResetHighlight(
+			mapMode,
+			borderStyle,
+			processedDataExtremes,
+			processedWorldwideRegions,
+			processedEuropeNutsRegions,
+			baseWorldGeoJSON,
+			mapHoverTimeout,
+			setMapHoverTimeout,
+			mapHoveredLayer,
+			setMapHoveredLayer,
+		);
+
+		const onEachWorldwideFeature =
+			MapInteractionHandlers.createOnEachWorldwideFeature(
+				currentVariableValue,
+				highlightFeature,
+				resetHighlight,
+			);
+
+		const onEachEuropeOnlyFeature =
+			MapInteractionHandlers.createOnEachEuropeOnlyFeature(
+				currentVariableValue,
+				highlightFeature,
+				resetHighlight,
+			);
+
+		// Memoize style functions to prevent recreation on every render
+		const nutsStyleFunction = useCallback(
+			(f?: GeoJSON.Feature) =>
+				f ? mapStyleService.getNutsStyle(f, processedDataExtremes) : {},
+			[processedDataExtremes],
+		);
+
+		const worldwideStyleFunction = useCallback(
+			(f?: GeoJSON.Feature) =>
+				f
+					? mapStyleService.getWorldwideStyle(
+							f,
+							borderStyle,
+							processedDataExtremes,
+						)
+					: {},
+			[borderStyle, processedDataExtremes],
+		);
+		return (
+			<>
+				{/* Worldwide Mode Layer */}
+				{mapMode === "worldwide" && (
+					<Pane name="worldwidePane" style={{ zIndex: 30, opacity: 0.9 }}>
+						{processedWorldwideRegions?.features &&
+							processedWorldwideRegions.features.length > 0 && (
 								<GeoJSON
-									data={convertedEuropeOnlyGeoJSON}
-									key={
-										convertedEuropeOnlyGeoJSON.features[0].properties.intensity
-									}
-									style={(f) =>
-										f ? mapStyleService.getNutsStyle(f, dataExtremes) : {}
-									}
+									data={processedWorldwideRegions}
+									style={worldwideStyleFunction}
+									onEachFeature={onEachWorldwideFeature}
+								/>
+							)}
+					</Pane>
+				)}
+
+				{/* Europe-only Mode Layer */}
+				{mapMode === "europe-only" && (
+					<Pane name="europeOnlyPane" style={{ zIndex: 30, opacity: 0.9 }}>
+						{!isProcessingEuropeNutsData &&
+							processedEuropeNutsRegions?.features &&
+							processedEuropeNutsRegions.features.length > 0 && (
+								<GeoJSON
+									key={`europe-nuts-${processedEuropeNutsRegions.features.length}`}
+									data={processedEuropeNutsRegions}
+									style={nutsStyleFunction}
 									onEachFeature={onEachEuropeOnlyFeature}
 								/>
-							</div>
-						)}
-				</Pane>
-			)}
+							)}
+					</Pane>
+				)}
 
-			{/* Grid Mode Layer */}
-			{mapMode === "grid" && (
-				<Pane name="gridPane" style={{ zIndex: 340, opacity: 1.0 }}>
-					{dataExtremes && <AdaptiveGridLayer extremes={dataExtremes} />}
-				</Pane>
-			)}
+				{/* Grid Mode Layer */}
+				{mapMode === "grid" && (
+					<Pane name="gridPane" style={{ zIndex: 340, opacity: 1.0 }}>
+						<AdaptiveGridLayer />
+					</Pane>
+				)}
 
-			{/* Cities Layer - always rendered, but filtered by data regions, and only over the rendered regions */}
-			<CitiesLayer
-				zoom={currentZoom}
-				dataRegions={
-					mapMode === "europe-only"
-						? convertedEuropeOnlyGeoJSON
-						: mapMode === "grid"
-							? null
-							: convertedWorldwideGeoJSON
-				}
-			/>
-		</>
-	);
-};
+				{/* Cities Layer - always rendered, but filtered by data regions, and only over the rendered regions */}
+				<CitiesLayer
+					zoom={mapZoomLevel}
+					dataRegions={
+						mapMode === "europe-only"
+							? processedEuropeNutsRegions
+							: mapMode === "grid"
+								? null
+								: processedWorldwideRegions
+					}
+				/>
+			</>
+		);
+	},
+);
+
+MapLayers.displayName = "MapLayers";
 
 export default MapLayers;

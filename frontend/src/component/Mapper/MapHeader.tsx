@@ -5,37 +5,36 @@ import { Map as MapIcon } from "lucide-react";
 const { Option } = Select;
 import { useState } from "react";
 import { isMobile } from "react-device-detect";
+import { useMapUIInteractions } from "../../hooks/useMapUIInteractions";
+import { useModelData } from "../../hooks/useModelData";
+import { useUserSelections } from "../../hooks/useUserSelections";
 import { viewingMode } from "../../stores/ViewingModeStore.ts";
 import GeneralCard from "../General/GeneralCard.tsx";
 import ModelSelector from "./InterfaceInputs/ModelSelector.tsx";
 import OptimismLevelSelector from "./InterfaceInputs/OptimismSelector.tsx";
 
-interface MapHeaderProps {
-	selectedModel: string;
-	handleModelSelect: (modelId: string) => void;
-	selectedOptimism: string;
-	setSelectedOptimism: (optimism: string) => void;
-	getOptimismLevels: () => string[];
-	mapMode?: "worldwide" | "europe-only" | "grid";
-	onMapModeChange?: (mode: "worldwide" | "europe-only" | "grid") => void;
-	borderStyle?: "white" | "light-gray" | "black" | "half-opacity" | "black-80";
-	onBorderStyleChange?: (
-		style: "white" | "light-gray" | "black" | "half-opacity" | "black-80",
-	) => void;
-}
+type MapHeaderProps = {};
 
-export default ({
-	selectedModel,
-	handleModelSelect,
-	selectedOptimism,
-	setSelectedOptimism,
-	getOptimismLevels,
-	mapMode = "europe-only",
-	onMapModeChange,
-	borderStyle = "white",
-	onBorderStyleChange,
-}: MapHeaderProps) => {
+export default ({}: MapHeaderProps) => {
 	const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+
+	// Use hooks directly instead of props
+	const {
+		mapMode,
+		setMapMode,
+		selectedModel,
+		setSelectedModel,
+		selectedOptimism,
+		setSelectedOptimism,
+	} = useUserSelections();
+
+	const { borderStyle, setBorderStyle } = useMapUIInteractions();
+
+	const { getOptimismLevels } = useModelData(selectedModel, setSelectedModel);
+
+	const handleModelSelect = (modelId: string) => {
+		setSelectedModel(modelId);
+	};
 
 	return isMobile ? (
 		<div className="map-header">
@@ -107,12 +106,12 @@ export default ({
 							/>
 						</div>
 					</div>
-					{mapMode === "worldwide" && onBorderStyleChange && (
+					{mapMode === "worldwide" && (
 						<div style={{ marginBottom: "24px" }}>
 							<h4>Border Style</h4>
 							<Select
 								value={borderStyle}
-								onChange={onBorderStyleChange}
+								onChange={setBorderStyle}
 								style={{ width: "100%" }}
 								size="large"
 							>
@@ -283,7 +282,7 @@ export default ({
 						<MapIcon size={20} />
 						<Select
 							value={mapMode}
-							onChange={onMapModeChange}
+							onChange={setMapMode}
 							style={{ minWidth: 120 }}
 							size="middle"
 						>
@@ -292,7 +291,7 @@ export default ({
 							<Option value="grid">Grid</Option>
 						</Select>
 					</div>
-					{mapMode === "worldwide" && onBorderStyleChange && (
+					{mapMode === "worldwide" && (
 						<div
 							className="glass-button"
 							style={{
@@ -312,7 +311,7 @@ export default ({
 							<span style={{ fontSize: "16px" }}>🖼️</span>
 							<Select
 								value={borderStyle}
-								onChange={onBorderStyleChange}
+								onChange={setBorderStyle}
 								style={{ minWidth: 100 }}
 								size="middle"
 							>

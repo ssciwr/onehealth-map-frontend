@@ -361,7 +361,33 @@ export class RegionProcessor {
 		};
 	}
 
-	// Process Europe-only regions
+	// Process Europe-only regions using direct API data (no lat/lon conversion needed)
+	public async processEuropeOnlyRegionsFromApi(
+		apiData: { [nutsId: string]: number },
+		currentYear: number,
+	): Promise<{
+		nutsGeoJSON: NutsGeoJSON;
+		extremes: { min: number; max: number };
+	}> {
+		console.log(
+			`Processing Europe-only NUTS regions from API data for year ${currentYear}...`,
+		);
+		console.log(
+			`API data contains ${Object.keys(apiData).length} NUTS regions`,
+		);
+
+		// Use NutsConverter to create GeoJSON directly from API data
+		const { nutsGeoJSON, extremes } =
+			await nutsConverter.createNutsFromApiData(apiData);
+
+		console.log(`NUTS processing complete for year ${currentYear}`);
+		console.log(`NUTS features count: ${nutsGeoJSON.features.length}`);
+		console.log("NUTS extremes:", extremes);
+
+		return { nutsGeoJSON, extremes };
+	}
+
+	// Process Europe-only regions (legacy method - kept for backward compatibility)
 	public async processEuropeOnlyRegions(
 		temperatureData: TemperatureDataPoint[],
 		currentYear: number,

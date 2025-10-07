@@ -7,7 +7,10 @@ import type {
 	WorldwideFeature,
 	WorldwideGeoJSON,
 } from "../component/Mapper/types";
-import { loadTemperatureData } from "../component/Mapper/utilities/mapDataUtils";
+import {
+	loadNutsData,
+	loadTemperatureData,
+} from "../component/Mapper/utilities/mapDataUtils";
 import { errorStore } from "../stores/ErrorStore";
 import { loadingStore } from "../stores/LoadingStore";
 import type { Model } from "./useModelData";
@@ -24,43 +27,45 @@ export interface UseTemperatureDataReturn {
 interface UseTemperatureDataProps {
 	models: Model[];
 	selectedModel: string;
+	mapMode: "worldwide" | "europe-only" | "grid";
 	currentYear: number;
 	currentMonth: Month;
-	setTemperatureData: (data: TemperatureDataPoint[]) => void;
-	setDataExtremes: (extremes: DataExtremes | null) => void;
-	setDataBounds: (bounds: ViewportBounds | null) => void;
+	setRawRegionTemperatureData: (data: TemperatureDataPoint[]) => void;
+	setProcessedDataExtremes: (extremes: DataExtremes | null) => void;
+	setMapDataBounds: (bounds: ViewportBounds | null) => void;
 	setCurrentVariableValue: (value: string) => void;
-	setRequestedYear: (year: number) => void;
-	setLackOfDataModalVisible: (visible: boolean) => void;
-	setApiErrorMessage: (message: string) => void;
-	setIsLoadingData: (loading: boolean) => void;
-	setError: (error: string | null) => void;
-	setWorldGeoJSON: (data: GeoJSON.FeatureCollection | null) => void;
-	setworldwideRegionsGeoJSON: (data: WorldwideGeoJSON | null) => void;
+	setUserRequestedYear: (year: number) => void;
+	setNoDataModalVisible: (visible: boolean) => void;
+	setDataFetchErrorMessage: (message: string) => void;
+	setIsLoadingRawData: (loading: boolean) => void;
+	setGeneralError: (error: string | null) => void;
+	setBaseWorldGeoJSON: (data: GeoJSON.FeatureCollection | null) => void;
+	setWorldwideRegionBoundaries: (data: WorldwideGeoJSON | null) => void;
 }
 
 export const useTemperatureData = ({
 	models,
 	selectedModel,
+	mapMode,
 	currentYear,
 	currentMonth,
-	setTemperatureData,
-	setDataExtremes,
-	setDataBounds,
+	setRawRegionTemperatureData,
+	setProcessedDataExtremes,
+	setMapDataBounds,
 	setCurrentVariableValue,
-	setRequestedYear,
-	setLackOfDataModalVisible,
-	setApiErrorMessage,
-	setIsLoadingData,
-	setError,
-	setWorldGeoJSON,
-	setworldwideRegionsGeoJSON,
+	setUserRequestedYear,
+	setNoDataModalVisible,
+	setDataFetchErrorMessage,
+	setIsLoadingRawData,
+	setGeneralError,
+	setBaseWorldGeoJSON,
+	setWorldwideRegionBoundaries,
 }: UseTemperatureDataProps): UseTemperatureDataReturn => {
 	const handleLoadTemperatureData = useCallback(
 		async (year: number, month: Month) => {
 			try {
 				loadingStore.start();
-				setIsLoadingData(true);
+				setIsLoadingRawData(true);
 
 				// Guard against undefined month - use July as default
 				const safeMonth = month || 7;
@@ -72,7 +77,7 @@ export const useTemperatureData = ({
 					typeof year,
 					typeof month,
 				);
-				setRequestedYear(year);
+				setUserRequestedYear(year);
 
 				// Get the selected model's output value
 				const selectedModelData = models.find((m) => m.id === selectedModel);
@@ -99,8 +104,8 @@ export const useTemperatureData = ({
 					`DEBUGYEARCHANGE: Data extremes for year ${year}, month ${safeMonth}:`,
 					extremes,
 				);
-				setTemperatureData(dataPoints);
-				setDataExtremes(extremes);
+				setRawRegionTemperatureData(dataPoints);
+				setProcessedDataExtremes(extremes);
 				if (bounds) {
 					const viewportBounds: ViewportBounds = {
 						north: bounds.getNorth(),
@@ -109,44 +114,44 @@ export const useTemperatureData = ({
 						west: bounds.getWest(),
 						zoom: 10, // default zoom
 					}; // this is perfect for Ingas API!!
-					setDataBounds(viewportBounds);
+					setMapDataBounds(viewportBounds);
 				}
 				console.log(
 					`DEBUGYEARCHANGE: Finished loading store for year ${year}, month ${safeMonth}`,
 				);
 				loadingStore.complete();
-				setIsLoadingData(false);
+				setIsLoadingRawData(false);
 			} catch (err: unknown) {
 				const error = err as Error;
 				loadingStore.complete();
-				setIsLoadingData(false);
+				setIsLoadingRawData(false);
 
 				// Check if this is an API error indicating missing data
 				if (error.message.includes("API_ERROR:")) {
 					const errorMsg = error.message.replace("API_ERROR: ", "");
-					setApiErrorMessage(errorMsg);
-					setLackOfDataModalVisible(true);
+					setDataFetchErrorMessage(errorMsg);
+					setNoDataModalVisible(true);
 				} else {
 					errorStore.showError(
 						"Temperature Data Error",
 						`Failed to load temperature data: ${error.message}`,
 					);
-					setError(`Failed to load temperature data: ${error.message}`);
+					setGeneralError(`Failed to load temperature data: ${error.message}`);
 				}
 			}
 		},
 		[
 			models,
 			selectedModel,
-			setTemperatureData,
-			setDataExtremes,
-			setDataBounds,
+			setRawRegionTemperatureData,
+			setProcessedDataExtremes,
+			setMapDataBounds,
 			setCurrentVariableValue,
-			setRequestedYear,
-			setLackOfDataModalVisible,
-			setApiErrorMessage,
-			setIsLoadingData,
-			setError,
+			setUserRequestedYear,
+			setNoDataModalVisible,
+			setDataFetchErrorMessage,
+			setIsLoadingRawData,
+			setGeneralError,
 		],
 	);
 
@@ -171,14 +176,14 @@ export const useTemperatureData = ({
 				features: allFeatures as WorldwideFeature[],
 			};
 
-			setworldwideRegionsGeoJSON(globalRegions);
+			setWorldwideRegionBoundaries(globalRegions);
 			console.log(
 				`Loaded ${allFeatures.length} global administrative regions from all countries`,
 			);
 		} catch (error) {
 			console.error("Failed to load worldwide administrative regions:", error);
 		}
-	}, [setworldwideRegionsGeoJSON]);
+	}, [setWorldwideRegionBoundaries]);
 
 	// Load world GeoJSON data
 	useEffect(() => {
@@ -188,29 +193,33 @@ export const useTemperatureData = ({
 					"https://raw.githubusercontent.com/holtzy/D3-graph-gallery/master/DATA/world.geojson",
 				);
 				const worldData = await response.json();
-				setWorldGeoJSON(worldData);
+				setBaseWorldGeoJSON(worldData);
 			} catch (error) {
 				console.warn("Failed to load world GeoJSON:", error);
 			}
 		};
 		loadWorldData();
-	}, [setWorldGeoJSON]);
+	}, [setBaseWorldGeoJSON]);
 
-	// Load worldwide regions on mount
+	// Load worldwide regions only when needed (worldwide mode)
 	useEffect(() => {
-		loadworldwideRegions();
-	}, [loadworldwideRegions]);
+		if (mapMode === "worldwide") {
+			loadworldwideRegions();
+		}
+	}, [mapMode]); // Remove unstable function reference
 
-	// Load temperature data when year or month changes
+	// Load temperature data when year or month changes (only for worldwide/grid modes)
+	// Europe-only mode will load NUTS data on-demand in ClimateMap
 	useEffect(() => {
-		console.log(
-			"DEBUGYEARCHANGE: Year/Month effect triggered, currentYear:",
-			currentYear,
-			"currentMonth:",
-			currentMonth,
-			"typeof currentMonth:",
-			typeof currentMonth,
-		);
+		if (mapMode !== "europe-only") {
+			console.log("Loading lat/lon data for mode:", mapMode, "year:", currentYear, "month:", currentMonth);
+		}
+
+		// Skip loading lat/lon data for Europe-only mode
+		if (mapMode === "europe-only") {
+			console.log("Skipping lat/lon data load for Europe-only mode");
+			return;
+		}
 
 		// Additional validation before calling
 		if (
@@ -222,11 +231,71 @@ export const useTemperatureData = ({
 			return;
 		}
 
+		// Note: This loads lat/lon data for worldwide/grid modes only
 		handleLoadTemperatureData(currentYear, currentMonth);
-	}, [currentYear, currentMonth, handleLoadTemperatureData]);
+	}, [currentYear, currentMonth, mapMode, handleLoadTemperatureData]);
+
+	// Load NUTS data directly for Europe-only mode
+	const handleLoadNutsData = useCallback(
+		async (year: number, month: Month) => {
+			try {
+				loadingStore.start();
+				setIsLoadingRawData(true);
+
+				const safeMonth = month || 7;
+				console.log(`Loading NUTS data for year ${year}, month ${safeMonth}`);
+				setUserRequestedYear(year);
+
+				const selectedModelData = models.find((m) => m.id === selectedModel);
+				const requestedVariableValue = selectedModelData?.output?.[0] || "R0";
+				setCurrentVariableValue(requestedVariableValue);
+
+				const nutsData = await loadNutsData(
+					year,
+					safeMonth,
+					requestedVariableValue,
+				);
+
+				console.log(
+					`Loaded NUTS data for ${Object.keys(nutsData).length} regions`,
+				);
+				loadingStore.complete();
+				setIsLoadingRawData(false);
+				return nutsData;
+			} catch (err: unknown) {
+				const error = err as Error;
+				loadingStore.complete();
+				setIsLoadingRawData(false);
+
+				if (error.message.includes("API_ERROR:")) {
+					const errorMsg = error.message.replace("API_ERROR: ", "");
+					setDataFetchErrorMessage(errorMsg);
+					setNoDataModalVisible(true);
+				} else {
+					errorStore.showError(
+						"NUTS Data Error",
+						`Failed to load NUTS data: ${error.message}`,
+					);
+					setGeneralError(`Failed to load NUTS data: ${error.message}`);
+				}
+				throw error;
+			}
+		},
+		[
+			models,
+			selectedModel,
+			setCurrentVariableValue,
+			setUserRequestedYear,
+			setNoDataModalVisible,
+			setDataFetchErrorMessage,
+			setIsLoadingRawData,
+			setGeneralError,
+		],
+	);
 
 	return {
 		handleLoadTemperatureData,
+		handleLoadNutsData,
 		loadworldwideRegions,
 	};
 };

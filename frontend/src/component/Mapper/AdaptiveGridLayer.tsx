@@ -1,18 +1,25 @@
 import { Popup, Rectangle } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import { useGridProcessing } from "../../hooks/useGridProcessing";
-import type { DataExtremes } from "./types";
+import { useMapDataState } from "../../hooks/useMapDataState";
 import { getColorFromGradient } from "./utilities/gradientUtilities";
 
-interface AdaptiveGridLayerProps {
-	extremes: DataExtremes;
-}
+type AdaptiveGridLayerProps = {};
 
-const AdaptiveGridLayer = ({ extremes }: AdaptiveGridLayerProps) => {
+const AdaptiveGridLayer = ({}: AdaptiveGridLayerProps) => {
 	const { gridCells } = useGridProcessing();
+	const { processedDataExtremes } = useMapDataState();
 
 	const getGridCellStyle = (temperature: number) => {
-		const color = getColorFromGradient(temperature, extremes);
+		if (!processedDataExtremes)
+			return {
+				fillColor: "#ccc",
+				weight: 0.5,
+				opacity: 0.8,
+				color: "#666",
+				fillOpacity: 0.8,
+			};
+		const color = getColorFromGradient(temperature, processedDataExtremes);
 		return {
 			fillColor: color,
 			weight: 0.5,

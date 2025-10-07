@@ -46,6 +46,7 @@ export interface NutsProperties {
 	nutsLevel?: number;
 	isFallback?: boolean;
 	isModelData?: boolean;
+	isApiData?: boolean;
 	currentPosition?: { lat: number; lng: number };
 	nearestDataPoint?: { lat: number; lng: number };
 	dataPoints?: Array<{ lat: number; lng: number; temperature: number }>;

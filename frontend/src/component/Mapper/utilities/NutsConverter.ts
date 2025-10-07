@@ -16,42 +16,55 @@ import type {
 export class NutsConverter {
 	private nutsGeoJSON: FeatureCollection | null = null;
 	private isLoadingNuts = false;
+	private loadingPromise: Promise<void> | null = null;
 
 	async loadNutsGeoJSON(): Promise<void> {
-		if (this.nutsGeoJSON || this.isLoadingNuts) return;
+		if (this.nutsGeoJSON) return;
+		
+		// If already loading, wait for the existing promise
+		if (this.isLoadingNuts && this.loadingPromise) {
+			return this.loadingPromise;
+		}
 
 		this.isLoadingNuts = true;
-		try {
-			// Load NUTS 2 regions from Eurostat official source
-			const response = await fetch(
-				"https://gisco-services.ec.europa.eu/distribution/v2/nuts/geojson/NUTS_RG_20M_2021_4326_LEVL_2.geojson",
-			);
-			const nutsData = await response.json();
+		
+		// Create and store the loading promise
+		this.loadingPromise = (async () => {
+			try {
+				// Load NUTS 2 regions from Eurostat official source
+				const response = await fetch(
+					"https://gisco-services.ec.europa.eu/distribution/v2/nuts/geojson/NUTS_RG_20M_2021_4326_LEVL_2.geojson",
+				);
+				const nutsData = await response.json();
 
-			// Filter to only NUTS 2 level regions (level code "2")
-			const nuts2Features = nutsData.features.filter(
-				(feature: GeoJSONFeature) => feature.properties?.LEVL_CODE === 2,
-			);
+				// Filter to only NUTS 2 level regions (level code "2")
+				const nuts2Features = nutsData.features.filter(
+					(feature: GeoJSONFeature) => feature.properties?.LEVL_CODE === 2,
+				);
 
-			this.nutsGeoJSON = {
-				type: "FeatureCollection",
-				features: nuts2Features,
-			};
+				this.nutsGeoJSON = {
+					type: "FeatureCollection",
+					features: nuts2Features,
+				};
 
-			console.log(`NUTS 2 GeoJSON loaded: ${nuts2Features.length} regions`);
-			console.log(
-				"Sample regions:",
-				nuts2Features
-					.slice(0, 5)
-					.map((f: GeoJSONFeature) => f.properties?.NUTS_ID),
-			);
-		} catch (error) {
-			console.error("Failed to load NUTS data from Eurostat:", error);
-			// Fallback to empty if can't load
-			this.nutsGeoJSON = { type: "FeatureCollection", features: [] };
-		} finally {
-			this.isLoadingNuts = false;
-		}
+				console.log(`NUTS 2 GeoJSON loaded: ${nuts2Features.length} regions`);
+				console.log(
+					"Sample regions:",
+					nuts2Features
+						.slice(0, 5)
+						.map((f: GeoJSONFeature) => f.properties?.NUTS_ID),
+				);
+			} catch (error) {
+				console.error("Failed to load NUTS data from Eurostat:", error);
+				// Fallback to empty if can't load
+				this.nutsGeoJSON = { type: "FeatureCollection", features: [] };
+			} finally {
+				this.isLoadingNuts = false;
+				this.loadingPromise = null;
+			}
+		})();
+		
+		return this.loadingPromise;
 	}
 
 	private createSpatialIndex(
@@ -318,6 +331,10 @@ export class NutsConverter {
 						);
 						const avgTemperature = temperatureSum / pointsInRegion.length;
 
+						console.log(
+							`NUTS ${nutsId}: ${pointsInRegion.length} points, avg temp: ${avgTemperature.toFixed(2)}°C`,
+						);
+
 						temperatures.push(avgTemperature);
 
 						// Get centroid for current position
@@ -406,6 +423,12 @@ export class NutsConverter {
 
 			// Calculate extremes
 			console.log("Calculating extremes...");
+			console.log(
+				`Temperature values: [${temperatures
+					.slice(0, 10)
+					.map((t) => t.toFixed(2))
+					.join(", ")}${temperatures.length > 10 ? "..." : ""}]`,
+			);
 			const extremes: DataExtremes =
 				temperatures.length > 0
 					? {
@@ -416,6 +439,9 @@ export class NutsConverter {
 							min: 0,
 							max: 0,
 						};
+			console.log(
+				`Final extremes: min=${extremes.min.toFixed(2)}°C, max=${extremes.max.toFixed(2)}°C`,
+			);
 
 			const nutsGeoJSON: NutsGeoJSON = {
 				type: "FeatureCollection",
@@ -494,6 +520,101 @@ export class NutsConverter {
 		}
 
 		return baseCountry;
+	}
+
+	// Create NUTS GeoJSON directly from API data (bypasses lat/lon processing)
+	async createNutsFromApiData(apiData: { [nutsId: string]: number }): Promise<{
+		nutsGeoJSON: NutsGeoJSON;
+		extremes: DataExtremes;
+	}> {
+		await this.loadNutsGeoJSON();
+
+		if (!this.nutsGeoJSON) {
+			throw new Error("NUTS GeoJSON not loaded");
+		}
+
+		const nutsFeatures: NutsFeature[] = [];
+		const temperatures: number[] = [];
+
+		console.log(
+			`Processing ${Object.keys(apiData).length} NUTS regions from API data`,
+		);
+
+		// Process each NUTS region in the API data
+		for (const nutsFeature of this.nutsGeoJSON.features) {
+			const nutsId =
+				nutsFeature.properties?.NUTS_ID || nutsFeature.properties?.nuts_id;
+
+			if (!nutsId) {
+				console.warn("NUTS feature missing NUTS_ID:", nutsFeature);
+				continue;
+			}
+
+			const apiValue = apiData[nutsId];
+
+			if (apiValue !== undefined && typeof apiValue === "number") {
+				temperatures.push(apiValue);
+
+				// Get centroid for current position
+				const polygon = this.createPolygonFromFeature(nutsFeature);
+				if (!polygon) continue;
+
+				const centroid = turf.centroid(polygon);
+				const currentPosition = {
+					lat: centroid.geometry.coordinates[1],
+					lng: centroid.geometry.coordinates[0],
+				};
+
+				const nutsFeatureResult: NutsFeature = {
+					type: "Feature",
+					properties: {
+						NUTS_ID: nutsId,
+						intensity: apiValue,
+						countryName: this.getNutsDisplayName(nutsId),
+						pointCount: 1, // API data is pre-processed
+						nutsLevel: 2,
+						isApiData: true,
+						currentPosition,
+						dataPoints: [
+							{
+								lat: currentPosition.lat,
+								lng: currentPosition.lng,
+								temperature: apiValue,
+							},
+						],
+					},
+					geometry: nutsFeature.geometry as NutsGeometry,
+				};
+
+				nutsFeatures.push(nutsFeatureResult);
+			}
+		}
+
+		// Calculate extremes
+		const extremes: DataExtremes =
+			temperatures.length > 0
+				? {
+						min: Math.min(...temperatures),
+						max: Math.max(...temperatures),
+					}
+				: {
+						min: 0,
+						max: 0,
+					};
+
+		const nutsGeoJSON: NutsGeoJSON = {
+			type: "FeatureCollection",
+			features: nutsFeatures,
+		};
+
+		console.log(
+			`Direct NUTS API processing complete: ${nutsFeatures.length} regions`,
+		);
+		console.log(
+			`Temperature range: ${extremes.min.toFixed(4)} to ${extremes.max.toFixed(4)}`,
+		);
+
+		return { nutsGeoJSON, extremes };
 	}
 
 	// Method to overlay actual model NUTS 3 data over calculated data

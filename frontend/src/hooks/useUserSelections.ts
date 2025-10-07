@@ -1,7 +1,7 @@
 import { useState } from "react";
 import type { Month } from "../component/Mapper/types";
 
-export interface UserSelectionState {
+export interface UserSelectionsState {
 	selectedModel: string;
 	setSelectedModel: (model: string) => void;
 	selectedOptimism: string;
@@ -12,19 +12,11 @@ export interface UserSelectionState {
 	setCurrentMonth: (month: Month) => void;
 	currentVariableValue: string;
 	setCurrentVariableValue: (value: string) => void;
-	error: string | null;
-	setError: (error: string | null) => void;
-	processingError: boolean;
-	setProcessingError: (error: boolean) => void;
-	lackOfDataModalVisible: boolean;
-	setLackOfDataModalVisible: (visible: boolean) => void;
-	requestedYear: number;
-	setRequestedYear: (year: number) => void;
-	apiErrorMessage: string;
-	setApiErrorMessage: (message: string) => void;
+	mapMode: "worldwide" | "europe-only" | "grid";
+	setMapMode: (mode: "worldwide" | "europe-only" | "grid") => void;
 }
 
-export const useUserSelectionState = (): UserSelectionState => {
+export const useUserSelections = (): UserSelectionsState => {
 	const [selectedModel, setSelectedModel] = useState<string>("");
 	const [selectedOptimism, setSelectedOptimism] =
 		useState<string>("optimistic");
@@ -32,11 +24,9 @@ export const useUserSelectionState = (): UserSelectionState => {
 	const [currentMonth, setCurrentMonth] = useState<Month>(7);
 	const [currentVariableValue, setCurrentVariableValue] =
 		useState<string>("R0");
-	const [error, setError] = useState<string | null>(null);
-	const [processingError, setProcessingError] = useState<boolean>(false);
-	const [lackOfDataModalVisible, setLackOfDataModalVisible] = useState(false);
-	const [requestedYear, setRequestedYear] = useState<number>(2016);
-	const [apiErrorMessage, setApiErrorMessage] = useState<string>("");
+	const [mapMode, setMapMode] = useState<"worldwide" | "europe-only" | "grid">(
+		"europe-only",
+	);
 
 	return {
 		selectedModel,
@@ -49,15 +39,7 @@ export const useUserSelectionState = (): UserSelectionState => {
 		setCurrentMonth,
 		currentVariableValue,
 		setCurrentVariableValue,
-		error,
-		setError,
-		processingError,
-		setProcessingError,
-		lackOfDataModalVisible,
-		setLackOfDataModalVisible,
-		requestedYear,
-		setRequestedYear,
-		apiErrorMessage,
-		setApiErrorMessage,
+		mapMode,
+		setMapMode,
 	};
 };

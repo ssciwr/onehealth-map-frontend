@@ -330,6 +330,57 @@ export const calculateExtremes = (
 	};
 };
 
+// Load NUTS data directly from API for Europe-only mode
+export const loadNutsData = async (
+	year: number,
+	month: number,
+	requestedVariableValue = "R0",
+): Promise<{ [nutsId: string]: number }> => {
+	console.log(
+		"Loading NUTS data for year:",
+		year,
+		"month:",
+		month,
+		"variable:",
+		requestedVariableValue,
+	);
+
+	// Format the month with leading zero
+	const monthStr = month.toString().padStart(2, "0");
+	const requestedTimePoint = `${year}-${monthStr}-01`;
+
+	try {
+		const response = await fetch(
+			`http://127.0.0.1:8000/nuts_data?requested_time_point=${requestedTimePoint}&requested_variable_value=${requestedVariableValue}&requested_grid_resolution=NUTS2`,
+			{
+				headers: {
+					accept: "application/json",
+				},
+			},
+		);
+
+		if (!response.ok) {
+			throw new Error(
+				`API_ERROR: HTTP ${response.status} - ${response.statusText}`,
+			);
+		}
+
+		const data = await response.json();
+
+		if (!data.result || typeof data.result !== "object") {
+			throw new Error("API_ERROR: Invalid response format");
+		}
+
+		console.log(
+			`Loaded NUTS data for ${Object.keys(data.result).length} regions`,
+		);
+		return data.result;
+	} catch (error) {
+		console.error("Failed to load NUTS data:", error);
+		throw error;
+	}
+};
+
 export const loadTemperatureData = async (
 	year: number,
 	month: number,
