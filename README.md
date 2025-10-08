@@ -12,6 +12,7 @@ It can be configured to request and display NUTS3 regions, or worldwide equivale
 For the worldwide view, the data is projected from individual points into polygons on the frontend.
 
 ## Main components diagram:
+(Out of date since 6/10/2025 Grid Refactoring to restore grid functionality and new NUTS API)
 <img width="1370" height="847" alt="image" src="https://github.com/user-attachments/assets/bb7daba0-d421-477b-9005-d5a116a119b2" />
 
 ## Example: Worldwide Simple R0 example:
