@@ -24,7 +24,7 @@ For the worldwide view, the data is projected from individual points into polygo
 
 
 # Installation guide
-- First, make sure the `onehealth-db` repository is running with the API accessible. The API must be able to return generated data for 2016 and 2017.
+- First, make sure the `onehealth-db` repository is running with the API accessible. It depends upon a running postgres database, typically docker name `my-postgres`. The API must be able to return generated data for 2016 and 2017.
 - Run `pnpm i` to install dependencies
 - Run `pnpm run dev` to launch the application
 
