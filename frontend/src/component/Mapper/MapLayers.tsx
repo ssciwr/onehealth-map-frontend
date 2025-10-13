@@ -1,9 +1,10 @@
+import { observer } from "mobx-react-lite";
 import type React from "react";
-import { memo, useCallback } from "react";
+import { useCallback } from "react";
 import { GeoJSON, Pane } from "react-leaflet";
+import { useUserSelectionsStore } from "../../contexts/UserSelectionsContext";
 import { useMapDataState } from "../../hooks/useMapDataState";
 import { useMapUIInteractions } from "../../hooks/useMapUIInteractions";
-import { useUserSelections } from "../../hooks/useUserSelections";
 import { mapStyleService } from "../../services/MapStyleService";
 import * as MapInteractionHandlers from "../../utils/MapInteractionHandlers";
 import AdaptiveGridLayer from "./AdaptiveGridLayer";
@@ -15,14 +16,14 @@ interface MapLayersProps {
 	processedDataExtremes?: any;
 }
 
-const MapLayers: React.FC<MapLayersProps> = memo(
+const MapLayers: React.FC<MapLayersProps> = observer(
 	({
 		processedEuropeNutsRegions: propsProcessedEuropeNutsRegions,
 		processedWorldwideRegions: propsProcessedWorldwideRegions,
 		processedDataExtremes: propsProcessedDataExtremes,
 	}) => {
 		// Use hooks for UI state and some data, but get processed data from props
-		const { mapMode, currentVariableValue } = useUserSelections();
+		const userStore = useUserSelectionsStore();
 		const {
 			borderStyle,
 			mapHoverTimeout,
@@ -40,7 +41,7 @@ const MapLayers: React.FC<MapLayersProps> = memo(
 
 		// Create interaction handlers
 		const highlightFeature = MapInteractionHandlers.createHighlightFeature(
-			mapMode,
+			userStore.mapMode,
 			borderStyle,
 			processedDataExtremes,
 			processedWorldwideRegions,
@@ -53,7 +54,7 @@ const MapLayers: React.FC<MapLayersProps> = memo(
 		);
 
 		const resetHighlight = MapInteractionHandlers.createResetHighlight(
-			mapMode,
+			userStore.mapMode,
 			borderStyle,
 			processedDataExtremes,
 			processedWorldwideRegions,
@@ -67,14 +68,14 @@ const MapLayers: React.FC<MapLayersProps> = memo(
 
 		const onEachWorldwideFeature =
 			MapInteractionHandlers.createOnEachWorldwideFeature(
-				currentVariableValue,
+				userStore.currentVariableType,
 				highlightFeature,
 				resetHighlight,
 			);
 
 		const onEachEuropeOnlyFeature =
 			MapInteractionHandlers.createOnEachEuropeOnlyFeature(
-				currentVariableValue,
+				userStore.currentVariableType,
 				highlightFeature,
 				resetHighlight,
 			);
@@ -100,7 +101,7 @@ const MapLayers: React.FC<MapLayersProps> = memo(
 		return (
 			<>
 				{/* Worldwide Mode Layer */}
-				{mapMode === "worldwide" && (
+				{userStore.mapMode === "worldwide" && (
 					<Pane name="worldwidePane" style={{ zIndex: 30, opacity: 0.9 }}>
 						{processedWorldwideRegions?.features &&
 							processedWorldwideRegions.features.length > 0 && (
@@ -114,7 +115,7 @@ const MapLayers: React.FC<MapLayersProps> = memo(
 				)}
 
 				{/* Europe-only Mode Layer */}
-				{mapMode === "europe-only" && (
+				{userStore.mapMode === "europe-only" && (
 					<Pane name="europeOnlyPane" style={{ zIndex: 30, opacity: 0.9 }}>
 						{!isProcessingEuropeNutsData &&
 							processedEuropeNutsRegions?.features &&
@@ -130,7 +131,7 @@ const MapLayers: React.FC<MapLayersProps> = memo(
 				)}
 
 				{/* Grid Mode Layer */}
-				{mapMode === "grid" && (
+				{userStore.mapMode === "grid" && (
 					<Pane name="gridPane" style={{ zIndex: 340, opacity: 1.0 }}>
 						<AdaptiveGridLayer />
 					</Pane>
@@ -140,9 +141,9 @@ const MapLayers: React.FC<MapLayersProps> = memo(
 				<CitiesLayer
 					zoom={mapZoomLevel}
 					dataRegions={
-						mapMode === "europe-only"
+						userStore.mapMode === "europe-only"
 							? processedEuropeNutsRegions
-							: mapMode === "grid"
+							: userStore.mapMode === "grid"
 								? null
 								: processedWorldwideRegions
 					}

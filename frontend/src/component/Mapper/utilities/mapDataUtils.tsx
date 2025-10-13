@@ -351,7 +351,7 @@ export const loadNutsData = async (
 
 	try {
 		const response = await fetch(
-			`http://127.0.0.1:8000/nuts_data?requested_time_point=${requestedTimePoint}&requested_variable_value=${requestedVariableValue}&requested_grid_resolution=NUTS2`,
+			`http://127.0.0.1:8000/nuts_data?requested_time_point=${requestedTimePoint}&requested_variable_type=${requestedVariableValue}&requested_grid_resolution=NUTS2`,
 			{
 				headers: {
 					accept: "application/json",

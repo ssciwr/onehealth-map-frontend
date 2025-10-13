@@ -3,11 +3,12 @@ import { Button, Modal, Select } from "antd";
 import { Map as MapIcon } from "lucide-react";
 
 const { Option } = Select;
+import { observer } from "mobx-react-lite";
 import { useState } from "react";
 import { isMobile } from "react-device-detect";
+import { useUserSelectionsStore } from "../../contexts/UserSelectionsContext";
 import { useMapUIInteractions } from "../../hooks/useMapUIInteractions";
 import { useModelData } from "../../hooks/useModelData";
-import { useUserSelections } from "../../hooks/useUserSelections";
 import { viewingMode } from "../../stores/ViewingModeStore.ts";
 import GeneralCard from "../General/GeneralCard.tsx";
 import ModelSelector from "./InterfaceInputs/ModelSelector.tsx";
@@ -15,25 +16,21 @@ import OptimismLevelSelector from "./InterfaceInputs/OptimismSelector.tsx";
 
 type MapHeaderProps = {};
 
-export default ({}: MapHeaderProps) => {
+export default observer(({}: MapHeaderProps) => {
 	const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
-	// Use hooks directly instead of props
-	const {
-		mapMode,
-		setMapMode,
-		selectedModel,
-		setSelectedModel,
-		selectedOptimism,
-		setSelectedOptimism,
-	} = useUserSelections();
+	// Use MobX store directly instead of props
+	const userStore = useUserSelectionsStore();
 
 	const { borderStyle, setBorderStyle } = useMapUIInteractions();
 
-	const { getOptimismLevels } = useModelData(selectedModel, setSelectedModel);
+	const { getOptimismLevels } = useModelData(
+		userStore.selectedModel,
+		userStore.setSelectedModel,
+	);
 
 	const handleModelSelect = (modelId: string) => {
-		setSelectedModel(modelId);
+		userStore.setSelectedModel(modelId);
 	};
 
 	return isMobile ? (
@@ -66,7 +63,7 @@ export default ({}: MapHeaderProps) => {
 
 						<div style={{ flex: 1, display: "flex", justifyContent: "center" }}>
 							<ModelSelector
-								selectedModel={selectedModel}
+								selectedModel={userStore.selectedModel}
 								onModelSelect={handleModelSelect}
 							/>
 						</div>
@@ -101,12 +98,12 @@ export default ({}: MapHeaderProps) => {
 						<div style={{ background: "white" }}>
 							<OptimismLevelSelector
 								availableOptimismLevels={getOptimismLevels()}
-								selectedOptimism={selectedOptimism}
-								setOptimism={setSelectedOptimism}
+								selectedOptimism={userStore.selectedOptimism}
+								setOptimism={userStore.setSelectedOptimism}
 							/>
 						</div>
 					</div>
-					{mapMode === "worldwide" && (
+					{userStore.mapMode === "worldwide" && (
 						<div style={{ marginBottom: "24px" }}>
 							<h4>Border Style</h4>
 							<Select
@@ -222,7 +219,7 @@ export default ({}: MapHeaderProps) => {
 							Display&nbsp;
 						</span>
 						<ModelSelector
-							selectedModel={selectedModel}
+							selectedModel={userStore.selectedModel}
 							onModelSelect={handleModelSelect}
 						/>
 					</div>
@@ -251,8 +248,8 @@ export default ({}: MapHeaderProps) => {
 					>
 						<OptimismLevelSelector
 							availableOptimismLevels={getOptimismLevels()}
-							selectedOptimism={selectedOptimism}
-							setOptimism={setSelectedOptimism}
+							selectedOptimism={userStore.selectedOptimism}
+							setOptimism={userStore.setSelectedOptimism}
 						/>
 						<span
 							style={{
@@ -281,8 +278,11 @@ export default ({}: MapHeaderProps) => {
 					>
 						<MapIcon size={20} />
 						<Select
-							value={mapMode}
-							onChange={setMapMode}
+							value={userStore.mapMode}
+							onChange={(v) => {
+								console.log("Map mode should be updated as such:", v);
+								userStore.setMapMode(v);
+							}}
 							style={{ minWidth: 120 }}
 							size="middle"
 						>
@@ -291,7 +291,7 @@ export default ({}: MapHeaderProps) => {
 							<Option value="grid">Grid</Option>
 						</Select>
 					</div>
-					{mapMode === "worldwide" && (
+					{userStore.mapMode === "worldwide" && (
 						<div
 							className="glass-button"
 							style={{
@@ -403,4 +403,4 @@ export default ({}: MapHeaderProps) => {
 			</GeneralCard>
 		</div>
 	);
-};
+});

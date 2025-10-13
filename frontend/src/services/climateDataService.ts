@@ -12,7 +12,7 @@ export interface ClimateApiResponse {
 
 export interface ClimateApiRequest {
 	requested_time_point: string;
-	requested_variable_value: string;
+	requested_variable_type: string;
 	outputFormat?: string[];
 }
 
@@ -48,14 +48,25 @@ export async function fetchClimateData(
 	);
 
 	try {
-		const apiUrl = `/api/cartesian?requested_time_point=${requestedTimePoint}&requested_variable_value=${requestedVariableValue}`;
+		const apiUrl = `/api/cartesian?requested_time_point=${requestedTimePoint}&requested_variable_type=${requestedVariableValue}`;
 
-		console.log(`Calling API: ${apiUrl}`);
+		const requestBody = {
+			requested_time_point: requestedTimePoint,
+			requested_variable_type: requestedVariableValue,
+		};
+
+		console.log(
+			`Calling API: ${apiUrl} with both query params AND POST body:`,
+			requestBody,
+		);
 
 		const response = await fetch(apiUrl, {
+			method: "POST",
 			headers: {
+				"Content-Type": "application/json",
 				Accept: "application/json",
 			},
+			body: JSON.stringify(requestBody),
 		});
 
 		if (!response.ok) {

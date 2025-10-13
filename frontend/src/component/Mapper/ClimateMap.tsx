@@ -4,16 +4,16 @@ import "leaflet/dist/leaflet.css";
 import type L from "leaflet";
 import ViewportMonitor from "./ViewportMonitor.tsx";
 import "./Map.css";
+import { observer } from "mobx-react-lite";
 import { isMobile } from "react-device-detect";
+import { useUserSelectionsStore } from "../../contexts/UserSelectionsContext";
 import { useGridProcessing } from "../../hooks/useGridProcessing";
 import { useMapDataState } from "../../hooks/useMapDataState";
 import { useMapScreenshot } from "../../hooks/useMapScreenshot";
 import { useMapUIInteractions } from "../../hooks/useMapUIInteractions";
 import { useModelData } from "../../hooks/useModelData";
 import { useTemperatureData } from "../../hooks/useTemperatureData";
-import { useUserSelections } from "../../hooks/useUserSelections";
 import { regionProcessor } from "../../services/RegionProcessor";
-import { loadNutsData } from "./utilities/mapDataUtils";
 import Footer from "../../static/Footer.tsx";
 import * as MapInteractionHandlers from "../../utils/MapInteractionHandlers";
 import DebugStatsPanel from "./DebugStatsPanel.tsx";
@@ -23,23 +23,12 @@ import LoadingSkeleton from "./LoadingSkeleton.tsx";
 import MapHeader from "./MapHeader.tsx";
 import MapLayers from "./MapLayers.tsx";
 import NoDataModal from "./NoDataModal.tsx";
+import { loadNutsData } from "./utilities/mapDataUtils";
 import { Legend, MAX_ZOOM, MIN_ZOOM } from "./utilities/mapDataUtils";
 import { getVariableUnit } from "./utilities/monthUtils";
 
-const ClimateMap = ({ onMount = () => true }) => {
-	// Only get the specific state we need for ClimateMap's core functionality
-	const {
-		mapMode,
-		currentYear,
-		setCurrentYear,
-		currentMonth,
-		setCurrentMonth,
-		selectedModel,
-		setSelectedModel,
-		currentVariableValue,
-		setCurrentVariableValue,
-		selectedOptimism,
-	} = useUserSelections();
+const ClimateMap = observer(({ onMount = () => true }) => {
+	const userStore = useUserSelectionsStore();
 	const {
 		generalError,
 		setGeneralError,
@@ -86,19 +75,22 @@ const ClimateMap = ({ onMount = () => true }) => {
 	const { generateGridCellsFromTemperatureData } = useGridProcessing();
 
 	// Use model data hook
-	const { models } = useModelData(selectedModel, setSelectedModel);
+	const { models } = useModelData(
+		userStore.selectedModel,
+		userStore.setSelectedModel,
+	);
 
 	// Use temperature data hook for region-based processing (europe/worldwide)
 	const { loadworldwideRegions } = useTemperatureData({
 		models,
-		selectedModel,
-		mapMode,
-		currentYear,
-		currentMonth,
+		selectedModel: userStore.selectedModel,
+		mapMode: userStore.mapMode,
+		currentYear: userStore.currentYear,
+		currentMonth: userStore.currentMonth,
 		setRawRegionTemperatureData,
 		setProcessedDataExtremes,
 		setMapDataBounds,
-		setCurrentVariableValue,
+		setCurrentVariableType: userStore.setCurrentVariableType,
 		setUserRequestedYear,
 		setNoDataModalVisible,
 		setDataFetchErrorMessage,
@@ -114,10 +106,10 @@ const ClimateMap = ({ onMount = () => true }) => {
 		screenshoter: mapScreenshoter,
 		setScreenshoter: setMapScreenshoter,
 		models,
-		selectedModel,
-		currentYear,
-		currentMonth,
-		selectedOptimism,
+		selectedModel: userStore.selectedModel,
+		currentYear: userStore.currentYear,
+		currentMonth: userStore.currentMonth,
+		selectedOptimism: userStore.selectedOptimism,
 	});
 
 	// Set theme to purple
@@ -153,19 +145,25 @@ const ClimateMap = ({ onMount = () => true }) => {
 	// Process data based on map mode - separate effects to prevent dependency loops
 	// Europe-only mode effect (independent of rawRegionTemperatureData)
 	useEffect(() => {
-		if (mapMode !== "europe-only" || dataProcessingError) {
+		if (userStore.mapMode !== "europe-only" || dataProcessingError) {
+			console.log(
+				"Change of map mode, but only europe is supported for now.",
+				userStore.mapMode,
+			);
 			return;
 		}
 
 		// Only run once per year/month combination to prevent infinite loops
 		let isProcessing = false;
-		
+
 		const processEuropeData = async () => {
 			if (isProcessing) return;
 			isProcessing = true;
-			
+
 			try {
-				console.log(`Processing Europe NUTS: ${currentYear}-${currentMonth}`);
+				console.log(
+					`Processing Europe NUTS: ${userStore.currentYear}-${userStore.currentMonth}`,
+				);
 				// Clear existing data immediately to prevent stale display
 				setProcessedEuropeNutsRegions(null);
 				setProcessedWorldwideRegions(null);
@@ -173,13 +171,15 @@ const ClimateMap = ({ onMount = () => true }) => {
 
 				// Load NUTS data directly from API (avoid unstable function dependency)
 				setIsLoadingRawData(true);
-				const selectedModelData = models.find((m) => m.id === selectedModel);
+				const selectedModelData = models.find(
+					(m) => m.id === userStore.selectedModel,
+				);
 				const requestedVariableValue = selectedModelData?.output?.[0] || "R0";
-				setCurrentVariableValue(requestedVariableValue);
-				
+				userStore.setCurrentVariableType(requestedVariableValue);
+
 				const nutsApiData = await loadNutsData(
-					currentYear,
-					currentMonth,
+					userStore.currentYear,
+					userStore.currentMonth,
 					requestedVariableValue,
 				);
 				setIsLoadingRawData(false);
@@ -188,7 +188,7 @@ const ClimateMap = ({ onMount = () => true }) => {
 				const { nutsGeoJSON, extremes } =
 					await regionProcessor.processEuropeOnlyRegionsFromApi(
 						nutsApiData,
-						currentYear,
+						userStore.currentYear,
 					);
 
 				// Update state with processed data
@@ -207,18 +207,31 @@ const ClimateMap = ({ onMount = () => true }) => {
 		};
 
 		processEuropeData();
-	}, [mapMode, currentYear, currentMonth, dataProcessingError]); // Keep only stable dependencies
+	}, [
+		userStore.mapMode,
+		userStore.currentYear,
+		userStore.currentMonth,
+		dataProcessingError,
+	]); // Keep only stable dependencies
 
 	// Worldwide/Grid mode effect (dependent on rawRegionTemperatureData)
 	useEffect(() => {
 		// Skip processing if there's already a processing error or in Europe mode
-		if (dataProcessingError || mapMode === "europe-only") {
+		if (dataProcessingError || userStore.mapMode === "europe-only") {
 			console.log("Skipping lat/lon processing due to error or Europe mode");
 			return;
 		}
 
+		// race condition problem: Europe default mode is loaded.. so rawREgionTemperatureData never gets set...
+		// then later world mode is active nad the code below in ProcessData runs, but the condition stops anything happening
+		// need to avoid that.
+		// 1. what sets rawRegionTemperatureData?
+
 		const processData = async () => {
-			if (mapMode === "worldwide" && rawRegionTemperatureData.length > 0) {
+			if (
+				userStore.mapMode === "worldwide" &&
+				rawRegionTemperatureData.length > 0
+			) {
 				// Load worldwide regions if not already loaded
 				if (!worldwideRegionBoundaries) {
 					try {
@@ -249,7 +262,10 @@ const ClimateMap = ({ onMount = () => true }) => {
 					setGeneralError("Failed to process worldwide regions");
 					setIsProcessingWorldwideRegionData(false);
 				}
-			} else if (mapMode === "grid" && rawRegionTemperatureData.length > 0) {
+			} else if (
+				userStore.mapMode === "grid" &&
+				rawRegionTemperatureData.length > 0
+			) {
 				// Grid mode: set extremes from raw temperature data and generate grid cells
 				const temps = rawRegionTemperatureData.map((d) => d.temperature);
 				const extremes = {
@@ -271,6 +287,9 @@ const ClimateMap = ({ onMount = () => true }) => {
 				setIsProcessingEuropeNutsData(false);
 				setIsProcessingWorldwideRegionData(false);
 			} else {
+				console.log(
+					"Entered the or case: No world wide or grid data to load so unable to really do anything.",
+				);
 				// Clear all when switching modes or no data
 				setProcessedWorldwideRegions(null);
 				setProcessedEuropeNutsRegions(null);
@@ -281,7 +300,7 @@ const ClimateMap = ({ onMount = () => true }) => {
 
 		processData();
 	}, [
-		mapMode,
+		userStore.mapMode,
 		rawRegionTemperatureData,
 		worldwideRegionBoundaries,
 		dataProcessingError,
@@ -323,12 +342,12 @@ const ClimateMap = ({ onMount = () => true }) => {
 			processedDataExtremes ? (
 				<Legend
 					extremes={processedDataExtremes}
-					unit={getVariableUnit(currentVariableValue)}
+					unit={getVariableUnit(userStore.currentVariableType)}
 				/>
 			) : (
 				<div />
 			),
-		[processedDataExtremes, currentVariableValue],
+		[processedDataExtremes, userStore.currentVariableType],
 	);
 
 	const memoizedDesktopLegend = useMemo(
@@ -336,10 +355,10 @@ const ClimateMap = ({ onMount = () => true }) => {
 			processedDataExtremes ? (
 				<Legend
 					extremes={processedDataExtremes}
-					unit={getVariableUnit(currentVariableValue)}
+					unit={getVariableUnit(userStore.currentVariableType)}
 				/>
 			) : null,
-		[processedDataExtremes, currentVariableValue],
+		[processedDataExtremes, userStore.currentVariableType],
 	);
 
 	// Viewport change handler
@@ -367,12 +386,12 @@ const ClimateMap = ({ onMount = () => true }) => {
 
 	const handleLoadCurrentYear = () => {
 		const currentYear = new Date().getFullYear();
-		setCurrentYear(currentYear);
+		userStore.setCurrentYear(currentYear);
 		setNoDataModalVisible(false);
 	};
 
 	const handleModelSelect = (modelId: string) => {
-		setSelectedModel(modelId);
+		userStore.setSelectedModel(modelId);
 	};
 
 	return (
@@ -423,10 +442,10 @@ const ClimateMap = ({ onMount = () => true }) => {
 
 						{/* Advanced Timeline Selector - Now supports mobile */}
 						<AdvancedTimelineSelector
-							year={currentYear}
-							month={currentMonth}
-							onYearChange={setCurrentYear}
-							onMonthChange={setCurrentMonth}
+							year={userStore.currentYear}
+							month={userStore.currentMonth}
+							onYearChange={userStore.setCurrentYear}
+							onMonthChange={userStore.setCurrentMonth}
 							onZoomIn={handleZoomIn}
 							onZoomOut={handleZoomOut}
 							onResetZoom={handleResetZoom}
@@ -436,7 +455,7 @@ const ClimateMap = ({ onMount = () => true }) => {
 							map={leafletMapInstance}
 							screenshoter={mapScreenshoter}
 							models={models}
-							selectedModelId={selectedModel}
+							selectedModelId={userStore.selectedModel}
 							onModelSelect={handleModelSelect}
 							legend={memoizedMobileLegend}
 						/>
@@ -502,6 +521,6 @@ const ClimateMap = ({ onMount = () => true }) => {
 			<Footer />
 		</div>
 	);
-};
+});
 
 export default ClimateMap;

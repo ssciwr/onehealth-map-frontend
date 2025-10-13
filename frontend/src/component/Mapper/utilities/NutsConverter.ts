@@ -20,14 +20,14 @@ export class NutsConverter {
 
 	async loadNutsGeoJSON(): Promise<void> {
 		if (this.nutsGeoJSON) return;
-		
+
 		// If already loading, wait for the existing promise
 		if (this.isLoadingNuts && this.loadingPromise) {
 			return this.loadingPromise;
 		}
 
 		this.isLoadingNuts = true;
-		
+
 		// Create and store the loading promise
 		this.loadingPromise = (async () => {
 			try {
@@ -63,7 +63,7 @@ export class NutsConverter {
 				this.loadingPromise = null;
 			}
 		})();
-		
+
 		return this.loadingPromise;
 	}
 
@@ -523,6 +523,14 @@ export class NutsConverter {
 	}
 
 	// Create NUTS GeoJSON directly from API data (bypasses lat/lon processing)
+	/*
+	The way this goes about this is longwinded/antiquated given how this could work now. For each NUTS region in our
+	local list of regions, it make a polygon object ready to draw, and then
+	 tries to see if the API data has a region with the same ID. When it does, it assigns the intensity value.
+	 That works and the full NUTS-API path will work like that too (backend will provide a GeoJSON of countries and
+	 NUTS regions as polygons), but the code is a bit convulted and function names should change to nolonger read like
+	 it creates the Nuts regions based on processing points into their relevant regions.
+	 */
 	async createNutsFromApiData(apiData: { [nutsId: string]: number }): Promise<{
 		nutsGeoJSON: NutsGeoJSON;
 		extremes: DataExtremes;
@@ -550,7 +558,7 @@ export class NutsConverter {
 				continue;
 			}
 
-			const apiValue = apiData[nutsId];
+			const apiValue = apiData[nutsId]; // look up in the hashtable of known NUTS IDs --> Intesity valuesf rom last API call.
 
 			if (apiValue !== undefined && typeof apiValue === "number") {
 				temperatures.push(apiValue);

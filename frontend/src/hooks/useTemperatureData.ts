@@ -33,7 +33,7 @@ interface UseTemperatureDataProps {
 	setRawRegionTemperatureData: (data: TemperatureDataPoint[]) => void;
 	setProcessedDataExtremes: (extremes: DataExtremes | null) => void;
 	setMapDataBounds: (bounds: ViewportBounds | null) => void;
-	setCurrentVariableValue: (value: string) => void;
+	setCurrentVariableType: (value: string) => void;
 	setUserRequestedYear: (year: number) => void;
 	setNoDataModalVisible: (visible: boolean) => void;
 	setDataFetchErrorMessage: (message: string) => void;
@@ -52,7 +52,7 @@ export const useTemperatureData = ({
 	setRawRegionTemperatureData,
 	setProcessedDataExtremes,
 	setMapDataBounds,
-	setCurrentVariableValue,
+	setCurrentVariableType,
 	setUserRequestedYear,
 	setNoDataModalVisible,
 	setDataFetchErrorMessage,
@@ -61,6 +61,7 @@ export const useTemperatureData = ({
 	setBaseWorldGeoJSON,
 	setWorldwideRegionBoundaries,
 }: UseTemperatureDataProps): UseTemperatureDataReturn => {
+	console.log("Map mode is:", mapMode);
 	const handleLoadTemperatureData = useCallback(
 		async (year: number, month: Month) => {
 			try {
@@ -85,7 +86,7 @@ export const useTemperatureData = ({
 				const outputFormat = selectedModelData?.output;
 
 				// Update current variable value for legend display
-				setCurrentVariableValue(requestedVariableValue);
+				setCurrentVariableType(requestedVariableValue);
 
 				const { dataPoints, extremes, bounds } = await loadTemperatureData(
 					year,
@@ -146,7 +147,7 @@ export const useTemperatureData = ({
 			setRawRegionTemperatureData,
 			setProcessedDataExtremes,
 			setMapDataBounds,
-			setCurrentVariableValue,
+			setCurrentVariableType,
 			setUserRequestedYear,
 			setNoDataModalVisible,
 			setDataFetchErrorMessage,
@@ -212,7 +213,14 @@ export const useTemperatureData = ({
 	// Europe-only mode will load NUTS data on-demand in ClimateMap
 	useEffect(() => {
 		if (mapMode !== "europe-only") {
-			console.log("Loading lat/lon data for mode:", mapMode, "year:", currentYear, "month:", currentMonth);
+			console.log(
+				"Loading lat/lon data for mode:",
+				mapMode,
+				"year:",
+				currentYear,
+				"month:",
+				currentMonth,
+			);
 		}
 
 		// Skip loading lat/lon data for Europe-only mode
@@ -248,7 +256,7 @@ export const useTemperatureData = ({
 
 				const selectedModelData = models.find((m) => m.id === selectedModel);
 				const requestedVariableValue = selectedModelData?.output?.[0] || "R0";
-				setCurrentVariableValue(requestedVariableValue);
+				setCurrentVariableType(requestedVariableValue);
 
 				const nutsData = await loadNutsData(
 					year,
@@ -284,7 +292,7 @@ export const useTemperatureData = ({
 		[
 			models,
 			selectedModel,
-			setCurrentVariableValue,
+			setCurrentVariableType,
 			setUserRequestedYear,
 			setNoDataModalVisible,
 			setDataFetchErrorMessage,
