@@ -53,7 +53,7 @@ export async function fetchClimateData(
 		const postData = {
 			requested_time_point: requestedTimePoint, // "2016-07-01"
 			requested_variable_type: requestedVariableValue, // "R0"
-			requested_area: [180, 0, 0, 180], // JSON array will be converted to tuple by Pydantic
+			requested_area: [180, 0, 0, 180], // convert this to the viewport coordinates.
 		};
 
 		console.log(`Calling API: ${apiUrl}`);

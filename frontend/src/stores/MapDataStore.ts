@@ -1,28 +1,61 @@
-import { makeAutoObservable } from "mobx";
+import type { FeatureCollection, GeoJsonProperties, Geometry } from "geojson";
 import type L from "leaflet";
+import { makeAutoObservable } from "mobx";
 import type {
+	DataExtremes,
 	NutsGeoJSON,
-	WorldwideGeoJSON,
+	ProcessingStats,
+	TemperatureDataPoint,
 	ViewportBounds,
+	WorldwideGeoJSON,
 } from "../component/Mapper/types";
 
 export class MapDataStore {
+	rawRegionTemperatureData: TemperatureDataPoint[] = [];
+	processedDataExtremes: DataExtremes | null = null;
+	mapDataBounds: ViewportBounds | null = null;
+	baseWorldGeoJSON: FeatureCollection<Geometry, GeoJsonProperties> | null =
+		null;
 	processedWorldwideRegions: WorldwideGeoJSON | null = null;
+	worldwideRegionBoundaries: WorldwideGeoJSON | null = null;
 	processedEuropeNutsRegions: NutsGeoJSON | null = null;
-	isProcessingEuropeNutsData: boolean = false;
-	isProcessingWorldwideRegionData: boolean = false;
-	isLoadingRawData: boolean = false;
+	isProcessingEuropeNutsData = false;
+	isProcessingWorldwideRegionData = false;
+	isLoadingRawData = false;
+	processingStats: ProcessingStats | null = null;
 	leafletMapInstance: L.Map | null = null;
 	mapViewportBounds: ViewportBounds | null = null;
-	mapZoomLevel: number = 3;
-	dataResolution: number = 1;
+	mapZoomLevel = 3;
+	dataResolution = 1;
 
 	constructor() {
 		makeAutoObservable(this);
 	}
 
+	setRawRegionTemperatureData = (data: TemperatureDataPoint[]) => {
+		this.rawRegionTemperatureData = data;
+	};
+
+	setProcessedDataExtremes = (extremes: DataExtremes | null) => {
+		this.processedDataExtremes = extremes;
+	};
+
+	setMapDataBounds = (bounds: ViewportBounds | null) => {
+		this.mapDataBounds = bounds;
+	};
+
+	setBaseWorldGeoJSON = (
+		data: FeatureCollection<Geometry, GeoJsonProperties> | null,
+	) => {
+		this.baseWorldGeoJSON = data;
+	};
+
 	setProcessedWorldwideRegions = (data: WorldwideGeoJSON | null) => {
 		this.processedWorldwideRegions = data;
+	};
+
+	setWorldwideRegionBoundaries = (data: WorldwideGeoJSON | null) => {
+		this.worldwideRegionBoundaries = data;
 	};
 
 	setProcessedEuropeNutsRegions = (data: NutsGeoJSON | null) => {
@@ -39,6 +72,10 @@ export class MapDataStore {
 
 	setIsLoadingRawData = (loading: boolean) => {
 		this.isLoadingRawData = loading;
+	};
+
+	setProcessingStats = (stats: ProcessingStats | null) => {
+		this.processingStats = stats;
 	};
 
 	setLeafletMapInstance = (map: L.Map | null) => {

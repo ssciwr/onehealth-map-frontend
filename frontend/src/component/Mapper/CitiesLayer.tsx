@@ -203,6 +203,7 @@ const CitiesLayer = ({ zoom, dataRegions }: CitiesLayerProps) => {
 		});
 	};
 
+	console.log("Current zoom for cities layer is: ", zoom);
 	const threshold = getPopulationThreshold(zoom);
 	const citiesInDataRegions = filterCitiesByDataRegions(cities);
 	const visibleCities = citiesInDataRegions.filter(
@@ -224,17 +225,19 @@ const CitiesLayer = ({ zoom, dataRegions }: CitiesLayerProps) => {
 						weight={1}
 						opacity={0.8}
 					>
-						<Popup>
-							<div style={{ fontSize: "14px", lineHeight: "1.4" }}>
-								<strong>{city.name}</strong>
-								<br />
-								<span style={{ color: "#666" }}>{city.country}</span>
-								<br />
-								<span style={{ fontSize: "12px" }}>
-									Population: {formatPopulation(city.population)}
-								</span>
-							</div>
-						</Popup>
+						<div style={{ zIndex: 390 }}>
+							<Popup>
+								<div style={{ fontSize: "14px", lineHeight: "1.4" }}>
+									<strong>{city.name}</strong>
+									<br />
+									<span style={{ color: "#666" }}>{city.country}</span>
+									<br />
+									<span style={{ fontSize: "12px" }}>
+										Population: {formatPopulation(city.population)}
+									</span>
+								</div>
+							</Popup>
+						</div>
 					</CircleMarker>
 				))}
 			</Pane>
