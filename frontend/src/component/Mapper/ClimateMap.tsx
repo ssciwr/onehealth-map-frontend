@@ -101,47 +101,6 @@ const ClimateMap = observer(({ onMount = () => true }) => {
 		models,
 	]);
 
-	// Process grid data when temperature data loads
-	useEffect(() => {
-		if (
-			userStore.mapMode === "grid" &&
-			temperatureDataStore.rawRegionTemperatureData.length > 0
-		) {
-			console.log(
-				"Grid processing check:",
-				userStore.mapMode,
-				temperatureDataStore.rawRegionTemperatureData.length,
-			);
-			console.log(
-				"mapDataStore.mapViewportBounds:",
-				mapDataStore.mapViewportBounds,
-			);
-			console.log("dataResolution:", mapDataStore.dataResolution);
-
-			// Grid mode: set extremes from raw temperature data and generate grid cells
-			const temps = temperatureDataStore.rawRegionTemperatureData.map(
-				(d) => d.temperature,
-			);
-			const extremes = {
-				min: Math.min(...temps),
-				max: Math.max(...temps),
-			};
-			temperatureDataStore.setProcessedDataExtremes(extremes);
-
-			// Generate grid cells using MobX store
-			console.log("About to call generateGridCellsFromTemperatureData");
-			gridProcessingStore.generateGridCellsFromTemperatureData(
-				temperatureDataStore.rawRegionTemperatureData,
-				mapDataStore.mapViewportBounds,
-				mapDataStore.dataResolution,
-			);
-		}
-	}, [
-		userStore.mapMode,
-		temperatureDataStore.rawRegionTemperatureData,
-		mapDataStore.mapViewportBounds,
-		mapDataStore.dataResolution,
-	]);
 
 	// Handle popup close button clicks
 	useEffect(() => {
@@ -196,7 +155,7 @@ const ClimateMap = observer(({ onMount = () => true }) => {
 				mapDataStore.setIsProcessingEuropeNutsData(true);
 
 				// Load NUTS data directly from API (avoid unstable function dependency)
-				mapDataStore.setIsloadingRawData(true);
+				mapDataStore.setIsLoadingRawData(true);
 				const selectedModelData = models.find(
 					(m) => m.id === userStore.selectedModel,
 				);
@@ -208,7 +167,7 @@ const ClimateMap = observer(({ onMount = () => true }) => {
 					userStore.currentMonth,
 					requestedVariableValue,
 				);
-				mapDataStore.setIsloadingRawData(false);
+				mapDataStore.setIsLoadingRawData(false);
 
 				// Process API data into GeoJSON format
 				const { nutsGeoJSON, extremes } =
@@ -219,14 +178,14 @@ const ClimateMap = observer(({ onMount = () => true }) => {
 
 				// Update state with processed data
 				mapDataStore.setProcessedEuropeNutsRegions(nutsGeoJSON);
-				setProcessedDataExtremes(extremes);
+				temperatureDataStore.setProcessedDataExtremes(extremes);
 				mapDataStore.setIsProcessingEuropeNutsData(false);
 			} catch (error) {
 				console.error("Failed to load/process Europe-only NUTS data:", error);
 				setDataProcessingError(true);
 				setGeneralError("Failed to process Europe-only NUTS data");
 				mapDataStore.setIsProcessingEuropeNutsData(false);
-				mapDataStore.setIsloadingRawData(false);
+				mapDataStore.setIsLoadingRawData(false);
 			} finally {
 				isProcessing = false;
 			}
@@ -279,7 +238,7 @@ const ClimateMap = observer(({ onMount = () => true }) => {
 						);
 					mapDataStore.setProcessedWorldwideRegions(processedGeoJSON);
 					if (extremes) {
-						setProcessedDataExtremes(extremes);
+						temperatureDataStore.setProcessedDataExtremes(extremes);
 					}
 					mapDataStore.setIsProcessingWorldwideRegionData(false);
 				} catch (error) {
@@ -315,10 +274,12 @@ const ClimateMap = observer(({ onMount = () => true }) => {
 
 				// Generate grid cells using MobX store
 				console.log("About to call generateGridCellsFromTemperatureData");
+				const viewportBounds = typeof mapDataStore.mapViewportBounds === 'function' ? mapDataStore.mapViewportBounds() : mapDataStore.mapViewportBounds;
+				const resolution = typeof mapDataStore.dataResolution === 'function' ? mapDataStore.dataResolution() : mapDataStore.dataResolution;
 				gridProcessingStore.generateGridCellsFromTemperatureData(
 					temperatureDataStore.rawRegionTemperatureData,
-					mapDataStore.mapViewportBounds,
-					mapDataStore.dataResolution,
+					viewportBounds,
+					resolution,
 				);
 
 				// Clear other processed data
@@ -563,7 +524,7 @@ const ClimateMap = observer(({ onMount = () => true }) => {
 							temperatureDataCount={
 								temperatureDataStore.rawRegionTemperatureData.length
 							}
-							currentResolution={dataResolution}
+							currentResolution={typeof mapDataStore.dataResolution === 'function' ? mapDataStore.dataResolution() : mapDataStore.dataResolution}
 							viewport={mapDataStore.mapViewportBounds}
 						/>
 					)}
