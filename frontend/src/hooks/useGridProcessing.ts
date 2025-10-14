@@ -88,6 +88,23 @@ export const useGridProcessing = (): GridProcessingState => {
 					point.lng <= east + buffer,
 			);
 
+			console.log(`Filtering ${dataPoints.length} points to viewport bounds:`, {
+				south,
+				north,
+				west,
+				east,
+			});
+			console.log(`After filtering: ${filteredData.length} points`);
+			console.log("Sample data point:", dataPoints[0]);
+
+			console.log(
+				"Grid size:",
+				gridSize,
+				"Processing",
+				filteredData.length,
+				"points",
+			);
+
 			for (const point of filteredData) {
 				const cellLat = Math.floor(point.lat / gridSize) * gridSize;
 				const cellLng = Math.floor(point.lng / gridSize) * gridSize;
@@ -113,11 +130,20 @@ export const useGridProcessing = (): GridProcessingState => {
 				}
 			}
 
-			return Array.from(cellMap.entries()).map(([id, data]) => ({
+			const finalCells = Array.from(cellMap.entries()).map(([id, data]) => ({
 				id,
 				bounds: data.bounds,
 				temperature: data.sum / data.count,
 			}));
+
+			console.log(
+				"Generated",
+				finalCells.length,
+				"cells from",
+				cellMap.size,
+				"unique grid positions",
+			);
+			return finalCells;
 		},
 		[],
 	);
@@ -153,11 +179,14 @@ export const useGridProcessing = (): GridProcessingState => {
 				hasDataChange
 			) {
 				const cells = generateAdaptiveGridCells(temperatureData, viewport);
+				console.log("Setting", cells.length, "grid cells in store");
 				setGridCells(cells);
 
 				prevViewportRef.current = viewport;
 				prevResolutionRef.current = resolutionLevel;
 				prevFirstDatapointTemperature.current = currentFirstDatapointTemp;
+			} else {
+				console.log("Skipping grid generation - no significant changes");
 			}
 		},
 		[generateAdaptiveGridCells],

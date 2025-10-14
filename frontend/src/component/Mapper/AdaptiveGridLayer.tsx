@@ -1,14 +1,17 @@
 import { Popup, Rectangle } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
-import { useGridProcessing } from "../../hooks/useGridProcessing";
-import { useMapDataState } from "../../hooks/useMapDataState";
+import { observer } from "mobx-react-lite";
+import { gridProcessingStore } from "../../stores/GridProcessingStore";
+import { temperatureDataStore } from "../../stores/TemperatureDataStore";
 import { getColorFromGradient } from "./utilities/gradientUtilities";
 
 type AdaptiveGridLayerProps = {};
 
-const AdaptiveGridLayer = ({}: AdaptiveGridLayerProps) => {
-	const { gridCells } = useGridProcessing();
-	const { processedDataExtremes } = useMapDataState();
+const AdaptiveGridLayer = observer(({}: AdaptiveGridLayerProps) => {
+	const gridCells = gridProcessingStore.gridCells;
+	const processedDataExtremes = temperatureDataStore.processedDataExtremes;
+
+	console.log("Rendering grid cells:", gridCells.length);
 
 	const getGridCellStyle = (temperature: number) => {
 		if (!processedDataExtremes)
@@ -36,6 +39,12 @@ const AdaptiveGridLayer = ({}: AdaptiveGridLayerProps) => {
 					key={cell.id}
 					bounds={cell.bounds}
 					pathOptions={getGridCellStyle(cell.temperature)}
+					eventHandlers={{
+						click: (e) => {
+							e.target.openPopup();
+							e.originalEvent?.stopPropagation();
+						},
+					}}
 				>
 					<Popup className="grid-popup">
 						<h4>Grid Cell</h4>
@@ -46,6 +55,6 @@ const AdaptiveGridLayer = ({}: AdaptiveGridLayerProps) => {
 			))}
 		</>
 	);
-};
+});
 
 export default AdaptiveGridLayer;

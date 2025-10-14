@@ -229,6 +229,11 @@ export const useTemperatureData = ({
 			return;
 		}
 
+		// For grid/worldwide modes, ensure we have data
+		if (mapMode === "grid" || mapMode === "worldwide") {
+			console.log(`Loading lat/lon data for ${mapMode} mode`);
+		}
+
 		// Additional validation before calling
 		if (
 			typeof currentMonth !== "number" ||

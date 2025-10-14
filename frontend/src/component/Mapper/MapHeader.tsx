@@ -287,7 +287,9 @@ export default observer(({}: MapHeaderProps) => {
 							size="middle"
 						>
 							<Option value="europe-only">Europe-only</Option>
-							<Option value="worldwide">Worldwide</Option>
+							<Option value="worldwide">
+								Worldwide[deprecated, too slow now, will use backend regions]
+							</Option>
 							<Option value="grid">Grid</Option>
 						</Select>
 					</div>

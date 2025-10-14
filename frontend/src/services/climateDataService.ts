@@ -48,17 +48,15 @@ export async function fetchClimateData(
 	);
 
 	try {
-		const apiUrl = `/api/cartesian?requested_time_point=${requestedTimePoint}&requested_variable_type=${requestedVariableValue}`;
+		const apiUrl = `/api/cartesian`;
 
-		const requestBody = {
-			requested_time_point: requestedTimePoint,
-			requested_variable_type: requestedVariableValue,
+		const postData = {
+			requested_time_point: requestedTimePoint, // "2016-07-01"
+			requested_variable_type: requestedVariableValue, // "R0"
+			requested_area: [180, 0, 0, 180], // JSON array will be converted to tuple by Pydantic
 		};
 
-		console.log(
-			`Calling API: ${apiUrl} with both query params AND POST body:`,
-			requestBody,
-		);
+		console.log(`Calling API: ${apiUrl}`);
 
 		const response = await fetch(apiUrl, {
 			method: "POST",
@@ -66,7 +64,7 @@ export async function fetchClimateData(
 				"Content-Type": "application/json",
 				Accept: "application/json",
 			},
-			body: JSON.stringify(requestBody),
+			body: JSON.stringify(postData),
 		});
 
 		if (!response.ok) {
