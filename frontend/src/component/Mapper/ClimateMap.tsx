@@ -27,7 +27,11 @@ import { loadNutsData } from "./utilities/mapDataUtils";
 import { Legend, MAX_ZOOM, MIN_ZOOM } from "./utilities/mapDataUtils";
 import { getVariableUnit } from "./utilities/monthUtils";
 
-const ClimateMap = observer(({ onMount = () => true }) => {
+type ClimateMapProps = {
+	onMount?: () => boolean;
+};
+
+const ClimateMap = observer(({ onMount = () => true }: ClimateMapProps) => {
 	const userStore = useUserSelectionsStore();
 	const {
 		generalError,
@@ -99,8 +103,12 @@ const ClimateMap = observer(({ onMount = () => true }) => {
 		userStore.currentMonth,
 		userStore.selectedModel,
 		models,
+		userStore.setCurrentVariableType,
+		setUserRequestedYear,
+		setNoDataModalVisible,
+		setDataFetchErrorMessage,
+		setGeneralError,
 	]);
-
 
 	// Handle popup close button clicks
 	useEffect(() => {
@@ -121,7 +129,7 @@ const ClimateMap = observer(({ onMount = () => true }) => {
 		return () => {
 			document.removeEventListener("click", handlePopupClose);
 		};
-	}, [mapDataStore.leafletMapInstance]);
+	}, []);
 
 	useEffect(() => {
 		onMount();
@@ -196,8 +204,13 @@ const ClimateMap = observer(({ onMount = () => true }) => {
 		userStore.mapMode,
 		userStore.currentYear,
 		userStore.currentMonth,
+		userStore.selectedModel,
 		dataProcessingError,
-	]); // Keep only stable dependencies
+		models,
+		userStore.setCurrentVariableType,
+		setDataProcessingError,
+		setGeneralError,
+	]);
 
 	// Worldwide/Grid mode effect (dependent on temperatureDataStore.rawRegionTemperatureData)
 	useEffect(() => {
@@ -220,7 +233,7 @@ const ClimateMap = observer(({ onMount = () => true }) => {
 				// Load worldwide regions if not already loaded
 				if (!temperatureDataStore.worldwideRegionBoundaries) {
 					try {
-						await loadworldwideRegions();
+						await temperatureDataStore.loadWorldwideRegions();
 					} catch (error) {
 						console.error("Failed to load worldwide regions:", error);
 						setDataProcessingError(true);
@@ -274,8 +287,8 @@ const ClimateMap = observer(({ onMount = () => true }) => {
 
 				// Generate grid cells using MobX store
 				console.log("About to call generateGridCellsFromTemperatureData");
-				const viewportBounds = typeof mapDataStore.mapViewportBounds === 'function' ? mapDataStore.mapViewportBounds() : mapDataStore.mapViewportBounds;
-				const resolution = typeof mapDataStore.dataResolution === 'function' ? mapDataStore.dataResolution() : mapDataStore.dataResolution;
+				const viewportBounds = mapDataStore.mapViewportBounds;
+				const resolution = mapDataStore.dataResolution;
 				gridProcessingStore.generateGridCellsFromTemperatureData(
 					temperatureDataStore.rawRegionTemperatureData,
 					viewportBounds,
@@ -302,11 +315,9 @@ const ClimateMap = observer(({ onMount = () => true }) => {
 		processData();
 	}, [
 		userStore.mapMode,
-		temperatureDataStore.rawRegionTemperatureData,
-		temperatureDataStore.worldwideRegionBoundaries,
 		dataProcessingError,
-		mapDataStore.mapViewportBounds,
-		mapDataStore.dataResolution,
+		setDataProcessingError,
+		setGeneralError,
 	]);
 
 	// Cleanup timeouts on unmount
@@ -339,13 +350,9 @@ const ClimateMap = observer(({ onMount = () => true }) => {
 			mapDataStore.leafletMapInstance &&
 			userStore.mapMode === "grid"
 		) {
-			mapDataStore.leafletMapInstance.setMaxBounds(null);
+			mapDataStore.leafletMapInstance.setMaxBounds(undefined);
 		}
-	}, [
-		mapDataStore.leafletMapInstance,
-		temperatureDataStore.mapDataBounds,
-		userStore.mapMode,
-	]);
+	}, [userStore.mapMode]);
 
 	// Memoize legend components to prevent unnecessary re-renders
 	const memoizedMobileLegend = useMemo(
@@ -358,7 +365,7 @@ const ClimateMap = observer(({ onMount = () => true }) => {
 			) : (
 				<div />
 			),
-		[temperatureDataStore.processedDataExtremes, userStore.currentVariableType],
+		[userStore.currentVariableType],
 	);
 
 	const memoizedDesktopLegend = useMemo(
@@ -369,18 +376,31 @@ const ClimateMap = observer(({ onMount = () => true }) => {
 					unit={getVariableUnit(userStore.currentVariableType)}
 				/>
 			) : null,
-		[temperatureDataStore.processedDataExtremes, userStore.currentVariableType],
+		[userStore.currentVariableType],
 	);
 
 	// Viewport change handler
 	const handleViewportChange = useCallback(
 		(newViewport: { bounds: L.LatLngBounds; zoom: number }) => {
-			MapInteractionHandlers.handleViewportChange(
-				newViewport,
-				mapDataStore.setMapViewportBounds,
-				mapDataStore.setDataResolution,
-				mapDataStore.setMapZoomLevel,
-			);
+			if (newViewport) {
+				const bounds = newViewport.bounds;
+				const zoom = newViewport.zoom;
+
+				const newViewportBounds = {
+					north: bounds.getNorth(),
+					south: bounds.getSouth(),
+					east: bounds.getEast(),
+					west: bounds.getWest(),
+					zoom: zoom,
+				};
+
+				mapDataStore.setMapViewportBounds(newViewportBounds);
+				mapDataStore.setMapZoomLevel(zoom);
+
+				// Set resolution based on zoom
+				const resolution = zoom < 5 ? 2 : zoom < 7 ? 1 : 0.5;
+				mapDataStore.setDataResolution(resolution);
+			}
 		},
 		[],
 	);
@@ -524,7 +544,7 @@ const ClimateMap = observer(({ onMount = () => true }) => {
 							temperatureDataCount={
 								temperatureDataStore.rawRegionTemperatureData.length
 							}
-							currentResolution={typeof mapDataStore.dataResolution === 'function' ? mapDataStore.dataResolution() : mapDataStore.dataResolution}
+							currentResolution={mapDataStore.dataResolution}
 							viewport={mapDataStore.mapViewportBounds}
 						/>
 					)}

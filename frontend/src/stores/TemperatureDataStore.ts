@@ -175,7 +175,7 @@ export class TemperatureDataStore {
 
 			const globalRegions: WorldwideGeoJSON = {
 				type: "FeatureCollection" as const,
-				features: allFeatures as any[],
+				features: allFeatures,
 			};
 
 			this.setWorldwideRegionBoundaries(globalRegions);

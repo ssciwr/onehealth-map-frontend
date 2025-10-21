@@ -5,9 +5,7 @@ import { gridProcessingStore } from "../../stores/GridProcessingStore";
 import { temperatureDataStore } from "../../stores/TemperatureDataStore";
 import { getColorFromGradient } from "./utilities/gradientUtilities";
 
-type AdaptiveGridLayerProps = {};
-
-const AdaptiveGridLayer = observer(({}: AdaptiveGridLayerProps) => {
+const AdaptiveGridLayer = observer(() => {
 	const renderStart = performance.now();
 	const gridCells = gridProcessingStore.gridCells;
 	const processedDataExtremes = temperatureDataStore.processedDataExtremes;

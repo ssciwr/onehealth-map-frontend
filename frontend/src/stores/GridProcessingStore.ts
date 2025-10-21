@@ -1,6 +1,6 @@
 import type { FeatureCollection, GeoJsonProperties, Geometry } from "geojson";
 import type L from "leaflet";
-import { makeAutoObservable, toJS } from "mobx";
+import { makeAutoObservable } from "mobx";
 import type {
 	GridCell,
 	TemperatureDataPoint,

@@ -10,10 +10,12 @@ import * as MapInteractionHandlers from "../../utils/MapInteractionHandlers";
 import AdaptiveGridLayer from "./AdaptiveGridLayer";
 import CitiesLayer from "./CitiesLayer";
 
+import type { DataExtremes, NutsGeoJSON, WorldwideGeoJSON } from "./types";
+
 interface MapLayersProps {
-	processedEuropeNutsRegions?: any;
-	processedWorldwideRegions?: any;
-	processedDataExtremes?: any;
+	processedEuropeNutsRegions?: NutsGeoJSON;
+	processedWorldwideRegions?: WorldwideGeoJSON;
+	processedDataExtremes?: DataExtremes;
 }
 
 const MapLayers: React.FC<MapLayersProps> = observer(
