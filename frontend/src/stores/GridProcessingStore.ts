@@ -1,6 +1,6 @@
-import {makeAutoObservable, toJS} from "mobx";
 import type { FeatureCollection, GeoJsonProperties, Geometry } from "geojson";
 import type L from "leaflet";
+import { makeAutoObservable, toJS } from "mobx";
 import type {
 	GridCell,
 	TemperatureDataPoint,
@@ -34,11 +34,12 @@ const calculateDerivedIntervalSize = (dataPoints: DataPoint[]): number => {
 
 export class GridProcessingStore {
 	gridCells: GridCell[] = [];
-	isProcessingGrid: boolean = false;
-	countriesGeoJSON: FeatureCollection<Geometry, GeoJsonProperties> | null = null;
-	
+	isProcessingGrid = false;
+	countriesGeoJSON: FeatureCollection<Geometry, GeoJsonProperties> | null =
+		null;
+
 	private prevViewport: ViewportBounds | null = null;
-	private prevResolution: number = 0;
+	private prevResolution = 0;
 	private prevFirstDatapointTemperature: number | undefined = undefined;
 
 	constructor() {
@@ -53,15 +54,34 @@ export class GridProcessingStore {
 		this.isProcessingGrid = processing;
 	};
 
-	setCountriesGeoJSON = (data: FeatureCollection<Geometry, GeoJsonProperties> | null) => {
+	setCountriesGeoJSON = (
+		data: FeatureCollection<Geometry, GeoJsonProperties> | null,
+	) => {
 		this.countriesGeoJSON = data;
 	};
 
-	generateAdaptiveGridCells = (dataPoints: DataPoint[], viewport: ViewportBounds): GridCell[] => {
-		if (!viewport || !dataPoints || dataPoints.length === 0) return [];
+	generateAdaptiveGridCells = (
+		dataPoints: DataPoint[],
+		viewport: ViewportBounds,
+	): GridCell[] => {
+		const startTime = performance.now();
+		console.log(
+			"🕒 generateAdaptiveGridCells START - dataPoints:",
+			dataPoints.length,
+		);
+
+		if (!viewport || !dataPoints || dataPoints.length === 0) {
+			console.log("⚠️ Early return - no viewport or data");
+			return [];
+		}
 
 		const { north, south, east, west, zoom } = viewport;
+
+		const intervalStart = performance.now();
 		const derivedIntervalSize = calculateDerivedIntervalSize(dataPoints);
+		console.log(
+			`📏 calculateDerivedIntervalSize took ${(performance.now() - intervalStart).toFixed(2)}ms`,
+		);
 
 		let gridSize = derivedIntervalSize;
 
@@ -71,10 +91,14 @@ export class GridProcessingStore {
 		else if (zoom < 7) gridSize = derivedIntervalSize;
 		else if (zoom < 9) gridSize = derivedIntervalSize * 0.5;
 
+		console.log(`🔍 Grid size: ${gridSize}, zoom: ${zoom}`);
+
 		const cellMap = new Map<
 			string,
 			{ sum: number; count: number; bounds: L.LatLngBoundsExpression }
 		>();
+
+		const filterStart = performance.now();
 		const buffer = gridSize * 2;
 		const filteredData = dataPoints.filter(
 			(point: DataPoint) =>
@@ -83,11 +107,17 @@ export class GridProcessingStore {
 				point.lng >= west - buffer &&
 				point.lng <= east + buffer,
 		);
+		console.log(
+			`🔍 Filtering took ${(performance.now() - filterStart).toFixed(2)}ms - filtered from ${dataPoints.length} to ${filteredData.length} points`,
+		);
 
+		const processStart = performance.now();
 		for (const point of filteredData) {
-			const cellLat = Math.floor(point.lat / gridSize) * gridSize;
-			const cellLng = Math.floor(point.lng / gridSize) * gridSize;
-			const cellId = `${cellLat.toFixed(4)}_${cellLng.toFixed(4)}`;
+			const cellLatIndex = Math.floor(point.lat / gridSize);
+			const cellLngIndex = Math.floor(point.lng / gridSize);
+			const cellLat = cellLatIndex * gridSize;
+			const cellLng = cellLngIndex * gridSize;
+			const cellId = `${cellLatIndex}_${cellLngIndex}`;
 
 			const bounds: L.LatLngBoundsExpression = [
 				[cellLat, cellLng],
@@ -108,12 +138,26 @@ export class GridProcessingStore {
 				});
 			}
 		}
+		console.log(
+			`⚙️ Processing loop took ${(performance.now() - processStart).toFixed(2)}ms`,
+		);
 
-		return Array.from(cellMap.entries()).map(([id, data]) => ({
+		const mapStart = performance.now();
+		const result = Array.from(cellMap.entries()).map(([id, data]) => ({
 			id,
 			bounds: data.bounds,
 			temperature: data.sum / data.count,
 		}));
+		console.log(
+			`🗺️ Final mapping took ${(performance.now() - mapStart).toFixed(2)}ms`,
+		);
+
+		const totalTime = performance.now() - startTime;
+		console.log(
+			`✅ generateAdaptiveGridCells COMPLETE - ${result.length} cells in ${totalTime.toFixed(2)}ms`,
+		);
+
+		return result;
 	};
 
 	generateGridCellsFromTemperatureData = (
@@ -121,14 +165,25 @@ export class GridProcessingStore {
 		viewport: ViewportBounds | null,
 		resolutionLevel: number,
 	) => {
-		console.log("generateGridCellsFromTemperatureData called with:", temperatureData.length, "points");
-		
+		const methodStart = performance.now();
+		console.log(
+			"🚀 generateGridCellsFromTemperatureData START with:",
+			temperatureData.length,
+			"points, resolution:",
+			resolutionLevel,
+		);
+
 		if (!viewport || !temperatureData.length) {
-			console.log("Setting empty array because of lack fo viewport or temrperatureData.length...", viewport, temperatureData.length);
+			console.log(
+				"⚠️ Early exit - no viewport or temperature data",
+				!!viewport,
+				temperatureData.length,
+			);
 			this.setGridCells([]);
 			return;
 		}
 
+		const changeCheckStart = performance.now();
 		const currentFirstDatapointTemp = temperatureData[0]?.temperature;
 		const hasSignificantViewportChange =
 			!this.prevViewport ||
@@ -138,27 +193,48 @@ export class GridProcessingStore {
 			Math.abs(this.prevViewport.east - viewport.east) > 1 ||
 			Math.abs(this.prevViewport.west - viewport.west) > 1;
 
-		console.log("Significant viewport change:", currentFirstDatapointTemp);
-
 		const hasResolutionChange =
 			Math.abs(this.prevResolution - resolutionLevel) > 0.1;
 		const hasDataChange =
 			this.prevFirstDatapointTemperature !== currentFirstDatapointTemp;
 
-		if (
-			hasSignificantViewportChange ||
-			hasResolutionChange ||
-			hasDataChange
-		) {
-			console.log("Recalculating using temperature data:", toJS(temperatureData), "on viewport:", toJS(viewport));
+		console.log(
+			`🔍 Change detection took ${(performance.now() - changeCheckStart).toFixed(2)}ms`,
+		);
+		console.log("📊 Changes detected:", {
+			viewport: hasSignificantViewportChange,
+			resolution: hasResolutionChange,
+			data: hasDataChange,
+		});
+
+		if (hasSignificantViewportChange || hasResolutionChange || hasDataChange) {
+			console.log(
+				"🔄 RECALCULATING grid cells - data size:",
+				temperatureData.length,
+				"viewport zoom:",
+				viewport.zoom,
+			);
+
+			const gridGenStart = performance.now();
 			const cells = this.generateAdaptiveGridCells(temperatureData, viewport);
-			console.log("Generated", cells.length, "grid cells");
+			console.log(
+				`🗂️ Grid generation took ${(performance.now() - gridGenStart).toFixed(2)}ms`,
+			);
+
+			console.log("📈 Generated", cells.length, "grid cells");
 			this.setGridCells(cells);
 
 			this.prevViewport = viewport;
 			this.prevResolution = resolutionLevel;
 			this.prevFirstDatapointTemperature = currentFirstDatapointTemp;
+		} else {
+			console.log("♻️ Using cached grid cells - no recalculation needed");
 		}
+
+		const methodTotal = performance.now() - methodStart;
+		console.log(
+			`✅ generateGridCellsFromTemperatureData COMPLETE in ${methodTotal.toFixed(2)}ms`,
+		);
 	};
 }
 

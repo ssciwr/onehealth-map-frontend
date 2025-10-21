@@ -10,9 +10,9 @@ import {
 	loadNutsData,
 	loadTemperatureData,
 } from "../component/Mapper/utilities/mapDataUtils";
+import type { Model } from "../hooks/useModelData";
 import { errorStore } from "./ErrorStore";
 import { loadingStore } from "./LoadingStore";
-import type { Model } from "../hooks/useModelData";
 
 const NATURAL_EARTH_URL =
 	"https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_10m_admin_1_states_provinces.geojson";
@@ -61,13 +61,18 @@ export class TemperatureDataStore {
 		setIsLoadingRawData: (loading: boolean) => void,
 		setGeneralError: (error: string | null) => void,
 	) => {
+		const loadStart = performance.now();
+		console.log(
+			`🌡️ TemperatureDataStore.loadTemperatureData START - year: ${year}, month: ${month}`,
+		);
+
 		try {
 			loadingStore.start();
 			setIsLoadingRawData(true);
 
 			const safeMonth = month || 7;
 			console.log(
-				`DEBUGYEARCHANGE: Starting to load data for year ${year}, month ${safeMonth}`,
+				`🚀 Starting to load data for year ${year}, month ${safeMonth}`,
 				"Original month:",
 				month,
 				"Types:",
@@ -76,34 +81,43 @@ export class TemperatureDataStore {
 			);
 			setUserRequestedYear(year);
 
+			const modelFindStart = performance.now();
 			const selectedModelData = models.find((m) => m.id === selectedModel);
 			const requestedVariableValue = selectedModelData?.output?.[0] || "R0";
 			const outputFormat = selectedModelData?.output;
+			console.log(
+				`🔍 Model selection took ${(performance.now() - modelFindStart).toFixed(2)}ms`,
+			);
 
 			setCurrentVariableType(requestedVariableValue);
 
+			const dataLoadStart = performance.now();
 			const { dataPoints, extremes, bounds } = await loadTemperatureData(
 				year,
 				safeMonth,
 				requestedVariableValue,
 				outputFormat,
 			);
-			
 			console.log(
-				`DEBUGYEARCHANGE: Loaded ${dataPoints.length} data points for year ${year}, month ${safeMonth}`,
+				`📊 loadTemperatureData utility took ${(performance.now() - dataLoadStart).toFixed(2)}ms`,
+			);
+
+			console.log(
+				`📈 Loaded ${dataPoints.length} data points for year ${year}, month ${safeMonth}`,
 			);
 			console.log(
-				`DEBUGYEARCHANGE: Sample point for year ${year}, month ${safeMonth}:`,
+				`🔬 Sample point for year ${year}, month ${safeMonth}:`,
 				dataPoints[0],
 			);
 			console.log(
-				`DEBUGYEARCHANGE: Data extremes for year ${year}, month ${safeMonth}:`,
+				`📏 Data extremes for year ${year}, month ${safeMonth}:`,
 				extremes,
 			);
 
+			const storeUpdateStart = performance.now();
 			this.setRawRegionTemperatureData(dataPoints);
 			this.setProcessedDataExtremes(extremes);
-			
+
 			if (bounds) {
 				const viewportBounds: ViewportBounds = {
 					north: bounds.getNorth(),
@@ -114,14 +128,21 @@ export class TemperatureDataStore {
 				};
 				this.setMapDataBounds(viewportBounds);
 			}
-			
 			console.log(
-				`DEBUGYEARCHANGE: Finished loading store for year ${year}, month ${safeMonth}`,
+				`💾 Store updates took ${(performance.now() - storeUpdateStart).toFixed(2)}ms`,
+			);
+
+			const totalTime = performance.now() - loadStart;
+			console.log(
+				`✅ TemperatureDataStore.loadTemperatureData COMPLETE for year ${year}, month ${safeMonth} in ${totalTime.toFixed(2)}ms`,
 			);
 			loadingStore.complete();
 			setIsLoadingRawData(false);
 		} catch (err: unknown) {
 			const error = err as Error;
+			console.log(
+				`❌ TemperatureDataStore.loadTemperatureData FAILED in ${(performance.now() - loadStart).toFixed(2)}ms: ${error.message}`,
+			);
 			loadingStore.complete();
 			setIsLoadingRawData(false);
 

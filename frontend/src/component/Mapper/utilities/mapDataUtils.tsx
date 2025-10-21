@@ -391,8 +391,9 @@ export const loadTemperatureData = async (
 	extremes: DataExtremes;
 	bounds: L.LatLngBounds | null;
 }> => {
+	const funcStart = performance.now();
 	console.log(
-		"Loading climate data for year:",
+		"🌍 loadTemperatureData START - year:",
 		year,
 		"month:",
 		month,
@@ -408,19 +409,27 @@ export const loadTemperatureData = async (
 	}
 
 	try {
+		const fetchStart = performance.now();
 		const apiData = await fetchClimateData(
 			year,
 			month,
 			requestedVariableValue,
 			outputFormat,
 		);
+		console.log(
+			`🌐 fetchClimateData took ${(performance.now() - fetchStart).toFixed(2)}ms - received ${apiData.length} raw points`,
+		);
+
+		const processStart = performance.now();
 		const dataPoints: TemperatureDataPoint[] = [];
 
 		for (let i = 0; i < apiData.length; i++) {
 			const { latitude: lat, longitude: lng, temperature } = apiData[i];
 
 			if (i % 100000 === 0) {
-				console.log("Lat:", lat, "Long: ", lng, "Temp:", temperature);
+				console.log(
+					`🔄 Processing point ${i}/${apiData.length} - Lat: ${lat}, Long: ${lng}, Temp: ${temperature}`,
+				);
 			}
 
 			if (
@@ -436,9 +445,17 @@ export const loadTemperatureData = async (
 				});
 			}
 		}
+		console.log(
+			`⚙️ Data processing took ${(performance.now() - processStart).toFixed(2)}ms - processed ${dataPoints.length} valid points`,
+		);
 
+		const extremesStart = performance.now();
 		const extremes = calculateExtremes(dataPoints);
+		console.log(
+			`📊 calculateExtremes took ${(performance.now() - extremesStart).toFixed(2)}ms`,
+		);
 
+		const boundsStart = performance.now();
 		let bounds: L.LatLngBounds | null = null;
 		if (dataPoints.length > 0) {
 			const lats = dataPoints.map((p) => p.lat);
@@ -448,10 +465,21 @@ export const loadTemperatureData = async (
 				[Math.max(...lats) + 15, Math.max(...lngs) + 15],
 			]);
 		}
+		console.log(
+			`🗺️ Bounds calculation took ${(performance.now() - boundsStart).toFixed(2)}ms`,
+		);
+
+		const totalTime = performance.now() - funcStart;
+		console.log(
+			`✅ loadTemperatureData COMPLETE in ${totalTime.toFixed(2)}ms - ${dataPoints.length} points`,
+		);
 
 		return { dataPoints, extremes, bounds };
 	} catch (error) {
-		console.error("Failed to load temperature data:", error);
+		console.error(
+			`❌ loadTemperatureData FAILED in ${(performance.now() - funcStart).toFixed(2)}ms:`,
+			error,
+		);
 		throw error;
 	}
 };

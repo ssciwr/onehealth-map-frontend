@@ -8,10 +8,11 @@ import { getColorFromGradient } from "./utilities/gradientUtilities";
 type AdaptiveGridLayerProps = {};
 
 const AdaptiveGridLayer = observer(({}: AdaptiveGridLayerProps) => {
+	const renderStart = performance.now();
 	const gridCells = gridProcessingStore.gridCells;
 	const processedDataExtremes = temperatureDataStore.processedDataExtremes;
 
-	console.log("Rendering grid cells:", gridCells.length);
+	console.log("📱 AdaptiveGridLayer render START - cells:", gridCells.length);
 
 	const getGridCellStyle = (temperature: number) => {
 		if (!processedDataExtremes)
@@ -32,8 +33,9 @@ const AdaptiveGridLayer = observer(({}: AdaptiveGridLayerProps) => {
 		};
 	};
 
-	return (
-		<>
+	// zIndex less than the city layer so those appear on top.
+	const result = (
+		<div style={{ zIndex: "335" }}>
 			{gridCells.map((cell) => (
 				<Rectangle
 					key={cell.id}
@@ -53,8 +55,15 @@ const AdaptiveGridLayer = observer(({}: AdaptiveGridLayerProps) => {
 					</Popup>
 				</Rectangle>
 			))}
-		</>
+		</div>
 	);
+
+	const renderTime = performance.now() - renderStart;
+	console.log(
+		`📱 AdaptiveGridLayer render COMPLETE - ${gridCells.length} cells in ${renderTime.toFixed(2)}ms`,
+	);
+
+	return result;
 });
 
 export default AdaptiveGridLayer;

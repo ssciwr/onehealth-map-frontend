@@ -93,6 +93,18 @@ const MapLayers: React.FC<MapLayersProps> = observer(
 		);
 		return (
 			<>
+				{/* Cities Layer - always rendered, but filtered by data regions, and only over the rendered regions */}
+				<CitiesLayer
+					zoom={mapDataStore.mapZoomLevel}
+					dataRegions={
+						userStore.mapMode === "europe-only"
+							? processedEuropeNutsRegions
+							: userStore.mapMode === "grid"
+								? null
+								: processedWorldwideRegions
+					}
+				/>
+
 				{/* Worldwide Mode Layer */}
 				{userStore.mapMode === "worldwide" && (
 					<Pane name="worldwidePane" style={{ zIndex: 30, opacity: 0.9 }}>
@@ -129,18 +141,6 @@ const MapLayers: React.FC<MapLayersProps> = observer(
 						<AdaptiveGridLayer />
 					</Pane>
 				)}
-
-				{/* Cities Layer - always rendered, but filtered by data regions, and only over the rendered regions */}
-				<CitiesLayer
-					zoom={mapDataStore.mapZoomLevel}
-					dataRegions={
-						userStore.mapMode === "europe-only"
-							? processedEuropeNutsRegions
-							: userStore.mapMode === "grid"
-								? null
-								: processedWorldwideRegions
-					}
-				/>
 			</>
 		);
 	},
