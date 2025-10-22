@@ -1,4 +1,3 @@
-import type React from "react";
 import { createContext, useContext } from "react";
 import {
 	type MapUIInteractionsStore,
@@ -9,15 +8,15 @@ const MapUIInteractionsContext = createContext<MapUIInteractionsStore>(
 	mapUIInteractionsStore,
 );
 
-export const MapUIInteractionsProvider: React.FC<{
-	children: React.ReactNode;
-}> = ({ children }) => {
+export function MapUIInteractionsProvider({
+	children,
+}: { children: React.ReactNode }) {
 	return (
 		<MapUIInteractionsContext.Provider value={mapUIInteractionsStore}>
 			{children}
 		</MapUIInteractionsContext.Provider>
 	);
-};
+}
 
 export const useMapUIInteractionsStore = () => {
 	const context = useContext(MapUIInteractionsContext);

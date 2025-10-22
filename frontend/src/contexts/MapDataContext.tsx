@@ -1,18 +1,15 @@
-import type React from "react";
 import { createContext, useContext } from "react";
 import { type MapDataStore, mapDataStore } from "../stores/MapDataStore";
 
 const MapDataContext = createContext<MapDataStore>(mapDataStore);
 
-export const MapDataProvider: React.FC<{ children: React.ReactNode }> = ({
-	children,
-}) => {
+export function MapDataProvider({ children }: { children: React.ReactNode }) {
 	return (
 		<MapDataContext.Provider value={mapDataStore}>
 			{children}
 		</MapDataContext.Provider>
 	);
-};
+}
 
 export const useMapDataStore = () => {
 	const context = useContext(MapDataContext);

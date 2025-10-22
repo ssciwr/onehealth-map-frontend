@@ -30,8 +30,12 @@ interface CitiesLayerProps {
 	zoom: number;
 	dataRegions?: NutsGeoJSON | WorldwideGeoJSON | null;
 }
+const CitiesLayer = () => <div></div>;
 
-const CitiesLayer = ({ zoom, dataRegions }: CitiesLayerProps) => {
+// Temporarily shim because I realised CitiesLayer was the source of lag, not either of the new APIs!
+// with reference to: https://github.com/ssciwr/onehealth-map-frontend/issues/54#issuecomment-3433209012
+
+const CitiesLayer2 = ({ zoom, dataRegions }: CitiesLayerProps) => {
 	const [cities, setCities] = useState<City[]>([]);
 
 	useEffect(() => {

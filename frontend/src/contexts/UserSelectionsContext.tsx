@@ -1,4 +1,3 @@
-import type React from "react";
 import { createContext, useContext } from "react";
 import {
 	type UserSelectionsStore,
@@ -8,15 +7,15 @@ import {
 const UserSelectionsContext =
 	createContext<UserSelectionsStore>(userSelectionsStore);
 
-export const UserSelectionsProvider: React.FC<{
-	children: React.ReactNode;
-}> = ({ children }) => {
+export function UserSelectionsProvider({
+	children,
+}: { children: React.ReactNode }) {
 	return (
 		<UserSelectionsContext.Provider value={userSelectionsStore}>
 			{children}
 		</UserSelectionsContext.Provider>
 	);
-};
+}
 
 export const useUserSelectionsStore = () => {
 	const context = useContext(UserSelectionsContext);
