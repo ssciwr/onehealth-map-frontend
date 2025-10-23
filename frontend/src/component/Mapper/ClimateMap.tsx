@@ -318,6 +318,7 @@ const ClimateMap = observer(({ onMount = () => true }: ClimateMapProps) => {
 		dataProcessingError,
 		setDataProcessingError,
 		setGeneralError,
+		temperatureDataStore.rawRegionTemperatureData,
 	]);
 
 	// Cleanup timeouts on unmount
