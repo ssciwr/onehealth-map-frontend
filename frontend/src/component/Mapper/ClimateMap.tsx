@@ -73,6 +73,7 @@ const ClimateMap = observer(({ onMount = () => true }: ClimateMapProps) => {
 	}, []);
 
 	// Load data when mode changes
+	// biome-ignore lint/correctness/useExhaustiveDependencies(mapDataStore.mapViewportBounds): mobx store property used for viewport-based data loading
 	useEffect(() => {
 		const loadData = async () => {
 			if (userStore.mapMode === "grid" || userStore.mapMode === "worldwide") {
@@ -118,6 +119,7 @@ const ClimateMap = observer(({ onMount = () => true }: ClimateMapProps) => {
 		setNoDataModalVisible,
 		setDataFetchErrorMessage,
 		setGeneralError,
+		mapDataStore.mapViewportBounds,
 	]);
 
 	// Handle popup close button clicks

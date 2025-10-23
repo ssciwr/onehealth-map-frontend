@@ -7,7 +7,7 @@ interface CitiesLayerProps {
 const CitiesLayer = ({
 	zoom: _zoom,
 	dataRegions: _dataRegions,
-}: CitiesLayerProps) => <div></div>;
+}: CitiesLayerProps) => <div />;
 
 // Temporarily shim because I realised CitiesLayer was the source of lag, not either of the new APIs!
 // with reference to: https://github.com/ssciwr/onehealth-map-frontend/issues/54#issuecomment-3433209012

@@ -58,7 +58,7 @@ export async function fetchClimateData(
 	);
 
 	try {
-		const apiUrl = `/api/cartesian`;
+		const apiUrl = "/api/cartesian";
 
 		// Use viewport bounds if provided, otherwise fallback to global coordinates
 		const requestedArea = viewportBounds
@@ -70,8 +70,73 @@ export async function fetchClimateData(
 				] // [N, W, S, E]
 			: [180, 0, 0, 180]; // global fallback
 
-		console.log("Viewport bounds received:", viewportBounds);
-		console.log("Requested area (N, W, S, E):", requestedArea);
+		console.log("🔍 DEBUG: Viewport bounds received:", viewportBounds);
+		console.log("🔍 DEBUG: viewportBounds is null?", viewportBounds === null);
+		console.log(
+			"🔍 DEBUG: viewportBounds is undefined?",
+			viewportBounds === undefined,
+		);
+		console.log("🔍 DEBUG: viewportBounds type:", typeof viewportBounds);
+
+		if (viewportBounds) {
+			console.log("🔍 DEBUG: Individual viewport bounds values:");
+			console.log(
+				"  - north:",
+				viewportBounds.north,
+				"type:",
+				typeof viewportBounds.north,
+			);
+			console.log(
+				"  - south:",
+				viewportBounds.south,
+				"type:",
+				typeof viewportBounds.south,
+			);
+			console.log(
+				"  - east:",
+				viewportBounds.east,
+				"type:",
+				typeof viewportBounds.east,
+			);
+			console.log(
+				"  - west:",
+				viewportBounds.west,
+				"type:",
+				typeof viewportBounds.west,
+			);
+
+			// Validate coordinate bounds
+			const isValidBounds =
+				viewportBounds.north > viewportBounds.south &&
+				viewportBounds.east > viewportBounds.west;
+			console.log("🔍 DEBUG: Are bounds geometrically valid?", isValidBounds);
+
+			if (!isValidBounds) {
+				console.warn("⚠️ WARNING: Invalid viewport bounds detected!");
+				console.warn(
+					"  North should be > South:",
+					viewportBounds.north,
+					">",
+					viewportBounds.south,
+					"=",
+					viewportBounds.north > viewportBounds.south,
+				);
+				console.warn(
+					"  East should be > West:",
+					viewportBounds.east,
+					">",
+					viewportBounds.west,
+					"=",
+					viewportBounds.east > viewportBounds.west,
+				);
+			}
+		}
+
+		console.log("🔍 DEBUG: Final requested area (N, W, S, E):", requestedArea);
+		console.log(
+			"🔍 DEBUG: Using",
+			viewportBounds ? "viewport bounds" : "global fallback coordinates",
+		);
 
 		const postData = {
 			requested_time_point: requestedTimePoint, // "2016-07-01"
