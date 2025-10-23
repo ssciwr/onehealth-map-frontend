@@ -386,6 +386,12 @@ export const loadTemperatureData = async (
 	month: number,
 	requestedVariableValue = "R0",
 	outputFormat?: string[],
+	viewportBounds?: {
+		north: number;
+		south: number;
+		east: number;
+		west: number;
+	} | null,
 ): Promise<{
 	dataPoints: TemperatureDataPoint[];
 	extremes: DataExtremes;
@@ -415,6 +421,7 @@ export const loadTemperatureData = async (
 			month,
 			requestedVariableValue,
 			outputFormat,
+			viewportBounds,
 		);
 		console.log(
 			`🌐 fetchClimateData took ${(performance.now() - fetchStart).toFixed(2)}ms - received ${apiData.length} raw points`,

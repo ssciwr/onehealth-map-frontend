@@ -13,9 +13,9 @@ import CitiesLayer from "./CitiesLayer";
 import type { DataExtremes, NutsGeoJSON, WorldwideGeoJSON } from "./types";
 
 interface MapLayersProps {
-	processedEuropeNutsRegions?: NutsGeoJSON;
-	processedWorldwideRegions?: WorldwideGeoJSON;
-	processedDataExtremes?: DataExtremes;
+	processedEuropeNutsRegions?: NutsGeoJSON | null;
+	processedWorldwideRegions?: WorldwideGeoJSON | null;
+	processedDataExtremes?: DataExtremes | null;
 }
 
 const MapLayers: React.FC<MapLayersProps> = observer(
@@ -30,9 +30,9 @@ const MapLayers: React.FC<MapLayersProps> = observer(
 		const mapDataStore = useMapDataStore();
 
 		// Use processed data from props (from ClimateMap) rather than hook instances
-		const processedDataExtremes = propsProcessedDataExtremes;
-		const processedWorldwideRegions = propsProcessedWorldwideRegions;
-		const processedEuropeNutsRegions = propsProcessedEuropeNutsRegions;
+		const processedDataExtremes = propsProcessedDataExtremes ?? null;
+		const processedWorldwideRegions = propsProcessedWorldwideRegions ?? null;
+		const processedEuropeNutsRegions = propsProcessedEuropeNutsRegions ?? null;
 
 		// Create interaction handlers
 		const highlightFeature = MapInteractionHandlers.createHighlightFeature(

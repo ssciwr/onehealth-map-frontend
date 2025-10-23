@@ -77,6 +77,15 @@ const ClimateMap = observer(({ onMount = () => true }: ClimateMapProps) => {
 		const loadData = async () => {
 			if (userStore.mapMode === "grid" || userStore.mapMode === "worldwide") {
 				console.log(`Loading lat/lon data for ${userStore.mapMode} mode`);
+				console.log(
+					"🗺️ Current mapViewportBounds when loading data:",
+					mapDataStore.mapViewportBounds,
+				);
+
+				// Use current viewport bounds for data fetching
+				const viewportBoundsToUse = mapDataStore.mapViewportBounds;
+				console.log("🔄 Using viewport bounds:", viewportBoundsToUse);
+
 				await temperatureDataStore.loadTemperatureData(
 					userStore.currentYear,
 					userStore.currentMonth,
@@ -88,6 +97,7 @@ const ClimateMap = observer(({ onMount = () => true }: ClimateMapProps) => {
 					setDataFetchErrorMessage,
 					mapDataStore.setIsLoadingRawData,
 					setGeneralError,
+					viewportBoundsToUse,
 				);
 			}
 
@@ -383,6 +393,7 @@ const ClimateMap = observer(({ onMount = () => true }: ClimateMapProps) => {
 					zoom: zoom,
 				};
 
+				console.log("🎯 Setting new viewport bounds:", newViewportBounds);
 				mapDataStore.setMapViewportBounds(newViewportBounds);
 				mapDataStore.setMapZoomLevel(zoom);
 

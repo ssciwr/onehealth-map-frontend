@@ -60,6 +60,12 @@ export class TemperatureDataStore {
 		setDataFetchErrorMessage: (message: string) => void,
 		setIsLoadingRawData: (loading: boolean) => void,
 		setGeneralError: (error: string | null) => void,
+		viewportBounds?: {
+			north: number;
+			south: number;
+			east: number;
+			west: number;
+		} | null,
 	) => {
 		const loadStart = performance.now();
 		console.log(
@@ -97,6 +103,7 @@ export class TemperatureDataStore {
 				safeMonth,
 				requestedVariableValue,
 				outputFormat,
+				viewportBounds,
 			);
 			console.log(
 				`📊 loadTemperatureData utility took ${(performance.now() - dataLoadStart).toFixed(2)}ms`,

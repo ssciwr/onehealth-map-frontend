@@ -1,40 +1,18 @@
-import * as turf from "@turf/turf";
-import type { MultiPolygon, Polygon } from "geojson";
-import L from "leaflet";
-import { useEffect, useState } from "react";
-import { CircleMarker, Marker, Pane, Popup } from "react-leaflet";
 import type { NutsGeoJSON, WorldwideGeoJSON } from "./types";
-import { MAX_ZOOM, MIN_ZOOM } from "./utilities/mapDataUtils.tsx";
-
-interface City {
-	name: string;
-	lat: number;
-	lng: number;
-	population: number;
-	country: string;
-}
-
-interface CityCSV {
-	city: string;
-	city_ascii: string;
-	lat: string;
-	lng: string;
-	pop: string;
-	country: string;
-	iso2: string;
-	iso3: string;
-	province: string;
-}
 
 interface CitiesLayerProps {
 	zoom: number;
 	dataRegions?: NutsGeoJSON | WorldwideGeoJSON | null;
 }
-const CitiesLayer = () => <div></div>;
+const CitiesLayer = ({
+	zoom: _zoom,
+	dataRegions: _dataRegions,
+}: CitiesLayerProps) => <div></div>;
 
 // Temporarily shim because I realised CitiesLayer was the source of lag, not either of the new APIs!
 // with reference to: https://github.com/ssciwr/onehealth-map-frontend/issues/54#issuecomment-3433209012
 
+/*
 const CitiesLayer2 = ({ zoom, dataRegions }: CitiesLayerProps) => {
 	const [cities, setCities] = useState<City[]>([]);
 
@@ -42,10 +20,9 @@ const CitiesLayer2 = ({ zoom, dataRegions }: CitiesLayerProps) => {
 		const loadCities = async () => {
 			try {
 				// Load from CSV data source (MIT licensed)
-				/* This data was downloaded in early August 2025, from https://www.simplemaps.aspiringeconomist.com/resources/world-cities-data
-				- the Natural Earth Populated Places 2015 data with 7,300 cities/towns.
-				Importantly the data is from 2015.
-				 */
+				// This data was downloaded in early August 2025, from https://www.simplemaps.aspiringeconomist.com/resources/world-cities-data
+				// - the Natural Earth Populated Places 2015 data with 7,300 cities/towns.
+				// Importantly the data is from 2015.
 				const response = await fetch("/data/world_cities.csv");
 				if (!response.ok) {
 					throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -216,7 +193,6 @@ const CitiesLayer2 = ({ zoom, dataRegions }: CitiesLayerProps) => {
 
 	return (
 		<>
-			{/* City marker dots - lower z-index */}
 			<Pane name="cityMarkersPane" style={{ zIndex: 100 }}>
 				{visibleCities.map((city) => (
 					<CircleMarker
@@ -246,7 +222,6 @@ const CitiesLayer2 = ({ zoom, dataRegions }: CitiesLayerProps) => {
 				))}
 			</Pane>
 
-			{/* City name labels - higher z-index */}
 			<Pane name="cityLabelsPane" style={{ zIndex: 110 }}>
 				{visibleCities.map((city) => (
 					<Marker
@@ -259,5 +234,6 @@ const CitiesLayer2 = ({ zoom, dataRegions }: CitiesLayerProps) => {
 		</>
 	);
 };
+*/
 
 export default CitiesLayer;

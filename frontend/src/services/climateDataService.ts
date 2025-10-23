@@ -23,6 +23,12 @@ export async function fetchClimateData(
 	month: number,
 	requestedVariableValue = "R0",
 	_outputFormat?: string[],
+	viewportBounds?: {
+		north: number;
+		south: number;
+		east: number;
+		west: number;
+	} | null,
 ): Promise<ClimateDataPoint[]> {
 	await delay(100 + Math.random() * 300);
 
@@ -46,14 +52,31 @@ export async function fetchClimateData(
 	console.log(
 		`Fetching climate data for year: ${year}, month: ${month}, variable: ${requestedVariableValue}, date: ${requestedTimePoint}`,
 	);
+	console.log(
+		"📍 ViewportBounds parameter passed to fetchClimateData:",
+		viewportBounds,
+	);
 
 	try {
 		const apiUrl = `/api/cartesian`;
 
+		// Use viewport bounds if provided, otherwise fallback to global coordinates
+		const requestedArea = viewportBounds
+			? [
+					viewportBounds.north,
+					viewportBounds.west,
+					viewportBounds.south,
+					viewportBounds.east,
+				] // [N, W, S, E]
+			: [180, 0, 0, 180]; // global fallback
+
+		console.log("Viewport bounds received:", viewportBounds);
+		console.log("Requested area (N, W, S, E):", requestedArea);
+
 		const postData = {
 			requested_time_point: requestedTimePoint, // "2016-07-01"
 			requested_variable_type: requestedVariableValue, // "R0"
-			requested_area: [180, 0, 0, 180], // convert this to the viewport coordinates.
+			requested_area: requestedArea,
 		};
 
 		console.log(`Calling API: ${apiUrl}`);
