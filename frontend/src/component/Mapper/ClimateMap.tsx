@@ -213,6 +213,7 @@ const ClimateMap = observer(({ onMount = () => true }: ClimateMapProps) => {
 	]);
 
 	// Worldwide/Grid mode effect (dependent on temperatureDataStore.rawRegionTemperatureData)
+	// biome-ignore lint/correctness/useExhaustiveDependencies: MobX observable dependency needed for reactivity
 	useEffect(() => {
 		// Skip processing if there's already a processing error or in Europe mode
 		if (dataProcessingError || userStore.mapMode === "europe-only") {
@@ -220,16 +221,10 @@ const ClimateMap = observer(({ onMount = () => true }: ClimateMapProps) => {
 			return;
 		}
 
-		// race condition problem: Europe default mode is loaded.. so rawREgionTemperatureData never gets set...
-		// then later world mode is active nad the code below in ProcessData runs, but the condition stops anything happening
-		// need to avoid that.
-		// 1. what sets temperatureDataStore.rawRegionTemperatureData?
+		const rawDataLength = temperatureDataStore.rawRegionTemperatureData.length;
 
 		const processData = async () => {
-			if (
-				userStore.mapMode === "worldwide" &&
-				temperatureDataStore.rawRegionTemperatureData.length > 0
-			) {
+			if (userStore.mapMode === "worldwide" && rawDataLength > 0) {
 				// Load worldwide regions if not already loaded
 				if (!temperatureDataStore.worldwideRegionBoundaries) {
 					try {
@@ -260,15 +255,8 @@ const ClimateMap = observer(({ onMount = () => true }: ClimateMapProps) => {
 					setGeneralError("Failed to process worldwide regions");
 					mapDataStore.setIsProcessingWorldwideRegionData(false);
 				}
-			} else if (
-				userStore.mapMode === "grid" &&
-				temperatureDataStore.rawRegionTemperatureData.length > 0
-			) {
-				console.log(
-					"Grid processing check:",
-					userStore.mapMode,
-					temperatureDataStore.rawRegionTemperatureData.length,
-				);
+			} else if (userStore.mapMode === "grid" && rawDataLength > 0) {
+				console.log("Grid processing check:", userStore.mapMode, rawDataLength);
 				console.log(
 					"mapDataStore.mapViewportBounds:",
 					mapDataStore.mapViewportBounds,
@@ -318,7 +306,7 @@ const ClimateMap = observer(({ onMount = () => true }: ClimateMapProps) => {
 		dataProcessingError,
 		setDataProcessingError,
 		setGeneralError,
-		temperatureDataStore.rawRegionTemperatureData,
+		temperatureDataStore.rawRegionTemperatureData.length,
 	]);
 
 	// Cleanup timeouts on unmount
