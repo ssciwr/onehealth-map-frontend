@@ -23,8 +23,8 @@ export class MapDataStore {
 	isLoadingRawData = false;
 	leafletMapInstance: L.Map | null = null;
 	mapViewportBounds: ViewportBounds | null = null;
-	mapZoomLevel = 2;
-	dataResolution = 1.5; // default make it quite zoomed out - 2 takes 4x less data/response time than 1.
+	mapZoomLevel = 0;
+	dataResolution = 5.0;
 
 	constructor() {
 		makeAutoObservable(this);

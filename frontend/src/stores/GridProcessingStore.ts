@@ -63,6 +63,7 @@ export class GridProcessingStore {
 	generateAdaptiveGridCells = (
 		dataPoints: DataPoint[],
 		viewport: ViewportBounds,
+		resolutionFactor = 1,
 	): GridCell[] => {
 		const startTime = performance.now();
 		console.log(
@@ -91,7 +92,11 @@ export class GridProcessingStore {
 		else if (zoom < 7) gridSize = derivedIntervalSize;
 		else if (zoom < 9) gridSize = derivedIntervalSize * 0.5;
 
-		console.log(`🔍 Grid size: ${gridSize}, zoom: ${zoom}`);
+		gridSize *= resolutionFactor;
+
+		console.log(
+			`🔍 Grid size: ${gridSize}, zoom: ${zoom}, resolutionFactor: ${resolutionFactor}`,
+		);
 
 		const cellMap = new Map<
 			string,
@@ -216,7 +221,11 @@ export class GridProcessingStore {
 			);
 
 			const gridGenStart = performance.now();
-			const cells = this.generateAdaptiveGridCells(temperatureData, viewport);
+			const cells = this.generateAdaptiveGridCells(
+				temperatureData,
+				viewport,
+				resolutionLevel,
+			);
 			console.log(
 				`🗂️ Grid generation took ${(performance.now() - gridGenStart).toFixed(2)}ms`,
 			);

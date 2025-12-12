@@ -26,6 +26,17 @@ import { loadNutsData } from "./utilities/mapDataUtils";
 import { Legend, MAX_ZOOM, MIN_ZOOM } from "./utilities/mapDataUtils";
 import { getVariableUnit } from "./utilities/monthUtils";
 
+// Coarser grid at low zoom to keep requests light; finer as you zoom in
+const GRID_RESOLUTION_BY_ZOOM = [5.0, 3.0, 2.5, 2.0, 1.5, 1.0, 0.5, 0.2, 0.1];
+
+const getGridResolutionForZoom = (zoom: number) => {
+	const clampedIndex = Math.max(
+		0,
+		Math.min(GRID_RESOLUTION_BY_ZOOM.length - 1, Math.round(zoom)),
+	);
+	return GRID_RESOLUTION_BY_ZOOM[clampedIndex];
+};
+
 type ClimateMapProps = {
 	onMount?: () => boolean;
 };
@@ -75,6 +86,12 @@ const ClimateMap = observer(({ onMount = () => true }: ClimateMapProps) => {
 	// biome-ignore lint/correctness/useExhaustiveDependencies(mapDataStore.mapViewportBounds): mobx store property used for viewport-based data loading
 	useEffect(() => {
 		const loadData = async () => {
+			// Avoid global requests before viewport is known in grid mode
+			if (userStore.mapMode === "grid" && !mapDataStore.mapViewportBounds) {
+				console.log("Skipping grid data load until viewport is available");
+				return;
+			}
+
 			if (userStore.mapMode === "grid" || userStore.mapMode === "worldwide") {
 				console.log(`Loading lat/lon data for ${userStore.mapMode} mode`);
 				console.log(
@@ -400,8 +417,7 @@ const ClimateMap = observer(({ onMount = () => true }: ClimateMapProps) => {
 				mapDataStore.setMapZoomLevel(zoom);
 
 				// Set resolution based on zoom
-				const resolution = zoom < 5 ? 2 : zoom < 7 ? 1 : 0.5;
-				mapDataStore.setDataResolution(resolution);
+				mapDataStore.setDataResolution(getGridResolutionForZoom(zoom));
 			}
 		},
 		[],
@@ -437,7 +453,7 @@ const ClimateMap = observer(({ onMount = () => true }: ClimateMapProps) => {
 						<MapContainer
 							className="full-height-map"
 							center={[10, 12]}
-							zoom={3}
+							zoom={0}
 							minZoom={MIN_ZOOM}
 							maxZoom={MAX_ZOOM}
 							ref={mapDataStore.setLeafletMapInstance}

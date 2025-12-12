@@ -5,7 +5,7 @@ import { fetchClimateData } from "../../../services/climateDataService.ts";
 import { buildNutsApiUrl } from "../../../services/nutsApi.ts";
 import type { DataExtremes, TemperatureDataPoint } from "../types.ts";
 
-export const MIN_ZOOM = 2;
+export const MIN_ZOOM = 0;
 export const MAX_ZOOM = 10;
 
 export const TEMP_COLORS = [
