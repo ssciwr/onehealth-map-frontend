@@ -222,6 +222,7 @@ export class TemperatureDataStore {
 				year,
 				safeMonth,
 				requestedVariableValue,
+				"NUTS3",
 			);
 
 			console.log(

@@ -186,6 +186,7 @@ const ClimateMap = observer(({ onMount = () => true }: ClimateMapProps) => {
 					userStore.currentYear,
 					userStore.currentMonth,
 					requestedVariableValue,
+					"NUTS3",
 				);
 				mapDataStore.setIsLoadingRawData(false);
 

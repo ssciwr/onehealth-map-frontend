@@ -2,6 +2,7 @@ import * as turf from "@turf/turf";
 import L from "leaflet";
 import { isMobile } from "react-device-detect";
 import { fetchClimateData } from "../../../services/climateDataService.ts";
+import { buildNutsApiUrl } from "../../../services/nutsApi.ts";
 import type { DataExtremes, TemperatureDataPoint } from "../types.ts";
 
 export const MIN_ZOOM = 2;
@@ -335,6 +336,7 @@ export const loadNutsData = async (
 	year: number,
 	month: number,
 	requestedVariableValue = "R0",
+	requestedGridResolution: "NUTS2" | "NUTS3" = "NUTS2",
 ): Promise<{ [nutsId: string]: number }> => {
 	console.log(
 		"Loading NUTS data for year:",
@@ -343,6 +345,8 @@ export const loadNutsData = async (
 		month,
 		"variable:",
 		requestedVariableValue,
+		"resolution:",
+		requestedGridResolution,
 	);
 
 	// Format the month with leading zero
@@ -350,14 +354,21 @@ export const loadNutsData = async (
 	const requestedTimePoint = `${year}-${monthStr}-01`;
 
 	try {
-		const response = await fetch(
-			`http://127.0.0.1:8000/nuts_data?requested_time_point=${requestedTimePoint}&requested_variable_type=${requestedVariableValue}&requested_grid_resolution=NUTS2`,
-			{
-				headers: {
-					accept: "application/json",
-				},
-			},
+		const nutsDataUrl = buildNutsApiUrl("/nuts_data", {
+			requested_time_point: requestedTimePoint,
+			requested_variable_type: requestedVariableValue,
+			requested_grid_resolution: requestedGridResolution,
+		});
+
+		console.log(
+			`Requesting NUTS values from backend: ${nutsDataUrl} (time=${requestedTimePoint}, variable=${requestedVariableValue}, resolution=${requestedGridResolution})`,
 		);
+
+		const response = await fetch(nutsDataUrl, {
+			headers: {
+				accept: "application/json",
+			},
+		});
 
 		if (!response.ok) {
 			throw new Error(
