@@ -80,13 +80,6 @@ export interface OutbreakData {
 	notes?: string;
 }
 
-export interface ProcessingStats {
-	processed: number;
-	skipped: number;
-	errors: number;
-	skippedRegions?: string[];
-}
-
 export interface GridCell {
 	bounds: L.LatLngBoundsExpression;
 	temperature: number;

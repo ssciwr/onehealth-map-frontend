@@ -4,7 +4,6 @@ import { makeAutoObservable } from "mobx";
 import type {
 	DataExtremes,
 	NutsGeoJSON,
-	ProcessingStats,
 	TemperatureDataPoint,
 	ViewportBounds,
 	WorldwideGeoJSON,
@@ -22,16 +21,15 @@ export class MapDataStore {
 	isProcessingEuropeNutsData = false;
 	isProcessingWorldwideRegionData = false;
 	isLoadingRawData = false;
-	processingStats: ProcessingStats | null = null;
 	leafletMapInstance: L.Map | null = null;
 	mapViewportBounds: ViewportBounds | null = null;
-	mapZoomLevel = 3;
-	dataResolution = 1;
+	mapZoomLevel = 2;
+	dataResolution = 1.5; // default make it quite zoomed out - 2 takes 4x less data/response time than 1.
 
 	constructor() {
 		makeAutoObservable(this);
 	}
-
+	// tidyup: remove
 	setRawRegionTemperatureData = (data: TemperatureDataPoint[]) => {
 		this.rawRegionTemperatureData = data;
 	};
@@ -50,12 +48,12 @@ export class MapDataStore {
 		this.baseWorldGeoJSON = data;
 	};
 
-	setProcessedWorldwideRegions = (data: WorldwideGeoJSON | null) => {
-		this.processedWorldwideRegions = data;
-	};
-
 	setWorldwideRegionBoundaries = (data: WorldwideGeoJSON | null) => {
 		this.worldwideRegionBoundaries = data;
+	};
+
+	setProcessedWorldwideRegions = (data: WorldwideGeoJSON | null) => {
+		this.processedWorldwideRegions = data;
 	};
 
 	setProcessedEuropeNutsRegions = (data: NutsGeoJSON | null) => {
@@ -72,10 +70,6 @@ export class MapDataStore {
 
 	setIsLoadingRawData = (loading: boolean) => {
 		this.isLoadingRawData = loading;
-	};
-
-	setProcessingStats = (stats: ProcessingStats | null) => {
-		this.processingStats = stats;
 	};
 
 	setLeafletMapInstance = (map: L.Map | null) => {

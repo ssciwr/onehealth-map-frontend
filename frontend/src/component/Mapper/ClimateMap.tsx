@@ -16,7 +16,6 @@ import { gridProcessingStore } from "../../stores/GridProcessingStore";
 import { mapDataStore } from "../../stores/MapDataStore";
 import { temperatureDataStore } from "../../stores/TemperatureDataStore";
 import * as MapInteractionHandlers from "../../utils/MapInteractionHandlers";
-import DebugStatsPanel from "./DebugStatsPanel.tsx";
 import AdvancedTimelineSelector from "./InterfaceInputs/AdvancedTimelineSelector.tsx";
 import MobileSideButtons from "./InterfaceInputs/MobileSideButtons.tsx";
 import LoadingSkeleton from "./LoadingSkeleton.tsx";
@@ -539,17 +538,6 @@ const ClimateMap = observer(({ onMount = () => true }: ClimateMapProps) => {
 								</p>
 							)}
 						</div>
-					)}
-
-					{mapDataStore.mapViewportBounds && (
-						<DebugStatsPanel
-							stats={{ processed: 0, skipped: 0, errors: 0 }}
-							temperatureDataCount={
-								temperatureDataStore.rawRegionTemperatureData.length
-							}
-							currentResolution={mapDataStore.dataResolution}
-							viewport={mapDataStore.mapViewportBounds}
-						/>
 					)}
 				</div>
 			</div>
