@@ -111,11 +111,13 @@ export class GridProcessingStore {
 		);
 
 		const processStart = performance.now();
+		const EPS = gridSize * 1e-6;
 		for (const point of filteredData) {
-			const cellLatIndex = Math.floor(point.lat / gridSize);
-			const cellLngIndex = Math.floor(point.lng / gridSize);
-			const cellLat = cellLatIndex * gridSize;
-			const cellLng = cellLngIndex * gridSize;
+			// Align to a global origin to avoid seams from floating-point drift
+			const cellLatIndex = Math.floor((point.lat + 90 + EPS) / gridSize);
+			const cellLngIndex = Math.floor((point.lng + 180 + EPS) / gridSize);
+			const cellLat = cellLatIndex * gridSize - 90;
+			const cellLng = cellLngIndex * gridSize - 180;
 			const cellId = `${cellLatIndex}_${cellLngIndex}`;
 
 			const bounds: L.LatLngBoundsExpression = [
