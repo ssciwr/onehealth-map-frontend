@@ -403,6 +403,7 @@ export const loadTemperatureData = async (
 		east: number;
 		west: number;
 	} | null,
+	requestedGridResolution?: number,
 ): Promise<{
 	dataPoints: TemperatureDataPoint[];
 	extremes: DataExtremes;
@@ -433,6 +434,7 @@ export const loadTemperatureData = async (
 			requestedVariableValue,
 			outputFormat,
 			viewportBounds,
+			requestedGridResolution,
 		);
 		console.log(
 			`🌐 fetchClimateData took ${(performance.now() - fetchStart).toFixed(2)}ms - received ${apiData.length} raw points`,

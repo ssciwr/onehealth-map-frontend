@@ -115,6 +115,7 @@ const ClimateMap = observer(({ onMount = () => true }: ClimateMapProps) => {
 					mapDataStore.setIsLoadingRawData,
 					setGeneralError,
 					viewportBoundsToUse,
+					mapDataStore.dataResolution,
 				);
 			}
 
@@ -452,8 +453,8 @@ const ClimateMap = observer(({ onMount = () => true }: ClimateMapProps) => {
 					<div className="map-content" style={{ position: "relative" }}>
 						<MapContainer
 							className="full-height-map"
-							center={[10, 12]}
-							zoom={0}
+							center={[45, 12]}
+							zoom={5}
 							minZoom={MIN_ZOOM}
 							maxZoom={MAX_ZOOM}
 							ref={mapDataStore.setLeafletMapInstance}

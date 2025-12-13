@@ -14,6 +14,7 @@ export interface ClimateApiRequest {
 	requested_time_point: string;
 	requested_variable_type: string;
 	outputFormat?: string[];
+	requested_grid_resolution?: number;
 }
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -29,6 +30,7 @@ export async function fetchClimateData(
 		east: number;
 		west: number;
 	} | null,
+	requestedGridResolution?: number,
 ): Promise<ClimateDataPoint[]> {
 	await delay(100 + Math.random() * 300);
 
@@ -142,6 +144,7 @@ export async function fetchClimateData(
 			requested_time_point: requestedTimePoint, // "2016-07-01"
 			requested_variable_type: requestedVariableValue, // "R0"
 			requested_area: requestedArea,
+			requested_grid_resolution: requestedGridResolution,
 		};
 
 		console.log(`Calling API: ${apiUrl}`);

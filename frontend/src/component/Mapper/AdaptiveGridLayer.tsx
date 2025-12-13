@@ -1,4 +1,6 @@
-import { Popup, Rectangle } from "react-leaflet";
+import L from "leaflet";
+import { useMemo } from "react";
+import { Popup, Rectangle, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import { observer } from "mobx-react-lite";
 import { gridProcessingStore } from "../../stores/GridProcessingStore";
@@ -6,6 +8,8 @@ import { temperatureDataStore } from "../../stores/TemperatureDataStore";
 import { getColorFromGradient } from "./utilities/gradientUtilities";
 
 const AdaptiveGridLayer = observer(() => {
+	const map = useMap();
+	const canvasRenderer = useMemo(() => L.canvas({ padding: 0.5 }), []);
 	const renderStart = performance.now();
 	const gridCells = gridProcessingStore.gridCells;
 	const processedDataExtremes = temperatureDataStore.processedDataExtremes;
@@ -41,6 +45,8 @@ const AdaptiveGridLayer = observer(() => {
 					<Rectangle
 						key={cell.id}
 						bounds={cell.bounds}
+						renderer={canvasRenderer}
+						interactive
 						pathOptions={getGridCellStyle(cell.temperature)}
 						eventHandlers={{
 							click: (e) => {

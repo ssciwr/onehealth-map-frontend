@@ -84,15 +84,9 @@ export class GridProcessingStore {
 			`📏 calculateDerivedIntervalSize took ${(performance.now() - intervalStart).toFixed(2)}ms`,
 		);
 
-		let gridSize = derivedIntervalSize;
-
-		if (zoom < 3) gridSize = derivedIntervalSize * 2.5;
-		else if (zoom < 4) gridSize = derivedIntervalSize * 1.75;
-		else if (zoom < 5.5) gridSize = derivedIntervalSize * 1.25;
-		else if (zoom < 7) gridSize = derivedIntervalSize;
-		else if (zoom < 9) gridSize = derivedIntervalSize * 0.5;
-
-		gridSize *= resolutionFactor;
+		const baseSize =
+			resolutionFactor > 0 ? resolutionFactor : derivedIntervalSize;
+		const gridSize = Number(baseSize.toFixed(6));
 
 		console.log(
 			`🔍 Grid size: ${gridSize}, zoom: ${zoom}, resolutionFactor: ${resolutionFactor}`,

@@ -66,6 +66,7 @@ export class TemperatureDataStore {
 			east: number;
 			west: number;
 		} | null,
+		requestedGridResolution?: number,
 	) => {
 		const loadStart = performance.now();
 		console.log(
@@ -104,6 +105,7 @@ export class TemperatureDataStore {
 				requestedVariableValue,
 				outputFormat,
 				viewportBounds,
+				requestedGridResolution,
 			);
 			console.log(
 				`📊 loadTemperatureData utility took ${(performance.now() - dataLoadStart).toFixed(2)}ms`,
