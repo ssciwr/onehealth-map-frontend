@@ -8,7 +8,6 @@ import { temperatureDataStore } from "../../stores/TemperatureDataStore";
 import { getColorFromGradient } from "./utilities/gradientUtilities";
 
 const AdaptiveGridLayer = observer(() => {
-	const map = useMap();
 	const canvasRenderer = useMemo(() => L.canvas({ padding: 0.5 }), []);
 	const renderStart = performance.now();
 	const gridCells = gridProcessingStore.gridCells;
