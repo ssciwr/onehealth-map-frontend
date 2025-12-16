@@ -2,7 +2,7 @@ import * as turf from "@turf/turf";
 import L from "leaflet";
 import { isMobile } from "react-device-detect";
 import { fetchClimateData } from "../../../services/climateDataService.ts";
-import { buildNutsApiUrl } from "../../../services/nutsApi.ts";
+import { nutsApiUrl } from "../../../services/nutsApi.ts";
 import type { DataExtremes, TemperatureDataPoint } from "../types.ts";
 
 export const MIN_ZOOM = 0;
@@ -354,7 +354,7 @@ export const loadNutsData = async (
 	const requestedTimePoint = `${year}-${monthStr}-01`;
 
 	try {
-		const nutsDataUrl = buildNutsApiUrl("/nuts_data", {
+		const nutsDataUrl = nutsApiUrl("/nuts_data", {
 			requested_time_point: requestedTimePoint,
 			requested_variable_type: requestedVariableValue,
 			requested_grid_resolution: requestedGridResolution,

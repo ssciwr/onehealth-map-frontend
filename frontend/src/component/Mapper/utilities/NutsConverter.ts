@@ -5,7 +5,7 @@ import type {
 	MultiPolygon,
 	Polygon,
 } from "geojson";
-import { buildNutsApiUrl } from "../../../services/nutsApi.ts";
+import { nutsApiUrl } from "../../../services/nutsApi.ts";
 import type {
 	DataExtremes,
 	NutsFeature,
@@ -24,7 +24,7 @@ export class NutsConverter {
 		}
 
 		const gridResolution = `NUTS${level}`;
-		const nutsRegionsUrl = buildNutsApiUrl("/nuts_regions", {
+		const nutsRegionsUrl = nutsApiUrl("/nuts_regions", {
 			grid_resolution: gridResolution,
 		});
 
