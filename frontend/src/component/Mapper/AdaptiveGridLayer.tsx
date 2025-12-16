@@ -1,6 +1,6 @@
 import L from "leaflet";
 import { useMemo } from "react";
-import { Popup, Rectangle, useMap } from "react-leaflet";
+import { Popup, Rectangle } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import { observer } from "mobx-react-lite";
 import { gridProcessingStore } from "../../stores/GridProcessingStore";
