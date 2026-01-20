@@ -60,9 +60,9 @@ export default ({
 						}}
 					>
 						<img
-							alt="OneHealth Logo - two objects on either side that appear to be holding a circular shape inbetween the them"
+							alt="Hei-Planet logo"
 							style={{ height: "30px", width: "30px" }}
-							src="/images/oneHealthLogoOnlySymbols.png"
+							src="/images/hei-planet-logo.png"
 						/>
 
 						<div style={{ flex: 1, display: "flex", justifyContent: "center" }}>
@@ -174,8 +174,8 @@ export default ({
 			>
 				<div className="logo-section">
 					<h1 hidden className="map-title">
-						<span className="title-one">One</span>
-						<span className="title-health">Health</span>
+						<span className="title-one">Hei-</span>
+						<span className="title-health">Planet</span>
 						<span className="title-platform">Platform</span>
 						<small className="tertiary">
 							<i>&nbsp;{viewingMode.isExpert && "Expert Mode"}</i>
@@ -197,8 +197,8 @@ export default ({
 							height: "48px",
 							marginRight: "10px",
 						}}
-						alt="OneHealth Logo - two objects on either side that appear to be holding a circular shape inbetween the them"
-						src="/images/oneHealthWhite.png"
+						alt="Hei-Planet logo"
+						src="/images/hei-planet-logo.png"
 					/>
 					<div
 						className="glass-button"

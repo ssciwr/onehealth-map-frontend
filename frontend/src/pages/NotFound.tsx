@@ -25,8 +25,8 @@ export default () => (
 			}}
 		>
 			<img
-				src="/images/oneHealthLogoOnlySymbols.png"
-				alt="OneHealth Logo"
+				src="/images/hei-planet-logo.png"
+				alt="Hei-Planet logo"
 				style={{
 					width: "40px",
 					height: "40px",
@@ -40,7 +40,7 @@ export default () => (
 					margin: 0,
 				}}
 			>
-				OneHealth
+				Hei-Planet
 			</h1>
 		</div>
 

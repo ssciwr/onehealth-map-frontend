@@ -846,7 +846,7 @@ const AdvancedTimelineSelector: React.FC<AdvancedTimelineSelectorProps> = ({
 			/>
 
 			<Modal
-				title="About OneHealth Platform"
+				title="About the Hei-Planet Platform"
 				open={isAboutOpen}
 				onCancel={() => setIsAboutOpen(false)}
 				footer={null}
