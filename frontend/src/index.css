@@ -452,6 +452,7 @@ button:focus-visible {
 	padding: 0;
 	background: transparent;
 }
+
 .gap-lg {
 	gap: var(--space-lg);
 }

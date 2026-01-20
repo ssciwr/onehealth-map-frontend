@@ -233,32 +233,22 @@ const ModelDetailsModal: React.FC<ModelDetailsModalProps> = React.memo(
 											<Title level={1} style={{ margin: "0 0 4px 0" }}>
 												{selectedDetailModel.title || "Untitled Model"}
 											</Title>
-											<Title
-												level={3}
-												style={{ margin: "0 0 4px 0" }}
-												className="tertiary"
-											>
-												{selectedDetailModel.modelName || "No model name"}
-											</Title>
 										</div>
 									</Space>
-									{selectedDetailModel.description && (
-										<div>
-											<Text className="tertiary">
-												{selectedDetailModel.description}
-											</Text>
-										</div>
-									)}
+									{selectedDetailModel.description &&
+										!/^model card:/i.test(
+											selectedDetailModel.description.trim(),
+										) && (
+											<div>
+												<Text className="tertiary">
+													{selectedDetailModel.description}
+												</Text>
+											</div>
+										)}
 								</div>
 
 								{/* Model Card Section */}
 								<div style={{ marginBottom: "32px" }}>
-									<Title
-										level={5}
-										style={{ marginBottom: "12px", color: "#172B4D" }}
-									>
-										Model Card
-									</Title>
 									{selectedDetailModel.cardMarkdown ? (
 										<SimpleMarkdown
 											markdown={selectedDetailModel.cardMarkdown}
@@ -405,6 +395,15 @@ const ModelDetailsModal: React.FC<ModelDetailsModalProps> = React.memo(
 										gap: "12px",
 									}}
 								>
+									{selectedDetailModel.cardYamlUrl && (
+										<Button
+											href={selectedDetailModel.cardYamlUrl}
+											target="_blank"
+											rel="noreferrer"
+										>
+											YAML
+										</Button>
+									)}
 									<Button
 										onClick={
 											isMobile
