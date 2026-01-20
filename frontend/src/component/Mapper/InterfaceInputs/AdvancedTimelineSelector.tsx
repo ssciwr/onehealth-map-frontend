@@ -15,8 +15,8 @@ import {
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { isMobile } from "react-device-detect";
-import type { Model } from "../../../hooks/useModelData";
 import { AboutContent } from "../../../static/Footer.tsx";
+import type { Model } from "../../../types/model";
 import type { Month } from "../types";
 import { MONTHS } from "../utilities/monthUtils";
 import ModelDetailsModal from "./ModelDetailsModal";
