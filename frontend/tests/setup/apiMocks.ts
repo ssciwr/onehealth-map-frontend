@@ -42,19 +42,19 @@ export async function setupApiMocksWithFs(page: Page) {
 
 	// Mock the 2016-07 API endpoint (baseline)
 	await page.route(
-		"**/api/cartesian?requested_time_point=2016-07-01&requested_variable_value=R0",
+		"**/api/cartesian?requested_time_point=2016-07-01&requested_variable_type=R0",
 		mock2016Handler,
 	);
 
 	// Mock the 2016-08 API endpoint (month navigation test)
 	await page.route(
-		"**/api/cartesian?requested_time_point=2016-08-01&requested_variable_value=R0",
+		"**/api/cartesian?requested_time_point=2016-08-01&requested_variable_type=R0",
 		mock2017Handler,
 	);
 
 	// Mock the 2017-07 API endpoint (year navigation test)
 	await page.route(
-		"**/api/cartesian?requested_time_point=2017-07-01&requested_variable_value=R0",
+		"**/api/cartesian?requested_time_point=2017-07-01&requested_variable_type=R0",
 		mock2017Handler,
 	);
 }

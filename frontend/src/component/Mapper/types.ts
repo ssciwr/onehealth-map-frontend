@@ -46,6 +46,8 @@ export interface NutsProperties {
 	nutsLevel?: number;
 	isFallback?: boolean;
 	isModelData?: boolean;
+	isApiData?: boolean;
+	isMissingData?: boolean;
 	currentPosition?: { lat: number; lng: number };
 	nearestDataPoint?: { lat: number; lng: number };
 	dataPoints?: Array<{ lat: number; lng: number; temperature: number }>;
@@ -76,13 +78,6 @@ export interface OutbreakData {
 	date: string;
 	cases: number;
 	notes?: string;
-}
-
-export interface ProcessingStats {
-	processed: number;
-	skipped: number;
-	errors: number;
-	skippedRegions?: string[];
 }
 
 export interface GridCell {
