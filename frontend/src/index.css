@@ -453,6 +453,24 @@ button:focus-visible {
 	background: transparent;
 }
 
+.simple-markdown table {
+	width: 100%;
+	margin: 0 0 16px;
+	border-collapse: collapse;
+}
+
+.simple-markdown th,
+.simple-markdown td {
+	padding: 6px 10px;
+	border: 1px solid #dfe3eb;
+	text-align: left;
+}
+
+.simple-markdown th {
+	background: #f5f7fa;
+	font-weight: 600;
+}
+
 .gap-lg {
 	gap: var(--space-lg);
 }
