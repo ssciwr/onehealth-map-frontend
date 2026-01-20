@@ -73,7 +73,7 @@ const ModelSelector = ({
 	const selectorItems = models.map((model) => ({
 		id: model.id,
 		title: model.modelName,
-		description: model.description,
+		description: model.description ?? "",
 		emoji: model.emoji,
 		color: model.color,
 	}));
