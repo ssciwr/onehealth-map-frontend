@@ -64,6 +64,9 @@ const AdaptiveGridLayer = observer(() => {
 		</div>
 	); // todo: Replace just teh cell.temperature above: rename temperature to .value (as it is used for R0 too etc) and provide the label.
 	// the label should be in some kind of mobx store or passed as prop.
+	// todo: Check this again. This relates to Ingas suggested changes today
+	// Cruically, the label here in this concept may become the yaml "model output yaml" or so
+	// Created #77 for this.
 
 	const renderTime = performance.now() - renderStart;
 	console.log(
