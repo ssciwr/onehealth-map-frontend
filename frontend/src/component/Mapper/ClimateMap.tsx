@@ -87,7 +87,7 @@ const ClimateMap = observer(({ onMount = () => true }: ClimateMapProps) => {
 	}, []);
 
 	// Load data when mode changes
-	// biome-ignore lint/correctness/useExhaustiveDependencies(mapDataStore.mapViewportBounds): mobx store property used for viewport-based data loading
+	// biome-ignore lint/correctness/useExhaustiveDependencies: mobx store values should trigger data loading.
 	useEffect(() => {
 		const loadData = async () => {
 			// Avoid global requests before viewport is known in grid mode
@@ -249,6 +249,7 @@ const ClimateMap = observer(({ onMount = () => true }: ClimateMapProps) => {
 	]);
 
 	// Worldwide/Grid mode effect (dependent on temperatureDataStore.rawRegionTemperatureData)
+	// biome-ignore lint/correctness/useExhaustiveDependencies: mobx store values should trigger processing.
 	useEffect(() => {
 		console.log("GRID-PROBLEM-DEBUG effect: processData start", {
 			mapMode: userStore.mapMode,
