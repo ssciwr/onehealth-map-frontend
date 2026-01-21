@@ -59,7 +59,7 @@ declare module "leaflet" {
 	): SimpleMapScreenshoter;
 }
 
-export const MOBILE_SIDE_BUTTONS_LOCATIONS = {
+const MOBILE_SIDE_BUTTONS_LOCATIONS = {
 	BOTTOM_RIGHT: "bottom-right",
 	TOP_LEFT: "top-left",
 } as const;

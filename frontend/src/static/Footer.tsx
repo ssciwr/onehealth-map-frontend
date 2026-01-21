@@ -182,7 +182,7 @@ const HeiPlanetHTMLFooter = () => <footer id="footer" className="footer">
 </footer>
 */
 
-export default () => (
+const Footer = () => (
 	<div
 		style={{
 			minWidth: "100%",
@@ -193,6 +193,8 @@ export default () => (
 		{/* <HeiPlanetHTMLFooter /> */}
 	</div>
 );
+
+export default Footer;
 
 export const AboutContent = () => (
 	<div>
