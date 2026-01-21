@@ -78,6 +78,7 @@ const ClimateMap = observer(({ onMount = () => true }: ClimateMapProps) => {
 	});
 
 	// Set theme to purple
+	// eslint-disable-next-line react-hooks/exhaustive-deps
 	useEffect(() => {
 		document.documentElement.setAttribute("data-theme", "purple");
 	}, []);
@@ -237,13 +238,13 @@ const ClimateMap = observer(({ onMount = () => true }: ClimateMapProps) => {
 		userStore.selectedModel,
 		dataProcessingError,
 		models,
+		userStore,
 		userStore.setCurrentVariableType,
 		setDataProcessingError,
 		setGeneralError,
 	]);
 
 	// Worldwide/Grid mode effect (dependent on temperatureDataStore.rawRegionTemperatureData)
-	// biome-ignore lint/correctness/useExhaustiveDependencies: MobX observable dependency needed for reactivity
 	useEffect(() => {
 		// Skip processing if there's already a processing error or in Europe mode
 		if (dataProcessingError || userStore.mapMode === "europe-only") {
@@ -336,7 +337,6 @@ const ClimateMap = observer(({ onMount = () => true }: ClimateMapProps) => {
 		dataProcessingError,
 		setDataProcessingError,
 		setGeneralError,
-		temperatureDataStore.rawRegionTemperatureData.length,
 	]);
 
 	// Cleanup timeouts on unmount
@@ -508,7 +508,6 @@ const ClimateMap = observer(({ onMount = () => true }: ClimateMapProps) => {
 							onLocationFind={handleLocationFind}
 							onScreenshot={handleScreenshot}
 							colorScheme="purple"
-							map={mapDataStore.leafletMapInstance}
 							screenshoter={mapScreenshoter}
 							models={models}
 							selectedModelId={userStore.selectedModel}

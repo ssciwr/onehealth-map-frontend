@@ -35,7 +35,6 @@ interface AdvancedTimelineSelectorProps {
 	onScreenshot: () => void;
 	colorScheme: "purple" | "red";
 	legend?: ReactNode;
-	map?: L.Map | null;
 	screenshoter?: L.SimpleMapScreenshoter | null;
 	models: Model[];
 	selectedModelId: string;
@@ -56,7 +55,6 @@ const AdvancedTimelineSelector: React.FC<AdvancedTimelineSelectorProps> = ({
 	onScreenshot,
 	colorScheme,
 	legend,
-	map: _map,
 	screenshoter,
 	models,
 	selectedModelId,

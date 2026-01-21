@@ -14,9 +14,7 @@ import GeneralCard from "../General/GeneralCard.tsx";
 import ModelSelector from "./InterfaceInputs/ModelSelector.tsx";
 import OptimismLevelSelector from "./InterfaceInputs/OptimismSelector.tsx";
 
-type MapHeaderProps = {};
-
-export default observer(({}: MapHeaderProps) => {
+const MapHeader = observer(() => {
 	const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
 	// Use MobX store directly instead of props
@@ -406,3 +404,5 @@ export default observer(({}: MapHeaderProps) => {
 		</div>
 	);
 });
+
+export default MapHeader;

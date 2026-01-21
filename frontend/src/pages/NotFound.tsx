@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import GeneralCard from "../component/General/GeneralCard.tsx";
 import Footer from "../static/Footer.tsx";
 
-export default () => (
+const NotFound = () => (
 	<div
 		style={{
 			background: "rgb(235, 235, 235)",
@@ -133,3 +133,5 @@ export default () => (
 		<Footer />
 	</div>
 );
+
+export default NotFound;

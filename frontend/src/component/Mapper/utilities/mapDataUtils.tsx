@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import * as turf from "@turf/turf";
 import L from "leaflet";
 import { isMobile } from "react-device-detect";
