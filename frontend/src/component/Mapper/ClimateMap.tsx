@@ -29,6 +29,8 @@ import { getVariableUnit } from "./utilities/monthUtils";
 // Coarser grid at low zoom to keep requests light; finer as you zoom in
 const GRID_RESOLUTION_BY_ZOOM = [5.0, 3.0, 2.5, 2.0, 1.5, 1.0, 0.5, 0.2, 0.1];
 
+console.log("GRID-PROBLEM-DEBUG ClimateMap module loaded");
+
 const getGridResolutionForZoom = (zoom: number) => {
 	const clampedIndex = Math.max(
 		0,
@@ -42,6 +44,7 @@ type ClimateMapProps = {
 };
 
 const ClimateMap = observer(({ onMount = () => true }: ClimateMapProps) => {
+	console.log("GRID-PROBLEM-DEBUG ClimateMap render");
 	const userStore = useUserSelectionsStore();
 	const {
 		generalError,
@@ -138,6 +141,7 @@ const ClimateMap = observer(({ onMount = () => true }: ClimateMapProps) => {
 		setDataFetchErrorMessage,
 		setGeneralError,
 		mapDataStore.mapViewportBounds,
+		mapDataStore.dataResolution,
 	]);
 
 	// Handle popup close button clicks
@@ -246,13 +250,25 @@ const ClimateMap = observer(({ onMount = () => true }: ClimateMapProps) => {
 
 	// Worldwide/Grid mode effect (dependent on temperatureDataStore.rawRegionTemperatureData)
 	useEffect(() => {
+		console.log("GRID-PROBLEM-DEBUG effect: processData start", {
+			mapMode: userStore.mapMode,
+			rawLen: temperatureDataStore.rawRegionTemperatureData.length,
+			hasViewport: !!mapDataStore.mapViewportBounds,
+			dataResolution: mapDataStore.dataResolution,
+			dataProcessingError,
+		});
 		// Skip processing if there's already a processing error or in Europe mode
 		if (dataProcessingError || userStore.mapMode === "europe-only") {
+			console.log("GRID-PROBLEM-DEBUG effect: early skip", {
+				mapMode: userStore.mapMode,
+				dataProcessingError,
+			});
 			console.log("Skipping lat/lon processing due to error or Europe mode");
 			return;
 		}
 
 		const rawDataLength = temperatureDataStore.rawRegionTemperatureData.length;
+		console.log("GRID-PROBLEM-DEBUG effect: rawDataLength", rawDataLength);
 
 		const processData = async () => {
 			if (userStore.mapMode === "worldwide" && rawDataLength > 0) {
@@ -287,6 +303,11 @@ const ClimateMap = observer(({ onMount = () => true }: ClimateMapProps) => {
 					mapDataStore.setIsProcessingWorldwideRegionData(false);
 				}
 			} else if (userStore.mapMode === "grid" && rawDataLength > 0) {
+				console.log("GRID-PROBLEM-DEBUG grid branch entry", {
+					rawDataLength,
+					viewport: mapDataStore.mapViewportBounds,
+					resolution: mapDataStore.dataResolution,
+				});
 				console.log("Grid processing check:", userStore.mapMode, rawDataLength);
 				console.log(
 					"mapDataStore.mapViewportBounds:",
@@ -308,11 +329,18 @@ const ClimateMap = observer(({ onMount = () => true }: ClimateMapProps) => {
 				console.log("About to call generateGridCellsFromTemperatureData");
 				const viewportBounds = mapDataStore.mapViewportBounds;
 				const resolution = mapDataStore.dataResolution;
+				console.log("GRID-PROBLEM-DEBUG before gridProcessingStore.generate", {
+					viewportBounds,
+					resolution,
+				});
 				gridProcessingStore.generateGridCellsFromTemperatureData(
 					temperatureDataStore.rawRegionTemperatureData,
 					viewportBounds,
 					resolution,
 				);
+				console.log("GRID-PROBLEM-DEBUG after gridProcessingStore.generate", {
+					gridCellCount: gridProcessingStore.gridCells.length,
+				});
 
 				// Clear other processed data
 				mapDataStore.setProcessedWorldwideRegions(null);
@@ -320,6 +348,10 @@ const ClimateMap = observer(({ onMount = () => true }: ClimateMapProps) => {
 				mapDataStore.setIsProcessingEuropeNutsData(false);
 				mapDataStore.setIsProcessingWorldwideRegionData(false);
 			} else {
+				console.log("GRID-PROBLEM-DEBUG grid/worldwide else", {
+					mapMode: userStore.mapMode,
+					rawDataLength,
+				});
 				console.log(
 					"Entered the or case: No world wide or grid data to load so unable to really do anything.",
 				);
@@ -337,6 +369,10 @@ const ClimateMap = observer(({ onMount = () => true }: ClimateMapProps) => {
 		dataProcessingError,
 		setDataProcessingError,
 		setGeneralError,
+		temperatureDataStore.rawRegionTemperatureData,
+		temperatureDataStore.rawRegionTemperatureData.length,
+		mapDataStore.mapViewportBounds,
+		mapDataStore.dataResolution,
 	]);
 
 	// Cleanup timeouts on unmount

@@ -2,12 +2,13 @@ import { makeAutoObservable } from "mobx";
 import type { Month } from "../component/Mapper/types";
 
 export class UserSelectionsStore {
-	selectedModel: string = "";
-	selectedOptimism: string = "optimistic";
-	currentYear: number = 2016;
+	selectedModel = "";
+	selectedOptimism = "optimistic";
+	currentYear = 2016;
 	currentMonth: Month = 7;
-	currentVariableType: string = "R0";
+	currentVariableType = "R0";
 	mapMode: "worldwide" | "europe-only" | "grid" = "europe-only";
+	showLatLongHints = true;
 
 	constructor() {
 		makeAutoObservable(this);
@@ -35,6 +36,10 @@ export class UserSelectionsStore {
 
 	setMapMode = (mode: "worldwide" | "europe-only" | "grid") => {
 		this.mapMode = mode;
+	};
+
+	setShowLatLongHints = (value: boolean) => {
+		this.showLatLongHints = value;
 	};
 }
 

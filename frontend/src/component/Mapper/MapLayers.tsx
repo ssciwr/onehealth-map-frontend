@@ -9,6 +9,7 @@ import { mapStyleService } from "../../services/MapStyleService";
 import * as MapInteractionHandlers from "../../utils/MapInteractionHandlers";
 import AdaptiveGridLayer from "./AdaptiveGridLayer";
 import CitiesLayer from "./CitiesLayer";
+import LatLongHintsLayer from "./LatLongHintsLayer";
 
 import type { DataExtremes, NutsGeoJSON, WorldwideGeoJSON } from "./types";
 
@@ -95,6 +96,15 @@ const MapLayers: React.FC<MapLayersProps> = observer(
 		);
 		return (
 			<>
+				{userStore.showLatLongHints && (
+					<Pane
+						name="latLongHintsPane"
+						style={{ zIndex: 5, pointerEvents: "none" }}
+					>
+						<LatLongHintsLayer />
+					</Pane>
+				)}
+
 				{/* Cities Layer - always rendered, but filtered by data regions, and only over the rendered regions */}
 				<CitiesLayer
 					zoom={mapDataStore.mapZoomLevel}
