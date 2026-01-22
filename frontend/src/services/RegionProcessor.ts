@@ -292,7 +292,10 @@ export class RegionProcessor {
 					...feature,
 					properties: {
 						...feature.properties,
-						intensity: tempResult.temperature,
+						intensity: tempResult.temperature, // this label should be in some kind of mobx store or passed as prop.
+						// todo: Check this again. This relates to Ingas suggested changes today
+						// Cruically, the label here in this concept may become the yaml "model output yaml" or so
+						// Created Forntend issue #77 for this.
 						WORLDWIDE_ID:
 							feature.properties?.name ||
 							feature.properties?.name_en ||

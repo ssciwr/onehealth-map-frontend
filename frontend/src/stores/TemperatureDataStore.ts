@@ -10,7 +10,7 @@ import {
 	loadNutsData,
 	loadTemperatureData,
 } from "../component/Mapper/utilities/mapDataUtils";
-import type { Model } from "../hooks/useModelData";
+import type { Model } from "../types/model";
 import { errorStore } from "./ErrorStore";
 import { loadingStore } from "./LoadingStore";
 
