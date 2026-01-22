@@ -1,14 +1,15 @@
 import type { Model } from "../types/model";
 
+// todo: Make this more dynamic in the future if needed.
 const MODEL_CARDS_REPO = "ssciwr/onehealth-model-backend";
-const MODEL_CARDS_REF = "926afe1fcadfd3588b00f8aa5df1cb725b2f4cd0";
 const MODEL_CARDS_DIR = "model_cards";
 const MODEL_CARDS_SUFFIX = "_model_card.md";
 const MODEL_CARDS_YAML_SUFFIX = "_model_card.yaml";
 const MODEL_CARDS_YML_SUFFIX = "_model_card.yml";
 
-const CONTENTS_URL = `https://api.github.com/repos/${MODEL_CARDS_REPO}/contents/${MODEL_CARDS_DIR}?ref=${MODEL_CARDS_REF}`;
-const RAW_BASE_URL = `https://raw.githubusercontent.com/${MODEL_CARDS_REPO}/${MODEL_CARDS_REF}/${MODEL_CARDS_DIR}/`;
+const CONTENTS_URL = `https://api.github.com/repos/${MODEL_CARDS_REPO}/contents/${MODEL_CARDS_DIR}`;
+const RAW_BASE_URL = `https://raw.githubusercontent.com/${MODEL_CARDS_REPO}/main/${MODEL_CARDS_DIR}/`;
+const BLOB_BASE_URL = `https://github.com/${MODEL_CARDS_REPO}/blob/main/${MODEL_CARDS_DIR}/`;
 
 const stripMarkdown = (text: string): string =>
 	text
@@ -85,7 +86,7 @@ export const fetchModelCards = async (): Promise<Model[]> => {
 				output: ["R0"],
 				cardMarkdown,
 				cardYamlUrl: yamlFilename
-					? `${RAW_BASE_URL}${yamlFilename}`
+					? `${BLOB_BASE_URL}${yamlFilename}`
 					: undefined,
 			});
 		} catch (error) {

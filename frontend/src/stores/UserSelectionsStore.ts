@@ -4,7 +4,7 @@ import type { Month } from "../component/Mapper/types";
 export class UserSelectionsStore {
 	selectedModel = "";
 	selectedOptimism = "optimistic";
-	currentYear = 2016;
+	currentYear = new Date().getFullYear();
 	currentMonth: Month = 7;
 	currentVariableType = "R0";
 	mapMode: "worldwide" | "europe-only" | "grid" = "europe-only";

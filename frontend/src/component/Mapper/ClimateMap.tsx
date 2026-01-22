@@ -169,6 +169,23 @@ const ClimateMap = observer(({ onMount = () => true }: ClimateMapProps) => {
 		onMount();
 	}, [onMount]);
 
+	// Clear processing errors on mode or input changes to avoid blocking other modes.
+	// biome-ignore lint/correctness/useExhaustiveDependencies: mobx store values should reset processing errors.
+	useEffect(() => {
+		if (!dataProcessingError) return;
+		console.log("Resetting dataProcessingError due to input change");
+		setDataProcessingError(false);
+		setGeneralError(null);
+	}, [
+		userStore.mapMode,
+		userStore.currentYear,
+		userStore.currentMonth,
+		userStore.selectedModel,
+		dataProcessingError,
+		setDataProcessingError,
+		setGeneralError,
+	]);
+
 	// Process data based on map mode - separate effects to prevent dependency loops
 	// Europe-only mode effect (independent of temperatureDataStore.rawRegionTemperatureData)
 	useEffect(() => {
