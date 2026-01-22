@@ -1,3 +1,5 @@
+import fs from "node:fs";
+import path from "node:path";
 import type { Page } from "@playwright/test";
 
 const MOCK_2016_FILE_PATH = "/tests/setup/MockResponse2258.json";
@@ -7,24 +9,19 @@ const NEXT_YEAR = CURRENT_YEAR + 1;
 
 // Helper function to create route handler that loads mock data
 async function createMockHandlerForYear(mockFilePath: string) {
-	const fs = await import("node:fs");
-	const path = await import("node:path");
 	return async (route) => {
 		try {
-			const filePath = path.default.join(
-				process.cwd(),
-				mockFilePath.substring(1),
-			);
+			const filePath = path.join(process.cwd(), mockFilePath.substring(1));
 
 			// Check if file exists first
-			const fileExists = fs.default.existsSync(filePath);
+			const fileExists = fs.existsSync(filePath);
 
 			if (!fileExists) {
 				await route.continue();
 				return;
 			}
 
-			const mockData = JSON.parse(fs.default.readFileSync(filePath, "utf-8"));
+			const mockData = JSON.parse(fs.readFileSync(filePath, "utf-8"));
 
 			await route.fulfill({
 				status: 200,

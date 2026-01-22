@@ -55,7 +55,8 @@ const MapHeader = observer(() => {
 					>
 						<img
 							alt="Hei-Planet logo"
-							style={{ height: "30px", width: "30px" }}
+							className="hei-planet-logo"
+							style={{ height: "30px", width: "auto" }}
 							src="/images/hei-planet-logo.png"
 						/>
 
@@ -189,8 +190,10 @@ const MapHeader = observer(() => {
 					<img
 						style={{
 							height: "48px",
+							width: "auto",
 							marginRight: "10px",
 						}}
+						className="hei-planet-logo"
 						alt="Hei-Planet logo"
 						src="/images/hei-planet-logo.png"
 					/>

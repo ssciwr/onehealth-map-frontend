@@ -27,9 +27,10 @@ const NotFound = () => (
 			<img
 				src="/images/hei-planet-logo.png"
 				alt="Hei-Planet logo"
+				className="hei-planet-logo"
 				style={{
-					width: "40px",
 					height: "40px",
+					width: "auto",
 				}}
 			/>
 			<h1

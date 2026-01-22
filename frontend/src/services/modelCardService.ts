@@ -13,7 +13,7 @@ const BLOB_BASE_URL = `https://github.com/${MODEL_CARDS_REPO}/blob/main/${MODEL_
 
 const stripMarkdown = (text: string): string =>
 	text
-		.replace(/\[(.+?)\]\([^)]+\)/g, "$1")
+		.replace(/\[(.+?)]\([^)]+\)/g, "$1")
 		.replace(/`([^`]+)`/g, "$1")
 		.replace(/\*\*([^*]+)\*\*/g, "$1")
 		.replace(/_([^_]+)_/g, "$1")

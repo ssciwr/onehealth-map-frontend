@@ -855,3 +855,10 @@ button:focus-visible {
 	color: #999 !important;
 	font-size: 14px !important;
 }
+
+.hei-planet-logo {
+	display: block;
+	height: auto;
+	max-width: 100%;
+	object-fit: contain;
+}

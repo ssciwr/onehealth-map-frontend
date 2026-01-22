@@ -4,11 +4,10 @@ import type { Month } from "../component/Mapper/types";
 export class UserSelectionsStore {
 	selectedModel = "";
 	selectedOptimism = "optimistic";
-	currentYear = new Date().getFullYear();
+	currentYear = 2025;
 	currentMonth: Month = 7;
 	currentVariableType = "R0";
 	mapMode: "worldwide" | "europe-only" | "grid" = "europe-only";
-	showLatLongHints = true;
 
 	constructor() {
 		makeAutoObservable(this);
@@ -36,10 +35,6 @@ export class UserSelectionsStore {
 
 	setMapMode = (mode: "worldwide" | "europe-only" | "grid") => {
 		this.mapMode = mode;
-	};
-
-	setShowLatLongHints = (value: boolean) => {
-		this.showLatLongHints = value;
 	};
 }
 

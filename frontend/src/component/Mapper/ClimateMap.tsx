@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo } from "react";
 import { MapContainer } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
-import type L from "leaflet";
+import type { LatLngBounds, LatLngBoundsExpression } from "leaflet";
 import ViewportMonitor from "./ViewportMonitor.tsx";
 import "./Map.css";
 import { observer } from "mobx-react-lite";
@@ -166,7 +166,7 @@ const ClimateMap = observer(({ onMount = () => true }: ClimateMapProps) => {
 	}, []);
 
 	useEffect(() => {
-		onMount();
+		onMount?.();
 	}, [onMount]);
 
 	// Clear processing errors on mode or input changes to avoid blocking other modes.
@@ -408,7 +408,7 @@ const ClimateMap = observer(({ onMount = () => true }: ClimateMapProps) => {
 			temperatureDataStore.mapDataBounds &&
 			userStore.mapMode !== "grid"
 		) {
-			const leafletBounds: L.LatLngBoundsExpression = [
+			const leafletBounds: LatLngBoundsExpression = [
 				[
 					temperatureDataStore.mapDataBounds.south,
 					temperatureDataStore.mapDataBounds.west,
@@ -454,7 +454,7 @@ const ClimateMap = observer(({ onMount = () => true }: ClimateMapProps) => {
 
 	// Viewport change handler
 	const handleViewportChange = useCallback(
-		(newViewport: { bounds: L.LatLngBounds; zoom: number }) => {
+		(newViewport: { bounds: LatLngBounds; zoom: number }) => {
 			if (newViewport) {
 				const bounds = newViewport.bounds;
 				const zoom = newViewport.zoom;
