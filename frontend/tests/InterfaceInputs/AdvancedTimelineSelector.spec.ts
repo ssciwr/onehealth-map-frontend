@@ -110,10 +110,12 @@ test.describe("AdvancedTimelineSelector Year Navigation - Desktop Only", () => {
 		// Helper function to get current year from display
 		async function getCurrentYear() {
 			const yearText = await page.locator(".year-text").textContent();
-			return Number.parseInt(yearText?.trim() || "2016");
+			return Number.parseInt(yearText?.trim() || "2025");
 		}
 
 		// Wait for initial data to load
+		await waitForMapDataStability();
+		await page.locator(".month-select").selectOption("6");
 		await waitForMapDataStability();
 
 		// Get initial year and colors
@@ -260,6 +262,8 @@ test.describe("AdvancedTimelineSelector Year Navigation - Desktop Only", () => {
 		}
 
 		// Wait for initial data to load
+		await waitForMapDataStability();
+		await page.locator(".month-select").selectOption("6");
 		await waitForMapDataStability();
 
 		// Get initial month and colors
