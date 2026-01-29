@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import { MapContainer } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import type { LatLngBounds, LatLngBoundsExpression } from "leaflet";
@@ -46,6 +46,7 @@ type ClimateMapProps = {
 const ClimateMap = observer(({ onMount = () => true }: ClimateMapProps) => {
 	console.log("GRID-PROBLEM-DEBUG ClimateMap render");
 	const userStore = useUserSelectionsStore();
+	const lastInputKeyRef = useRef<string | null>(null);
 	const {
 		generalError,
 		setGeneralError,
@@ -172,10 +173,29 @@ const ClimateMap = observer(({ onMount = () => true }: ClimateMapProps) => {
 	// Clear processing errors on mode or input changes to avoid blocking other modes.
 	// biome-ignore lint/correctness/useExhaustiveDependencies: mobx store values should reset processing errors.
 	useEffect(() => {
-		if (!dataProcessingError) return;
+		const inputKey = [
+			userStore.mapMode,
+			userStore.currentYear,
+			userStore.currentMonth,
+			userStore.selectedModel,
+		].join("|");
+
+		if (!dataProcessingError) {
+			lastInputKeyRef.current = inputKey;
+			return;
+		}
+
+		if (lastInputKeyRef.current === null) {
+			lastInputKeyRef.current = inputKey;
+			return;
+		}
+
+		if (lastInputKeyRef.current === inputKey) return;
+
 		console.log("Resetting dataProcessingError due to input change");
 		setDataProcessingError(false);
 		setGeneralError(null);
+		lastInputKeyRef.current = inputKey;
 	}, [
 		userStore.mapMode,
 		userStore.currentYear,
@@ -227,6 +247,9 @@ const ClimateMap = observer(({ onMount = () => true }: ClimateMapProps) => {
 					requestedVariableValue,
 					"NUTS3",
 				);
+				if (Object.keys(nutsApiData).length === 0) {
+					throw new Error("NO_DATA");
+				}
 				mapDataStore.setIsLoadingRawData(false);
 
 				// Process API data into GeoJSON format
@@ -242,8 +265,12 @@ const ClimateMap = observer(({ onMount = () => true }: ClimateMapProps) => {
 				mapDataStore.setIsProcessingEuropeNutsData(false);
 			} catch (error) {
 				console.error("Failed to load/process Europe-only NUTS data:", error);
+				const noDataMessage =
+					error instanceof Error && error.message === "NO_DATA"
+						? "Sorry, this map data is not available right now"
+						: "Failed to process Europe-only NUTS data";
 				setDataProcessingError(true);
-				setGeneralError("Failed to process Europe-only NUTS data");
+				setGeneralError(noDataMessage);
 				mapDataStore.setIsProcessingEuropeNutsData(false);
 				mapDataStore.setIsLoadingRawData(false);
 			} finally {
