@@ -6,6 +6,10 @@
 # https://github.com/github/super-linter
 name: Lint Code Base
 
+permissions:
+  contents: read
+  statuses: write
+  checks: write
 on:
   push:
     branches: [ "main" ]
@@ -22,8 +26,8 @@ jobs:
           fetch-depth: 0
 
       - name: Lint Code Base
-        uses: github/super-linter@v4
+        uses: github/super-linter@v7
         env:
           VALIDATE_ALL_CODEBASE: false
           DEFAULT_BRANCH: "main"
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
