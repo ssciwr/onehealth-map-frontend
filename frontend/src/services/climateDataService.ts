@@ -70,7 +70,7 @@ export async function fetchClimateData(
 					viewportBounds.south,
 					viewportBounds.east,
 				] // [N, W, S, E]
-			: [180, 0, 0, 180]; // global fallback
+			: [90, -180, -90, 180]; // global fallback
 
 		console.log("🔍 DEBUG: Viewport bounds received:", viewportBounds);
 		console.log("🔍 DEBUG: viewportBounds is null?", viewportBounds === null);
