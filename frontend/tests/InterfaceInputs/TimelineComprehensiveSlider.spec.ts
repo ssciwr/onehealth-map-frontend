@@ -159,10 +159,14 @@ test.describe("Comprehensive Grid Color Analysis - Desktop Only", () => {
 		// Wait for initial map data to load and stabilize
 		await waitForMapDataStability();
 		const monthSelect = page.locator(
-			'[data-testid="timeline-selector"] .ant-select',
+			'[data-testid="timeline-selector"] .ant-select-selector',
 		);
-		await monthSelect.click();
-		await page.getByRole("option", { name: "June" }).click();
+		await expect(monthSelect).toBeVisible({ timeout: 30000 });
+		await monthSelect.scrollIntoViewIfNeeded();
+		await monthSelect.click({ force: true });
+		const juneOption = page.getByRole("option", { name: "June" });
+		await expect(juneOption).toBeVisible({ timeout: 10000 });
+		await juneOption.click();
 		await waitForMapDataStability();
 
 		// Test multiple years

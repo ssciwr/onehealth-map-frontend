@@ -19,10 +19,10 @@ test.describe("ModelDetailsModal", () => {
 	test("Model details dropdown should open and allow the user to view all models", async ({
 		page,
 	}, testInfo) => {
-		await expect(page.locator(".model-selector")).toBeVisible();
-		const dropdownTrigger = page
-			.locator('[data-testid="model-selector"] .model-selector-button')
-			.or(page.locator(".model-selector button"))
+		const modelSelector = page.getByTestId("model-selector");
+		await expect(modelSelector).toBeVisible();
+		const dropdownTrigger = modelSelector
+			.locator(".model-selector-button, button")
 			.first();
 
 		await expect(dropdownTrigger).toBeVisible();
